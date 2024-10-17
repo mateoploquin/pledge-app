@@ -22,6 +22,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e7e2e883-b2f3-4d92-964c-0e0608a1ff96"
+      }
+    },
+    "owner": "francoismari"
   }
 }
