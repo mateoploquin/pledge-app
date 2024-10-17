@@ -12,7 +12,9 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "buildNumber": "1",
+      "bundleIdentifier": "com.pledge.pledgeApp"
     },
     "android": {
       "adaptiveIcon": {
