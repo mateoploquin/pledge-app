@@ -18,7 +18,11 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
 
   const handleSurrender = () => {
     navigation.navigate("Instructions");
-  }
+  };
+
+  const handleOpenDetails = () => {
+    navigation.navigate("Details");
+  };
 
   return (
     <AppWrapper>
@@ -100,7 +104,10 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
             </View>
           </HomeCardWrapper>
 
-          <HomeCardWrapper style={{ marginTop: 17 }}>
+          <HomeCardWrapper
+            onPress={handleOpenDetails}
+            style={{ marginTop: 17 }}
+          >
             <Text style={{ fontSize: 48, fontWeight: "500" }}>1h 21m</Text>
             <Text style={{ fontSize: 15 }}>
               <Text style={{ fontWeight: "500" }}>39m</Text> less than yesterday
@@ -110,7 +117,8 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
           </HomeCardWrapper>
         </>
       ) : (
-        <Text>Total</Text>
+        // <Text>Total</Text>
+        <></>
       )}
 
       <TouchableOpacity
