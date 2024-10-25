@@ -1,24 +1,33 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React from "react";
+import { Text, Image, TouchableOpacity } from "react-native";
+import OnboardingWrapper from "../../components/layout/app-wrapper";
+import MainHeader from "../../components/headers/main-header";
+import AppWrapper from "../../components/layout/app-wrapper";
 
 interface LoginScreenProps {
-  // define your props here
+  handleLogin: () => void;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = (props) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ handleLogin }) => {
+  const [loggedIn, setLoggedIn] = React.useState(false);
+
   return (
-    <View style={styles.container}>
-      <Text>Login</Text>
-    </View>
+    <AppWrapper>
+      <MainHeader />
+
+      <TouchableOpacity
+        onPress={handleLogin}
+        style={{ position: "absolute", top: 150, zIndex: 100 }}
+      >
+        <Text>Enter your email</Text>
+      </TouchableOpacity>
+
+      <Image
+        source={require("../../../assets/images/onboarding/login-phone.png")}
+        style={{ position: "absolute", alignSelf: "center", bottom: 0 }}
+      />
+    </AppWrapper>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
 
 export default LoginScreen;

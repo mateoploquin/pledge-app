@@ -1,24 +1,24 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React from "react";
+import { Text, StyleSheet, ImageBackground, View } from "react-native";
+import { SCREEN_WIDTH, SCREEN_HEIGHT } from "../../utils/constants/dimensions";
+import Onboarding from "./onboarding";
 
-interface OnboardingScreenProps {
+interface SplashScreenProps {
   // define your props here
 }
 
-const OnboardingScreen: React.FC<OnboardingScreenProps> = (props) => {
+const SplashScreen: React.FC<SplashScreenProps> = (props) => {
   return (
-    <View style={styles.container}>
-      <Text>Hello, React Native!</Text>
-    </View>
+    <Onboarding />
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
-export default OnboardingScreen;
+export default SplashScreen;
