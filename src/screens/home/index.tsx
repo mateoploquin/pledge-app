@@ -16,8 +16,9 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
   const navigation = useNavigation();
   const [openedTab, setOpenedTab] = useState("today");
 
-  const handleSurrender = () => {}
-  navigation.navigate("Instructions");
+  const handleSurrender = () => {
+    navigation.navigate("Instructions");
+  }
 
   return (
     <AppWrapper>

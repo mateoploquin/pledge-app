@@ -11,11 +11,11 @@ const Stack = createStackNavigator();
 
 const AppNavigator = () => {
   return (
-    <Stack.Navigator initialRouteName="Home">
+    <Stack.Navigator initialRouteName="Splash">
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, gestureEnabled: false }}
       />
       <Stack.Screen
         name="Splash"
