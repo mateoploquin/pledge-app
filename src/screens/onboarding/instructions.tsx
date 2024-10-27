@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
 import MainButton from "../../components/buttons/main-button";
 import colors from "../../theme/colors";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import SetPledge from "./setup/set-pledge";
 import ChallengeOn from "./setup/challenge-on";
 import SetTimeLimit from "./setup/set-time-limit";
@@ -25,6 +25,13 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
   const [timeValue, setTimeValue] = useState<Number>(10);
   const [selectedApps, setSelectedApps] = useState([]);
   const [termsAccepted, setTermsAccepted] = useState<Boolean>(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      // Reset the step to 0 when the screen is focused
+      setStep(0);
+    }, [])
+  );
 
   return (
     <AppWrapper>
@@ -67,7 +74,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
       <View
         style={{
           position: "absolute",
-          bottom: step == 5 ? 70 : 38,
+          bottom: step == 5 || step == 0 ? 71 : 38,
           zIndex: 100,
           alignSelf: "center",
         }}
@@ -83,8 +90,12 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           text={step == 5 ? "Track My Pledge" : "Continue"}
           style={{ width: 162 }}
         />
-        {step !== 5 && (
-          <TouchableOpacity onPress={() => setStep(step - 1)}>
+        {step !== 5 && step > 0 ? (
+          <TouchableOpacity
+            onPress={() => {
+              setStep(step - 1);
+            }}
+          >
             <Text
               style={{
                 textDecorationLine: "underline",
@@ -96,7 +107,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
               Go Back
             </Text>
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
     </AppWrapper>
   );
