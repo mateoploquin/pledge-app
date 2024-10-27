@@ -39,6 +39,7 @@ const SetApps: React.FC<SetAppsProps> = ({
           marginHorizontal: 34,
           textAlign: "center",
           fontSize: 16,
+          fontFamily: "InstrumentSerif-Regular",
         }}
       >
         Pick the apps that steal your time, and reclaim it for what matters.

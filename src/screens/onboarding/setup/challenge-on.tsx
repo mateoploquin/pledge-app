@@ -24,7 +24,12 @@ const ChallengeOn: React.FC<ChallengeOnProps> = (props) => {
         Challenge On!
       </Text>
       <Text
-        style={{ textAlign: "center", marginTop: 15, marginHorizontal: 30 }}
+        style={{
+          fontFamily: "InstrumentSerif-Regular",
+          textAlign: "center",
+          marginTop: 15,
+          marginHorizontal: 30,
+        }}
       >
         Take control of your time. Let the challenge begin!
       </Text>

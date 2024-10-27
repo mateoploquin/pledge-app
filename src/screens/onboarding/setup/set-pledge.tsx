@@ -36,6 +36,7 @@ const SetPledge: React.FC<SetPledgeProps> = ({
           marginHorizontal: 34,
           textAlign: "center",
           fontSize: 16,
+          fontFamily: "InstrumentSerif-Regular",
         }}
       >
         The higher your pledge, the greater your commitment—and the bigger the

@@ -7,7 +7,7 @@ const MainHeader: React.FC = ({}) => {
   return (
     <View
       style={{
-        marginTop: 18,
+        marginTop: 16,
         // position: "absolute",
         width: SCREEN_WIDTH,
         alignItems: "center",

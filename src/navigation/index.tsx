@@ -9,9 +9,9 @@ import Instructions from "../screens/onboarding/instructions";
 
 const Stack = createStackNavigator();
 
-const AppNavigator = () => {
+const AppNavigator = ({ initialRouteName }) => {
   return (
-    <Stack.Navigator initialRouteName="Splash">
+    <Stack.Navigator initialRouteName={initialRouteName}>
       <Stack.Screen
         name="Home"
         component={HomeScreen}

@@ -8,19 +8,20 @@
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": false,
       "buildNumber": "1",
-      "bundleIdentifier": "com.pledge.pledgeApp"
+      "bundleIdentifier": "com.pledgeinc.pledge"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.pledge.pledgeApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,6 +31,10 @@
         "projectId": "e7e2e883-b2f3-4d92-964c-0e0608a1ff96"
       }
     },
-    "owner": "pledge"
+    "owner": "pledge",
+    "plugins": [
+      "expo-font",
+      "expo-localization"
+    ]
   }
 }

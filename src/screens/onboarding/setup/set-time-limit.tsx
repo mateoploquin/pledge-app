@@ -39,6 +39,7 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
           marginHorizontal: 34,
           textAlign: "center",
           fontSize: 16,
+          fontFamily: "InstrumentSerif-Regular",
         }}
       >
         Remember, every minute saved is a step closer to your goals
