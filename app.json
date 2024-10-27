@@ -13,8 +13,11 @@
     },
     "ios": {
       "supportsTablet": false,
-      "buildNumber": "1",
-      "bundleIdentifier": "com.pledgeinc.pledge"
+      "buildNumber": "3",
+      "bundleIdentifier": "com.pledgeinc.pledge",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Pledge does not usage camera for any purpose"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -32,9 +35,6 @@
       }
     },
     "owner": "pledge",
-    "plugins": [
-      "expo-font",
-      "expo-localization"
-    ]
+    "plugins": ["expo-font", "expo-localization"]
   }
 }
