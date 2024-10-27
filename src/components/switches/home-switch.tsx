@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   },
   slider: {
     position: "absolute",
-    width: 110, // Adjust based on switch width
+    width: 110,
     height: "100%",
     backgroundColor: colors.orange,
     borderRadius: 20,
