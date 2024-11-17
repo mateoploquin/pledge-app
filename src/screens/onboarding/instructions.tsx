@@ -1,16 +1,19 @@
-import React, { useCallback, useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import React, { useCallback, useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, Alert } from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
 import MainButton from "../../components/buttons/main-button";
 import colors from "../../theme/colors";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { onAuthStateChanged, getIdToken } from 'firebase/auth';
+import { auth } from '../../../firebaseConfig'; // Import Firebase auth
 import SetPledge from "./setup/set-pledge";
 import ChallengeOn from "./setup/challenge-on";
 import SetTimeLimit from "./setup/set-time-limit";
 import SetApps from "./setup/set-apps";
 import InstructionCarousel from "../../components/carousels/instructions-carousel";
 import AcceptTerms from "./setup/accept-terms";
+import { sendPledgeData } from "../../services/sendPledgeData";
 
 interface InstructionsProps {
   // define your props here
@@ -18,13 +21,13 @@ interface InstructionsProps {
 
 const Instructions: React.FC<InstructionsProps> = (props) => {
   const navigation = useNavigation();
-  const [step, setStep] = useState<Number>(0);
-  const [isButtonDisabled, setIsButtonDisabled] = useState<Boolean>(false);
+  const [step, setStep] = useState<number>(0);
+  const [isButtonDisabled, setIsButtonDisabled] = useState<boolean>(false);
 
-  const [pledgeValue, setPledgeValue] = useState<Number>(10);
-  const [timeValue, setTimeValue] = useState<Number>(10);
-  const [selectedApps, setSelectedApps] = useState([]);
-  const [termsAccepted, setTermsAccepted] = useState<Boolean>(false);
+  const [pledgeValue, setPledgeValue] = useState<number>(10);
+  const [timeValue, setTimeValue] = useState<number>(10);
+  const [selectedApps, setSelectedApps] = useState<string[]>([]);
+  const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -32,6 +35,46 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
       setStep(0);
     }, [])
   );
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        navigation.navigate("Login");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigation]);
+
+  const handleNextStep = async () => {
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        if (step == 4) {
+          try {
+            const idToken = await getIdToken(user, true);
+            const pledgeData = {
+              timeValue: timeValue,
+              pledgeValue: pledgeValue,
+              selectedApps: selectedApps, // Ensure this is correct
+            };
+            console.log('Pledge data to send:', pledgeData); // Log the pledge data
+            await sendPledgeData(pledgeData, idToken);
+            Alert.alert("Success", "Pledge data sent successfully!");
+          } catch (error) {
+            console.error("Error sending pledge data:", error);
+            Alert.alert("Error", "Failed to send pledge data.");
+          }
+        }
+        if (step == 5) {
+          navigation.navigate("Home");
+        } else {
+          setStep(step + 1);
+        }
+      } else {
+        navigation.navigate("Login");
+      }
+    });
+  };
 
   return (
     <AppWrapper>
@@ -62,8 +105,6 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         />
       ) : step == 4 ? (
         <AcceptTerms
-          isButtonDisabled={isButtonDisabled}
-          setIsButtonDisabled={setIsButtonDisabled}
           termsAccepted={termsAccepted}
           setTermsAccepted={setTermsAccepted}
         />
@@ -80,13 +121,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         }}
       >
         <MainButton
-          onPress={() => {
-            if (step == 5) {
-              navigation.navigate("Home");
-            } else {
-              setStep(step + 1);
-            }
-          }}
+          onPress={handleNextStep}
           text={step == 5 ? "Track My Pledge" : "Continue"}
           style={{ width: 162 }}
         />

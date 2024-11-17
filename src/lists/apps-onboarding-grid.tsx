@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -58,24 +58,24 @@ const appData = [
 ];
 
 interface AppsOnboardingListProps {
-  selectedApps: [];
-  setSelectedApps: () => void;
+  selectedApps: string[];
+  setSelectedApps: (apps: string[]) => void;
 }
 
 const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
   selectedApps,
   setSelectedApps,
 }) => {
-  const toggleAppSelection = (id: number) => {
+  const toggleAppSelection = (name: string) => {
     setSelectedApps((prevSelected) =>
-      prevSelected.includes(id)
-        ? prevSelected.filter((appId) => appId !== id)
-        : [...prevSelected, id]
+      prevSelected.includes(name)
+        ? prevSelected.filter((appName) => appName !== name)
+        : [...prevSelected, name]
     );
   };
 
   const renderApp = ({ item }) => {
-    const isSelected = selectedApps.includes(item.id);
+    const isSelected = selectedApps.includes(item.name);
     return (
       <TouchableOpacity
         style={[styles.appContainer, isSelected && {
@@ -83,7 +83,7 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
           borderWidth: 1,
           borderColor: colors.orange,
         }]}
-        onPress={() => toggleAppSelection(item.id)}
+        onPress={() => toggleAppSelection(item.name)}
       >
         <View style={styles.iconContainer}>{item.icon}</View>
         <View
@@ -95,7 +95,7 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
             alignSelf: "center",
             marginTop: 7,
             borderWidth: 1,
-            borderColor: selectedApps.includes(item.id) ? colors.orange : "white",
+            borderColor: isSelected ? colors.orange : "white",
           }}
         />
       </TouchableOpacity>
@@ -131,7 +131,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     justifyContent: "center",
     alignItems: "center",
-    // position: "relative",
     marginHorizontal: 11,
   },
   iconContainer: {

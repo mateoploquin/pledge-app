@@ -6,8 +6,8 @@ import AppsOnboardingGrid from "../../../lists/apps-onboarding-grid";
 interface SetAppsProps {
   isButtonDisabled: boolean;
   setIsButtonDisabled: (value: boolean) => void;
-  selectedApps: [];
-  setSelectedApps: (value: []) => void;
+  selectedApps: string[];
+  setSelectedApps: (value: string[]) => void;
 }
 
 const SetApps: React.FC<SetAppsProps> = ({
