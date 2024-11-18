@@ -29,6 +29,8 @@ self.define_singleton_method(use_autolinking_method_symbol) do |*args|
 end
 
 platform :ios, podfile_properties['ios.deploymentTarget'] || '13.4'
+use_modular_headers!  # This line enables modular headers globally
+
 install! 'cocoapods',
   :deterministic_uuids => false
 
@@ -40,14 +42,26 @@ target 'Pledge' do
 
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+  use_frameworks! :linkage => :static
+
 
   use_react_native!(
     :path => config[:reactNativePath],
     :hermes_enabled => podfile_properties['expo.jsEngine'] == nil || podfile_properties['expo.jsEngine'] == 'hermes',
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/..",
     :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
   )
+
+  # Specify modular headers for specific dependencies
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  # Prevent multiple definitions of ReactCommon
+  pod 'ReactCommon', :path => "../node_modules/react-native/ReactCommon"
+
+  pod 'Stripe', '~> 23.30.0'
+  pod 'StripePayments', '~> 23.30.0'
+  pod 'StripeApplePay', '~> 23.30.0'
+
 
   post_install do |installer|
     react_native_post_install(

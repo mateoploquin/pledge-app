@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, NativeModules } from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
 import HomeSwitch from "../../components/switches/home-switch";
@@ -7,6 +7,12 @@ import HomeCardWrapper from "../../components/cards/home-card-wrapper";
 import colors from "../../theme/colors";
 import ScreenTimeList from "../../lists/screen-time-list";
 import { useNavigation } from "@react-navigation/native";
+import CheckoutScreen from "../payment/pay-with-stripe";
+import MainButton from "../../components/buttons/main-button";
+import PaymentPopup from '../payment/payment-popup';
+
+
+const { ScreenTimeBridge } = NativeModules;
 
 interface HomeScreenProps {
   // define your props here
@@ -16,6 +22,22 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
   const navigation = useNavigation();
   const [openedTab, setOpenedTab] = useState("today");
 
+  const [instagramUsage, setInstagramUsage] = useState("Loading...");
+
+  useEffect(() => {
+    fetchInstagramUsage();
+  }, []);
+
+  const fetchInstagramUsage = async () => {
+    try {
+      const usage = await ScreenTimeBridge.getInstagramUsage();
+      setInstagramUsage(usage);
+    } catch (error) {
+      console.error("Error fetching Instagram usage:", error);
+      setInstagramUsage("Unable to fetch data");
+    }
+  };
+
   const handleSurrender = () => {
     navigation.navigate("Instructions");
   };
@@ -24,11 +46,19 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
     navigation.navigate("Details");
   };
 
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+  const [selectedPrice, setSelectedPrice] = useState(10);
+  const handlePaymentSuccess = () => {
+    setShowPaymentPopup(false);
+    // Add any additional logic after successful payment
+  };
+
   return (
     <AppWrapper>
       <MainHeader />
 
       <HomeSwitch openedTab={openedTab} setOpenedTab={setOpenedTab} />
+      
 
       {openedTab === "today" ? (
         <>
@@ -115,6 +145,19 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
 
             <ScreenTimeList />
           </HomeCardWrapper>
+          <HomeCardWrapper
+            style={{
+              marginVertical: 20,
+            }}
+          >
+            <Text
+              style={{fontWeight: "bold"}}
+            >
+              Total screen time on Instagram:
+            </Text>
+            <Text>{instagramUsage}</Text>
+          </HomeCardWrapper>
+          
         </>
       ) : (
         // <Text>Total</Text>
