@@ -1,0 +1,16 @@
+diff --git a/node_modules/react-native-device-activity/ios/ScreenTimeActivityPicker.swift b/node_modules/react-native-device-activity/ios/ScreenTimeActivityPicker.swift
+index 96349c8..670cc81 100644
+--- a/node_modules/react-native-device-activity/ios/ScreenTimeActivityPicker.swift
++++ b/node_modules/react-native-device-activity/ios/ScreenTimeActivityPicker.swift
+@@ -20,9 +20,10 @@ class ScreenTimeSelectAppsModel: ObservableObject {
+     init() { }
+ }
+ 
++@available(iOS 15.0, *)
+ struct InnerView: View {
+     var body: some View {
+-        Color.clear
++        Color.init(uiColor: UIColor(red: 1.0, green: 0.349, blue: 0.0, alpha: 1.0))
+             .contentShape(Rectangle())
+             .frame(maxWidth: .infinity, maxHeight: .infinity)
+     }

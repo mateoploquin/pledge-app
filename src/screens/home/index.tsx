@@ -1,149 +1,252 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import AppWrapper from "../../components/layout/app-wrapper";
-import MainHeader from "../../components/headers/main-header";
-import HomeSwitch from "../../components/switches/home-switch";
-import HomeCardWrapper from "../../components/cards/home-card-wrapper";
-import colors from "../../theme/colors";
-import ScreenTimeList from "../../lists/screen-time-list";
-import { useNavigation } from "@react-navigation/native";
+import React, { useCallback, useEffect } from "react";
+import { View, Text, StyleSheet, Button, NativeSyntheticEvent, SafeAreaView, ScrollView, TextInput, Alert, Linking } from "react-native";
+import * as ReactNativeDeviceActivity from "react-native-device-activity";
+import { AuthorizationStatus, DeviceActivityEvent, EventParsed, UIBlurEffectStyle } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
 
 interface HomeScreenProps {
   // define your props here
+  familyActivitySelection: string
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = (props) => {
-  const navigation = useNavigation();
-  const [openedTab, setOpenedTab] = useState("today");
+const initialMinutes = 1;
+const postponeMinutes = 1;
 
-  const handleSurrender = () => {
-    navigation.navigate("Instructions");
-  };
+const potentialMaxEvents = Math.floor(
+  (60 * 24 - initialMinutes) / postponeMinutes,
+);
 
-  const handleOpenDetails = () => {
-    navigation.navigate("Details");
-  };
+const startMonitoring = (activitySelection: string) => {
+  const events: DeviceActivityEvent[] = [];
 
-  return (
-    <AppWrapper>
-      <MainHeader />
+  for (let i = 0; i < potentialMaxEvents; i++) {
+    const eventName = `minutes_reached_${initialMinutes + i * postponeMinutes}`;
+    const event: DeviceActivityEvent = {
+      eventName,
+      familyActivitySelection: activitySelection,
+      threshold: { minute: initialMinutes + i * postponeMinutes },
+    };
+    events.push(event);
+  }
 
-      <HomeSwitch openedTab={openedTab} setOpenedTab={setOpenedTab} />
+  ReactNativeDeviceActivity.startMonitoring(
+    "Goal1",
+    {
+      warningTime: { minute: 1 },
+      intervalStart: { hour: 0, minute: 0, second: 0 },
+      intervalEnd: { hour: 23, minute: 59, second: 59 },
+      repeats: false,
+    },
+    events,
+  );
+};
 
-      {openedTab === "today" ? (
-        <>
-          <HomeCardWrapper style={{ marginTop: 25 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-evenly",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ fontSize: 36, color: colors.orange }}>19</Text>
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(0, 0, 0, 0.70)",
-                    textTransform: "uppercase",
-                    textAlign: "center",
-                  }}
-                >
-                  Days
-                </Text>
-              </View>
+const authorizationStatusMap = {
+  [AuthorizationStatus.approved]: "approved",
+  [AuthorizationStatus.denied]: "denied",
+  [AuthorizationStatus.notDetermined]: "notDetermined",
+};
 
-              <Text>:</Text>
+const HomeScreen: React.FC = () => {
+  const [events, setEvents] = React.useState<EventParsed[]>([]);
+  const [shieldTitle, setShieldTitle] = React.useState<string>("");
+  const [activities, setActivities] = React.useState<string[]>([]);
+  const [authorizationStatus, setAuthorizationStatus] =
+    React.useState<AuthorizationStatus | null>(null);
 
-              <View style={{ justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ fontSize: 36, color: colors.orange }}>12</Text>
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(0, 0, 0, 0.70)",
-                    textTransform: "uppercase",
-                    textAlign: "center",
-                  }}
-                >
-                  Hours
-                </Text>
-              </View>
+  const [familyActivitySelection, setFamilyActivitySelection] = React.useState<
+    string | null
+  >(null);
 
-              <Text>:</Text>
+  useEffect(() => {
+    const status = ReactNativeDeviceActivity.getAuthorizationStatus();
+    console.log("authorization status", authorizationStatusMap[status]);
+    setAuthorizationStatus(status);
+  }, []);
 
-              <View style={{ justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ fontSize: 36, color: colors.orange }}>70</Text>
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(0, 0, 0, 0.70)",
-                    textTransform: "uppercase",
-                    textAlign: "center",
-                  }}
-                >
-                  Minutes
-                </Text>
-              </View>
+  const refreshEvents = useCallback(() => {
+    const eventsParsed = ReactNativeDeviceActivity.getEvents();
 
-              <Text>:</Text>
+    setEvents(eventsParsed);
 
-              <View style={{ justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ fontSize: 36, color: colors.orange }}>44</Text>
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(0, 0, 0, 0.70)",
-                    textTransform: "uppercase",
-                    textAlign: "center",
-                  }}
-                >
-                  Seconds
-                </Text>
-              </View>
-            </View>
-          </HomeCardWrapper>
+    console.log("eventsParsed", eventsParsed);
+  }, []);
 
-          <HomeCardWrapper
-            onPress={handleOpenDetails}
-            style={{ marginTop: 17 }}
-          >
-            <Text style={{ fontSize: 48, fontWeight: "500" }}>1h 21m</Text>
-            <Text style={{ fontSize: 15 }}>
-              <Text style={{ fontWeight: "500" }}>39m</Text> less than yesterday
-            </Text>
+  const requestAuthorization = useCallback(async () => {
+    if (authorizationStatus === AuthorizationStatus.notDetermined) {
+      const status = await ReactNativeDeviceActivity.requestAuthorization();
+      setAuthorizationStatus(status);
+    } else if (authorizationStatus === AuthorizationStatus.denied) {
+      Alert.alert(
+        "You didn't grant access",
+        "Please go to settings and enable it",
+        [
+          {
+            text: "Open settings",
+            onPress: () => Linking.openSettings(),
+          },
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+        ],
+      );
+    } else {
+      const status = await ReactNativeDeviceActivity.revokeAuthorization();
+      setAuthorizationStatus(status);
+    }
+  }, [authorizationStatus]);
 
-            <ScreenTimeList />
-          </HomeCardWrapper>
-        </>
-      ) : (
-        // <Text>Total</Text>
-        <></>
-      )}
+  useEffect(() => {
+    const listener = ReactNativeDeviceActivity.addEventReceivedListener(
+      (event) => {
+        console.log("got event, refreshing events!", event);
+        refreshEvents();
+      },
+    );
+    return () => {
+      listener.remove();
+    };
+  }, [refreshEvents]);
 
-      <TouchableOpacity
-        onPress={handleSurrender}
-        style={{ position: "absolute", bottom: 43, alignSelf: "center" }}
+return (
+  <SafeAreaView style={{ flex: 1 }}>
+    <ScrollView style={styles.container}>
+      <Text>
+        Authorization status:
+        {authorizationStatus !== null
+          ? authorizationStatusMap[authorizationStatus]
+          : "unknown"}
+      </Text>
+
+      <Button
+        title={
+          authorizationStatus === AuthorizationStatus.approved
+            ? "Revoke authorization"
+            : "Request authorization"
+        }
+        onPress={requestAuthorization}
+      />
+
+      <Button
+        title="Start monitoring"
+        disabled={!familyActivitySelection}
+        onPress={() => startMonitoring(familyActivitySelection!)}
+      />
+
+      <Button
+        title="Stop monitoring"
+        disabled={!familyActivitySelection}
+        onPress={() => ReactNativeDeviceActivity.stopMonitoring()}
+      />
+
+      <Button
+        title="Get activities"
+        onPress={() =>
+          setActivities(ReactNativeDeviceActivity.getActivities())
+        }
+      />
+
+      <Button title="Get events" onPress={refreshEvents} />
+
+      <Button
+        title="Block all apps"
+        onPress={() => ReactNativeDeviceActivity.blockApps()}
+      />
+      <Button
+        title="Unblock all apps"
+        onPress={ReactNativeDeviceActivity.unblockApps}
+      />
+
+      <TextInput
+        placeholder="Enter shield title"
+        onChangeText={(text) => setShieldTitle(text)}
+        value={shieldTitle}
+        onSubmitEditing={() =>
+          ReactNativeDeviceActivity.updateShieldConfiguration({
+            title: shieldTitle,
+            backgroundBlurStyle: UIBlurEffectStyle.systemMaterialDark,
+            // backgroundColor: null,
+            titleColor: {
+              red: 1,
+              green: 0,
+              blue: 0,
+            },
+            subtitle: "subtitle",
+            subtitleColor: {
+              red: Math.random() * 1,
+              green: Math.random() * 1,
+              blue: Math.random() * 1,
+            },
+            primaryButtonBackgroundColor: {
+              red: Math.random() * 1,
+              green: Math.random() * 1,
+              blue: Math.random() * 1,
+            },
+            primaryButtonLabelColor: {
+              red: Math.random() * 1,
+              green: Math.random() * 1,
+              blue: Math.random() * 1,
+            },
+            secondaryButtonLabelColor: {
+              red: Math.random() * 1,
+              green: Math.random() * 1,
+              blue: Math.random() * 1,
+            },
+          })
+        }
+      />
+
+      <ReactNativeDeviceActivity.DeviceActivitySelectionView
+        style={{
+          width: 300,
+          height: 400,
+          borderRadius: 20,
+          borderWidth: 10,
+          borderColor: "rgb(213,85,37)",
+        }}
+        headerText="a header text!"
+        footerText="a footer text!"
+        onSelectionChange={(
+          event: NativeSyntheticEvent<{ familyActivitySelection: string }>,
+        ) => {
+          console.log("event.nativeEvent", event.nativeEvent);
+          if (
+            event.nativeEvent.familyActivitySelection !==
+            familyActivitySelection
+          ) {
+            setFamilyActivitySelection(
+              event.nativeEvent.familyActivitySelection,
+            );
+
+            // alert(event.nativeEvent.familyActivitySelection);
+          }
+          // console.log(event.nativeEvent.familyActivitySelection);
+        }}
+        familyActivitySelection={familyActivitySelection}
       >
-        <Text
+        <View
+          pointerEvents="none"
           style={{
-            color: colors.orange,
-            textDecorationLine: "underline",
-            fontSize: 16,
+            backgroundColor: "rgb(213,85,37)",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          I surrender
-        </Text>
-      </TouchableOpacity>
-    </AppWrapper>
-  );
+          <Text style={{ color: "white" }}>Select apps</Text>
+        </View>
+      </ReactNativeDeviceActivity.DeviceActivitySelectionView>
+      <Text>{JSON.stringify(events, null, 2)}</Text>
+      <Text>{JSON.stringify(activities, null, 2)}</Text>
+    </ScrollView>
+  </SafeAreaView>
+)
 };
 
 const styles = StyleSheet.create({
   container: {
+    margin: 10,
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#fff",
   },
 });
 
