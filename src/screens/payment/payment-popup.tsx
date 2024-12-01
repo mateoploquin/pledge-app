@@ -174,6 +174,7 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess }) => {
 
           <View style={styles.content}>
             <Text style={styles.description}>Please enter your payment details below:</Text>
+            <Text style={styles.priceText}>Price: {pledgePrice} €</Text>
             <View style={styles.cardFormContainer}>
               <CardForm
                 style={styles.cardForm}
@@ -183,6 +184,8 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess }) => {
               />
             </View>
           </View>
+
+          
 
           <View style={styles.content}>
             <MainButton
@@ -254,6 +257,11 @@ const styles = StyleSheet.create({
   cardForm: {
     width: '100%',
     height: 200,
+  },
+  priceText: {
+    fontSize: 18,
+    fontWeight: '500',
+    marginBottom: 10,
   },
 });
 
