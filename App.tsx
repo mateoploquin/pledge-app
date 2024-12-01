@@ -13,7 +13,7 @@ import AppNavigator from "./src/navigation";
 SplashScreen.preventAutoHideAsync();
 
 const publishableKey = "pk_live_51Q3go300KOFp3VG2iDuNCZxC805si40p87u3LKKC9AcbpSin0WFEyhvOj2e2HiC8g2t9ugc2GctC4ztLTqs69Vwn00YppeC182";
-const merchantId = "merchant.com.example";
+const merchantId = "merchant.pledge.applepay";
 const merchantSecret = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJHQzJYUlo2SFNKIiwiaWF0IjoxNzMxNDIyMzYxLCJkb21haW5zIjpbImZ1Y2tzY3JvbGxpbmcuY29tIl19.nEIAZQjMvq6E5mmB9AqCD-janc-UvkBt7BtJSfwp09glUmRJ79jyBBpdhtqtafKODNwzEYy4ZwMsJdPauW9ufA1";
 
 function AppContent({ initialRouteName, onLayoutRootView }) {
@@ -47,6 +47,8 @@ export default function App() {
   return (
     <StripeProvider
       publishableKey={publishableKey}
+      merchantIdentifier={merchantId}
+      urlScheme="your-url-scheme"
     >
     <NavigationContainer>
       <AppContent

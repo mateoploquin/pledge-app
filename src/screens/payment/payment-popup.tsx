@@ -11,6 +11,9 @@ import {
 import {
   useStripe,
   CardForm,
+  isPlatformPaySupported,
+  PlatformPayButton,
+  PlatformPay
 } from '@stripe/stripe-react-native';
 import MainButton from '../../components/buttons/main-button';
 
@@ -21,7 +24,8 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess }) => {
   const [loading, setLoading] = useState(false);
   const mockMode = true; // Toggle mock mode for testing
 
-  const [pledgePrice, setPledgePrice] = useState(0);
+  const [pledgePrice, setPledgePrice] = useState(10);
+  const [isApplePaySupported, setIsApplePaySupported] = useState(false);
 
   const API_URL = "https://api.stripe.com/v1";
 
@@ -49,67 +53,57 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess }) => {
     animatePopup(isVisible);
   }, [isVisible]);
 
-  const fetchPaymentSheetParams = async () => {
-    const response = await fetch(`${API_URL}/payment-sheet`, {
+  useEffect(() => {
+    (async function () {
+      setIsApplePaySupported(await isPlatformPaySupported());
+    })();
+  }, []);
+
+  const fetchPaymentIntentClientSecret = async () => {
+    const response = await fetch(`${API_URL}/create-payment-intent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        amount: pledgePrice, // Make sure this is set to your actual amount
+        currency: 'eur',
+      }),
     });
-    const { setupIntent, ephemeralKey, customer } = await response.json();
-
-    return {
-      setupIntent,
-      ephemeralKey,
-      customer,
-    };
-  };
-
-  const initializePaymentSheet = async () => {
-    setLoading(true);
-    try {
-      const { setupIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
-
-      const { error } = await stripe.initPaymentSheet({
-        merchantDisplayName: "Your Merchant Name",
-        customerId: customer,
-        customerEphemeralKeySecret: ephemeralKey,
-        setupIntentClientSecret: setupIntent,
-        returnURL: "yourapp://payment-complete",
-        paymentMethodTypes: ['apple_pay'], // Add other payment methods as required
-        applePay: {
-          merchantCountryCode: 'US',
-        },
-      });
-
-      if (error) {
-        console.error("Error initializing payment sheet:", error);
-      } else {
-        console.log("Payment sheet initialized successfully");
-      }
-    } catch (error) {
-      console.error("Error during initialization:", error);
-    } finally {
-      setLoading(false);
-    }
+    const { clientSecret } = await response.json();
+    return clientSecret;
   };
 
   const handleApplePayPress = async () => {
     try {
-      const { error } = await stripe.presentApplePay({
-        cartItems: [
-          { label: 'Pledge', amount: pledgePrice },
-          { label: 'Total', amount: pledgePrice },
-        ],
-        country: 'ES',
-        currency: 'EUR',
-      });
+      const clientSecret = await fetchPaymentIntentClientSecret();
+      
+      const { error } = await stripe.confirmPlatformPayPayment(
+        clientSecret,
+        {
+          applePay: {
+            cartItems: [
+              {
+                label: 'Your Pledge',
+                amount: pledgePrice.toString(),
+                paymentType: PlatformPay.PaymentType.Immediate,
+              }
+            ],
+            merchantCountryCode: 'ES',
+            currencyCode: 'EUR',
+            requiredBillingContactFields: [
+              PlatformPay.ContactField.PhoneNumber,
+              PlatformPay.ContactField.EmailAddress,
+            ],
+          },
+        }
+      );
 
       if (error) {
-        console.error(error);
+        console.error('Payment failed:', error);
       } else {
-        console.log('Apple Pay payment successful');
-        onPaymentSuccess(); // Notify parent component of success
+        console.log('Payment successful!');
+        onPaymentSuccess();
       }
     } catch (error) {
       console.error('Error during Apple Pay:', error);
@@ -165,7 +159,18 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess }) => {
             </TouchableOpacity>
           </View>
 
-          <MainButton text="Pay with Apple Pay" onPress={handleApplePayPress} />
+          {isApplePaySupported && (
+            <PlatformPayButton
+              onPress={handleApplePayPress}
+              type={PlatformPay.ButtonType.Order}
+              appearance={PlatformPay.ButtonStyle.Black}
+              borderRadius={4}
+              style={{
+                width: '100%',
+                height: 50,
+              }}
+            />
+          )}
 
           <View style={styles.content}>
             <Text style={styles.description}>Please enter your payment details below:</Text>
@@ -183,8 +188,8 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess }) => {
             <MainButton
               onPress={openPaymentSheet}
               text="Submit"
-              style={[{ opacity: loading ? 1 : 0.5 }]}
-              disabled={!loading}
+              style={[{ opacity: loading ? 0.5 : 1 }]}
+              disabled={loading}
             />
           </View>
         </Animated.View>

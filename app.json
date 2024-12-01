@@ -35,6 +35,16 @@
       }
     },
     "owner": "pledge",
-    "plugins": ["expo-font", "expo-localization"]
+    "plugins": [
+      "expo-font", 
+      "expo-localization",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.pledge.applepay",
+          "enableGooglePay": false
+        }
+      ]
+    ]
   }
 }

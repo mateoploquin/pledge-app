@@ -17,5 +17,5 @@ npx expo run:[ios or android]
 
 To export it to Transporter and get it on TestFlight, you need to use `EAS`:
 ```sh
-eas build --platform [ios or android] --profile production
+eas build --platform [ios or android] --profile development
 ```
