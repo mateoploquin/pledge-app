@@ -77,6 +77,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           setIsButtonDisabled={setIsButtonDisabled}
           paymentSetupComplete={paymentSetupComplete}
           setPaymentSetupComplete={setPaymentSetupComplete}
+          pledgeValue={pledgeValue}
         />
       ) : step == 6 ? ( // Add the new step condition
         <ChallengeOn />

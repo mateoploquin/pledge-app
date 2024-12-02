@@ -17,7 +17,7 @@ import {
 } from '@stripe/stripe-react-native';
 import MainButton from '../../components/buttons/main-button';
 
-const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess }) => {
+const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess, pledgeValue }) => {
   const stripe = useStripe();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').height)).current;
@@ -66,7 +66,7 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess }) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        amount: pledgePrice, // Make sure this is set to your actual amount
+        amount: pledgeValue, // Make sure this is set to your actual amount
         currency: 'eur',
       }),
     });
@@ -85,7 +85,7 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess }) => {
             cartItems: [
               {
                 label: 'Your Pledge',
-                amount: pledgePrice.toString(),
+                amount: pledgeValue.toString(),
                 paymentType: PlatformPay.PaymentType.Immediate,
               }
             ],
@@ -174,7 +174,7 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess }) => {
 
           <View style={styles.content}>
             <Text style={styles.description}>Please enter your payment details below:</Text>
-            <Text style={styles.priceText}>Price: {pledgePrice} €</Text>
+            <Text style={styles.priceText}>Price: {pledgeValue} €</Text>
             <View style={styles.cardFormContainer}>
               <CardForm
                 style={styles.cardForm}

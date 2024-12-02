@@ -21,13 +21,15 @@ interface SetPaymentProps {
   setIsButtonDisabled: (disabled: Boolean) => void;
   paymentSetupComplete: Boolean;
   setPaymentSetupComplete: (complete: Boolean) => void;
+  pledgeValue: number;
 }
 
 const SetPayment: React.FC<SetPaymentProps> = ({
   isButtonDisabled,
   setIsButtonDisabled,
   paymentSetupComplete,
-  setPaymentSetupComplete
+  setPaymentSetupComplete,
+  pledgeValue,
 }) => {
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
 
@@ -81,6 +83,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
           setPaymentSetupComplete(true);
           setShowPaymentPopup(false);
         }}
+        pledgeValue={pledgeValue}
       />
 
     </View>
