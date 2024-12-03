@@ -84,7 +84,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         <MainButton
           onPress={() => {
             if (step == 5) {
-              navigation.navigate("Home", {selectionEvent});
+              navigation.navigate("Home", {selectionEvent, pledgeValue, timeValue});
             } else if (step === 3 && authorizationStatus !== AuthorizationStatus.approved) {
               return;
             } else {

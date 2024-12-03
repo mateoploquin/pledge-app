@@ -14,7 +14,9 @@ type SelectionInfo = {
 type HomeScreenProps = {
   route: {
     params: {
-      selectionEvent: SelectionInfo
+      selectionEvent: SelectionInfo;
+      pledgeValue: number;
+      timeValue: number;
     }
   }
 }
@@ -28,7 +30,7 @@ const potentialMaxEvents = Math.floor(
 
 const monitoringEventName = 'GeneralMonitoring';
 
-const startMonitoring = (activitySelection: string) => {
+const startMonitoring = (activitySelection: string, thresholdMinutes: number) => {
   const events: DeviceActivityEvent[] = [];
 
   for (let i = 0; i < potentialMaxEvents; i++) {
@@ -40,6 +42,12 @@ const startMonitoring = (activitySelection: string) => {
     };
     events.push(event);
   }
+
+  events.push({
+    eventName: 'tresholdReached',
+    familyActivitySelection: activitySelection,
+    threshold: {minute: thresholdMinutes},
+  });
 
   ReactNativeDeviceActivity.startMonitoring(
     monitoringEventName,
