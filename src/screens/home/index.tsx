@@ -1,11 +1,22 @@
 import React, { useCallback, useEffect } from "react";
-import { View, Text, StyleSheet, Button, NativeSyntheticEvent, SafeAreaView, ScrollView, TextInput, Alert, Linking } from "react-native";
+import { Text, StyleSheet, Button, SafeAreaView, ScrollView } from "react-native";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
-import { AuthorizationStatus, DeviceActivityEvent, EventParsed, UIBlurEffectStyle } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
+import { getEvents } from 'react-native-device-activity';
+import { DeviceActivityEvent, EventParsed, UIBlurEffectStyle } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
 
-interface HomeScreenProps {
-  // define your props here
-  familyActivitySelection: string
+type SelectionInfo = {
+  familyActivitySelection: string;
+  applicationCount: number;
+  categoryCount: number;
+  webDomainCount: number;
+};
+
+type HomeScreenProps = {
+  route: {
+    params: {
+      selectionEvent: SelectionInfo
+    }
+  }
 }
 
 const initialMinutes = 1;
@@ -14,6 +25,8 @@ const postponeMinutes = 1;
 const potentialMaxEvents = Math.floor(
   (60 * 24 - initialMinutes) / postponeMinutes,
 );
+
+const monitoringEventName = 'GeneralMonitoring';
 
 const startMonitoring = (activitySelection: string) => {
   const events: DeviceActivityEvent[] = [];
@@ -29,74 +42,67 @@ const startMonitoring = (activitySelection: string) => {
   }
 
   ReactNativeDeviceActivity.startMonitoring(
-    "Goal1",
+    monitoringEventName,
     {
       warningTime: { minute: 1 },
       intervalStart: { hour: 0, minute: 0, second: 0 },
       intervalEnd: { hour: 23, minute: 59, second: 59 },
-      repeats: false,
+      repeats: true,
     },
-    events,
+    []
+    // events,
   );
 };
 
-const authorizationStatusMap = {
-  [AuthorizationStatus.approved]: "approved",
-  [AuthorizationStatus.denied]: "denied",
-  [AuthorizationStatus.notDetermined]: "notDetermined",
-};
+const stopMonitoring = () => {
+  ReactNativeDeviceActivity.stopMonitoring([monitoringEventName])
+}
 
-const HomeScreen: React.FC = () => {
+const shieldConfiguration = () => {
+  ReactNativeDeviceActivity.updateShieldConfiguration({
+    title: 'App blocked by Pledge',
+    backgroundBlurStyle: UIBlurEffectStyle.systemMaterialDark,
+    // backgroundColor: null,
+    titleColor: {
+      red: 1,
+      green: 0,
+      blue: 0,
+    },
+    subtitle: "subtitle",
+    subtitleColor: {
+      red: Math.random() * 1,
+      green: Math.random() * 1,
+      blue: Math.random() * 1,
+    },
+    primaryButtonBackgroundColor: {
+      red: Math.random() * 1,
+      green: Math.random() * 1,
+      blue: Math.random() * 1,
+    },
+    primaryButtonLabelColor: {
+      red: Math.random() * 1,
+      green: Math.random() * 1,
+      blue: Math.random() * 1,
+    },
+    secondaryButtonLabelColor: {
+      red: Math.random() * 1,
+      green: Math.random() * 1,
+      blue: Math.random() * 1,
+    },
+  });
+}
+
+const HomeScreen: React.FC<HomeScreenProps> = (props) => {
+  const {selectionEvent} = props.route.params;
   const [events, setEvents] = React.useState<EventParsed[]>([]);
-  const [shieldTitle, setShieldTitle] = React.useState<string>("");
   const [activities, setActivities] = React.useState<string[]>([]);
-  const [authorizationStatus, setAuthorizationStatus] =
-    React.useState<AuthorizationStatus | null>(null);
-
-  const [familyActivitySelection, setFamilyActivitySelection] = React.useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    const status = ReactNativeDeviceActivity.getAuthorizationStatus();
-    console.log("authorization status", authorizationStatusMap[status]);
-    setAuthorizationStatus(status);
-  }, []);
 
   const refreshEvents = useCallback(() => {
-    const eventsParsed = ReactNativeDeviceActivity.getEvents();
-
-    setEvents(eventsParsed);
-
-    console.log("eventsParsed", eventsParsed);
+    setEvents(getEvents());
   }, []);
 
-  const requestAuthorization = useCallback(async () => {
-    if (authorizationStatus === AuthorizationStatus.notDetermined) {
-      const status = await ReactNativeDeviceActivity.requestAuthorization();
-      setAuthorizationStatus(status);
-    } else if (authorizationStatus === AuthorizationStatus.denied) {
-      Alert.alert(
-        "You didn't grant access",
-        "Please go to settings and enable it",
-        [
-          {
-            text: "Open settings",
-            onPress: () => Linking.openSettings(),
-          },
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-        ],
-      );
-    } else {
-      const status = await ReactNativeDeviceActivity.revokeAuthorization();
-      setAuthorizationStatus(status);
-    }
-  }, [authorizationStatus]);
-
   useEffect(() => {
+    shieldConfiguration();
     const listener = ReactNativeDeviceActivity.addEventReceivedListener(
       (event) => {
         console.log("got event, refreshing events!", event);
@@ -111,32 +117,15 @@ const HomeScreen: React.FC = () => {
 return (
   <SafeAreaView style={{ flex: 1 }}>
     <ScrollView style={styles.container}>
-      <Text>
-        Authorization status:
-        {authorizationStatus !== null
-          ? authorizationStatusMap[authorizationStatus]
-          : "unknown"}
-      </Text>
-
-      <Button
-        title={
-          authorizationStatus === AuthorizationStatus.approved
-            ? "Revoke authorization"
-            : "Request authorization"
-        }
-        onPress={requestAuthorization}
-      />
 
       <Button
         title="Start monitoring"
-        disabled={!familyActivitySelection}
-        onPress={() => startMonitoring(familyActivitySelection!)}
+        onPress={() => startMonitoring(selectionEvent.familyActivitySelection)}
       />
 
       <Button
         title="Stop monitoring"
-        disabled={!familyActivitySelection}
-        onPress={() => ReactNativeDeviceActivity.stopMonitoring()}
+        onPress={stopMonitoring}
       />
 
       <Button
@@ -150,91 +139,13 @@ return (
 
       <Button
         title="Block all apps"
-        onPress={() => ReactNativeDeviceActivity.blockApps()}
+        onPress={() => ReactNativeDeviceActivity.blockApps(selectionEvent.familyActivitySelection)}
       />
+
       <Button
         title="Unblock all apps"
         onPress={ReactNativeDeviceActivity.unblockApps}
       />
-
-      <TextInput
-        placeholder="Enter shield title"
-        onChangeText={(text) => setShieldTitle(text)}
-        value={shieldTitle}
-        onSubmitEditing={() =>
-          ReactNativeDeviceActivity.updateShieldConfiguration({
-            title: shieldTitle,
-            backgroundBlurStyle: UIBlurEffectStyle.systemMaterialDark,
-            // backgroundColor: null,
-            titleColor: {
-              red: 1,
-              green: 0,
-              blue: 0,
-            },
-            subtitle: "subtitle",
-            subtitleColor: {
-              red: Math.random() * 1,
-              green: Math.random() * 1,
-              blue: Math.random() * 1,
-            },
-            primaryButtonBackgroundColor: {
-              red: Math.random() * 1,
-              green: Math.random() * 1,
-              blue: Math.random() * 1,
-            },
-            primaryButtonLabelColor: {
-              red: Math.random() * 1,
-              green: Math.random() * 1,
-              blue: Math.random() * 1,
-            },
-            secondaryButtonLabelColor: {
-              red: Math.random() * 1,
-              green: Math.random() * 1,
-              blue: Math.random() * 1,
-            },
-          })
-        }
-      />
-
-      <ReactNativeDeviceActivity.DeviceActivitySelectionView
-        style={{
-          width: 300,
-          height: 400,
-          borderRadius: 20,
-          borderWidth: 10,
-          borderColor: "rgb(213,85,37)",
-        }}
-        headerText="a header text!"
-        footerText="a footer text!"
-        onSelectionChange={(
-          event: NativeSyntheticEvent<{ familyActivitySelection: string }>,
-        ) => {
-          console.log("event.nativeEvent", event.nativeEvent);
-          if (
-            event.nativeEvent.familyActivitySelection !==
-            familyActivitySelection
-          ) {
-            setFamilyActivitySelection(
-              event.nativeEvent.familyActivitySelection,
-            );
-
-            // alert(event.nativeEvent.familyActivitySelection);
-          }
-          // console.log(event.nativeEvent.familyActivitySelection);
-        }}
-        familyActivitySelection={familyActivitySelection}
-      >
-        <View
-          pointerEvents="none"
-          style={{
-            backgroundColor: "rgb(213,85,37)",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text style={{ color: "white" }}>Select apps</Text>
-        </View>
-      </ReactNativeDeviceActivity.DeviceActivitySelectionView>
       <Text>{JSON.stringify(events, null, 2)}</Text>
       <Text>{JSON.stringify(activities, null, 2)}</Text>
     </ScrollView>
