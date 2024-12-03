@@ -1,11 +1,15 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { EvilIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
-interface ChallengeOnProps {
-  // define your props here
-}
+const ChallengeOn: React.FC = () => {
+  const navigation = useNavigation();
 
-const ChallengeOn: React.FC<ChallengeOnProps> = (props) => {
+  const handleSharePledge = () => {
+    navigation.navigate("SharePledge");
+  };
+
   return (
     <View>
       <Image
@@ -33,6 +37,22 @@ const ChallengeOn: React.FC<ChallengeOnProps> = (props) => {
       >
         Take control of your time. Let the challenge begin!
       </Text>
+
+      <TouchableOpacity
+        onPress={() => handleSharePledge()}
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: "#FFFFFF",
+          justifyContent: "center",
+          alignItems: "center",
+          alignSelf: "center",
+          marginTop: 31,
+        }}
+      >
+        <EvilIcons name="share-apple" size={30} color="#FF5900" />
+      </TouchableOpacity>
     </View>
   );
 };

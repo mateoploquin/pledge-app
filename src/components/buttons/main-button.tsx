@@ -6,13 +6,25 @@ interface MainButtonProps {
   onPress: () => void;
   text: string;
   style?: any;
+  disabled?: boolean;
 }
 
-const MainButton: React.FC<MainButtonProps> = ({ onPress, text, style }) => {
+const MainButton: React.FC<MainButtonProps> = ({
+  onPress,
+  text,
+  style,
+  disabled = false,
+}) => {
   return (
     <View style={[{ alignSelf: "center" }, style]}>
-      <Pressable onPress={onPress} style={styles.container}>
-        <Text style={styles.text}>{text}</Text>
+      <Pressable
+        onPress={!disabled ? onPress : undefined}
+        style={[
+          styles.container,
+          disabled && { backgroundColor: colors.orange, opacity: 0.6 },
+        ]}
+      >
+        <Text style={[styles.text, disabled && { opacity: 0.6 }]}>{text}</Text>
       </Pressable>
     </View>
   );
@@ -20,7 +32,6 @@ const MainButton: React.FC<MainButtonProps> = ({ onPress, text, style }) => {
 
 const styles = StyleSheet.create({
   container: {
-    // alignSelf: "flex-start",
     backgroundColor: colors.orange,
     paddingHorizontal: 17,
     paddingVertical: 12,

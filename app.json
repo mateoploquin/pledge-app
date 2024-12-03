@@ -13,8 +13,8 @@
     },
     "ios": {
       "supportsTablet": false,
-      "buildNumber": "3",
-      "bundleIdentifier": "com.pledgeinc.pledge",
+      "buildNumber": "4",
+      "bundleIdentifier": "com.pledgecompany.pledge",
       "infoPlist": {
         "NSCameraUsageDescription": "Pledge does not usage camera for any purpose"
       }

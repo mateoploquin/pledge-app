@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
@@ -21,6 +21,8 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
   const [step, setStep] = useState<Number>(0);
   const [isButtonDisabled, setIsButtonDisabled] = useState<Boolean>(false);
 
+  const isReturningFromShare = useRef(false);
+
   const [pledgeValue, setPledgeValue] = useState<Number>(10);
   const [timeValue, setTimeValue] = useState<Number>(10);
   const [selectedApps, setSelectedApps] = useState([]);
@@ -28,10 +30,25 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
 
   useFocusEffect(
     useCallback(() => {
-      // Reset the step to 0 when the screen is focused
-      setStep(0);
+      // Only reset step if we're not returning from SharePledge
+      if (!isReturningFromShare.current) {
+        setStep(0);
+      }
+      // Reset the flag
+      isReturningFromShare.current = false;
     }, [])
   );
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      // Set the flag when navigating to SharePledge
+      if ((navigation as any).getState().routes.slice(-1)[0]?.name === 'SharePledge') {
+        isReturningFromShare.current = true;
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   return (
     <AppWrapper>
@@ -71,6 +88,45 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         <ChallengeOn />
       ) : null}
 
+      {/* <View
+        style={{
+          position: "absolute",
+          bottom: step == 5 || step == 0 ? 71 : 38,
+          zIndex: 100,
+          alignSelf: "center",
+        }}
+      >
+        <MainButton
+          onPress={() => {
+            if (step == 5) {
+              navigation.navigate("Home");
+            } else {
+              setStep(step + 1);
+            }
+          }}
+          text={step == 5 ? "Track My Pledge" : "Continue"}
+          style={{ width: 162 }}
+        />
+        {step !== 5 && step > 0 ? (
+          <TouchableOpacity
+            onPress={() => {
+              setStep(step - 1);
+            }}
+          >
+            <Text
+              style={{
+                textDecorationLine: "underline",
+                color: colors.orange,
+                textAlign: "center",
+                marginTop: 16,
+              }}
+            >
+              Go Back
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+      </View> */}
+
       <View
         style={{
           position: "absolute",
@@ -89,6 +145,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           }}
           text={step == 5 ? "Track My Pledge" : "Continue"}
           style={{ width: 162 }}
+          disabled={step === 4 && !termsAccepted} // Disable only on AcceptTerms step if unchecked
         />
         {step !== 5 && step > 0 ? (
           <TouchableOpacity

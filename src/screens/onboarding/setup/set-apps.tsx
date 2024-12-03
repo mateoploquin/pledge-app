@@ -20,7 +20,6 @@ const SetApps: React.FC<SetAppsProps> = ({
     <View style={{ flex: 1, marginTop: 69 }}>
       <Text
         style={{
-          marginBottom: 31,
           textAlign: "center",
           fontSize: 24,
           fontWeight: "500",
@@ -28,12 +27,23 @@ const SetApps: React.FC<SetAppsProps> = ({
       >
         The <Text style={{ color: colors.orange }}>Pledge</Text> includes
       </Text>
+      <Text
+        style={{
+          marginTop: 10,
+          marginBottom: 25,
+          alignSelf: "center",
+          fontSize: 13,
+        }}
+      >
+        Choose among other apps
+      </Text>
+
       <AppsOnboardingGrid
         selectedApps={selectedApps}
         setSelectedApps={setSelectedApps}
       />
 
-      <Text
+      {/* <Text
         style={{
           marginTop: 69,
           marginHorizontal: 34,
@@ -43,7 +53,7 @@ const SetApps: React.FC<SetAppsProps> = ({
         }}
       >
         Pick the apps that steal your time, and reclaim it for what matters.
-      </Text>
+      </Text> */}
     </View>
   );
 };
