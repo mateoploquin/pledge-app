@@ -32,7 +32,7 @@ const rules = [
     id: 5,
     title: "If You Lose, You Give Back 💙",
     description:
-      "If you don’t succeed, your pledge becomes meaningful 💙: It will be donated to the Make-A-Wish Foundation, our partner charity, with a small €5 fee to support the app! :).",
+      "If you don’t succeed, your pledge becomes meaningful 💙: It will be donated to the Make-A-Wish France, our partner charity, with a small €5 fee to support the app! :).",
   },
 ];
 
