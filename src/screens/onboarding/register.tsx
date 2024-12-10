@@ -1,14 +1,52 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { signUp } from "../../services/auth";
 
-interface RegisterScreenProps {
-  // define your props here
-}
+const RegisterScreen: React.FC = () => {
+  const navigation = useNavigation();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-const RegisterScreen: React.FC<RegisterScreenProps> = (props) => {
+  const handleSignUp = async () => {
+    try {
+      await signUp(email, password, name);
+      Alert.alert("Success", "Registration complete!");
+      navigation.navigate("Instructions"); // Navigate to Instructions screen
+    } catch (error) {
+      console.error("Sign-up Error:", error);
+      Alert.alert("Registration failed", error.message || "An error occurred");
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Text>Register</Text>
+      <Text style={styles.title}>Register</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Your Name"
+        value={name}
+        onChangeText={setName}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Your Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Your Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+        <Text style={styles.buttonText}>Sign Up</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -16,8 +54,32 @@ const RegisterScreen: React.FC<RegisterScreenProps> = (props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  input: {
+    height: 40,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    marginBottom: 12,
+    paddingHorizontal: 8,
+  },
+  button: {
+    backgroundColor: "#FF5900",
+    paddingVertical: 12,
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 
