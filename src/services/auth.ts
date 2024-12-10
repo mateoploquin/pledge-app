@@ -4,6 +4,7 @@ import axios from 'axios';
 import { auth } from '../../firebaseConfig';
 import * as FileSystem from 'expo-file-system';
 
+
 export async function signUp(email, password, displayName) {
   try {
     // Create user with email and password
@@ -52,3 +53,4 @@ async function sendTokenToBackend(idToken) {
 //     throw error;
 //   }
 // }
+
