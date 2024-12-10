@@ -1,26 +1,15 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  ScrollView,
-  Pressable,
-} from "react-native";
-import {
-  SCREEN_HEIGHT,
-  SCREEN_WIDTH,
-} from "../../../utils/constants/dimensions";
+import { View, Text, Alert } from "react-native";
 import colors from "../../../theme/colors";
 import MainButton from "../../../components/buttons/main-button";
-import PaymentPopup from "../../payment/payment-popup";
-
+import { useStripe } from "@stripe/stripe-react-native";
+import { fetchPaymentSheetParams } from "../../../services/stripe-api";
 
 interface SetPaymentProps {
-  isButtonDisabled: Boolean;
-  setIsButtonDisabled: (disabled: Boolean) => void;
-  paymentSetupComplete: Boolean;
-  setPaymentSetupComplete: (complete: Boolean) => void;
+  isButtonDisabled: boolean;
+  setIsButtonDisabled: (disabled: boolean) => void;
+  paymentSetupComplete: boolean;
+  setPaymentSetupComplete: (complete: boolean) => void;
 }
 
 const SetPayment: React.FC<SetPaymentProps> = ({
@@ -29,12 +18,53 @@ const SetPayment: React.FC<SetPaymentProps> = ({
   paymentSetupComplete,
   setPaymentSetupComplete
 }) => {
-  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const [loading, setLoading] = useState(false);
 
-  // Update parent's button disabled state when component mounts
+  const initializePaymentSheet = async () => {
+    try {
+      const { setupIntent, ephemeralKey, customer, error } = await fetchPaymentSheetParams();
+      if (error) {
+        console.error("Error fetching payment sheet params:", error);
+        return;
+      }
+
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: "Example, Inc.",
+        customerId: customer,
+        customerEphemeralKeySecret: ephemeralKey,
+        setupIntentClientSecret: setupIntent,
+      });
+
+      if (!initError) {
+        setLoading(true);
+      } else {
+        console.error("Error initializing payment sheet:", initError);
+      }
+    } catch (err) {
+      console.error("Error initializing payment sheet:", err);
+    }
+  };
+
+  const openPaymentSheet = async () => {
+    const { error } = await presentPaymentSheet();
+
+    if (error) {
+      Alert.alert(`Error code: ${error.code}`, error.message);
+    } else {
+      Alert.alert("Success", "Your payment method is successfully set up for future payments!");
+      setPaymentSetupComplete(true);
+    }
+  };
+
+  useEffect(() => {
+    // Initialize the PaymentSheet when the component mounts
+    initializePaymentSheet();
+  }, []);
+
   useEffect(() => {
     setIsButtonDisabled(!paymentSetupComplete);
-  }, [paymentSetupComplete]);
+  }, [paymentSetupComplete, setIsButtonDisabled]);
 
   return (
     <View>
@@ -51,48 +81,30 @@ const SetPayment: React.FC<SetPaymentProps> = ({
         Set Up Your Payment
       </Text>
 
-      <View 
-        style={{ 
-            marginVertical: 20,
-            paddingVertical: 10,
-        }}>
+      <View style={{ marginVertical: 20, paddingVertical: 10 }}>
         <MainButton
-          onPress={() => setShowPaymentPopup(true)}
+          onPress={openPaymentSheet}
           text={paymentSetupComplete ? "Update Payment Method" : "Set Up Payment"}
+          style={{ opacity: loading ? 1 : 0.5 }}
+          disabled={!loading}
         />
         {paymentSetupComplete && (
-          <Text style={{
-            color: colors.orange,
-            textAlign: 'center',
-            marginTop: 50,
-            fontSize: 20,
-            fontWeight: '600',
-            paddingHorizontal: 100,
-          }}>
+          <Text
+            style={{
+              color: colors.orange,
+              textAlign: 'center',
+              marginTop: 50,
+              fontSize: 20,
+              fontWeight: '600',
+              paddingHorizontal: 100,
+            }}
+          >
             We've received your payment method. You're all set!
           </Text>
         )}
       </View>
-
-      <PaymentPopup
-        isVisible={showPaymentPopup}
-        onClose={() => setShowPaymentPopup(false)}
-        onPaymentSuccess={() => {
-          setPaymentSetupComplete(true);
-          setShowPaymentPopup(false);
-        }}
-      />
-
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
 
 export default SetPayment;
