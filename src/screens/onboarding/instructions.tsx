@@ -11,6 +11,8 @@ import SetTimeLimit from "./setup/set-time-limit";
 import SetApps from "./setup/set-apps";
 import InstructionCarousel from "../../components/carousels/instructions-carousel";
 import AcceptTerms from "./setup/accept-terms";
+import SetPayment from "./setup/set-up-payment"; // Import the new component
+
 
 interface InstructionsProps {
   // define your props here
@@ -27,6 +29,8 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
   const [timeValue, setTimeValue] = useState<Number>(10);
   const [selectedApps, setSelectedApps] = useState([]);
   const [termsAccepted, setTermsAccepted] = useState<Boolean>(false);
+
+  const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -85,6 +89,14 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           setTermsAccepted={setTermsAccepted}
         />
       ) : step == 5 ? (
+        <SetPayment
+          isButtonDisabled={isButtonDisabled}
+          setIsButtonDisabled={setIsButtonDisabled}
+          paymentSetupComplete={paymentSetupComplete}
+          setPaymentSetupComplete={setPaymentSetupComplete}
+          pledgeValue={pledgeValue}
+        />
+      ) : step == 6 ? ( // Add the new step condition
         <ChallengeOn />
       ) : null}
 
@@ -98,16 +110,16 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
       >
         <MainButton
           onPress={() => {
-            if (step == 5) {
+            if (step == 6) {
               navigation.navigate("Home");
             } else {
               setStep(step + 1);
             }
           }}
-          text={step == 5 ? "Track My Pledge" : "Continue"}
+          text={step == 6 ? "Track My Pledge" : "Continue"}
           style={{ width: 162 }}
         />
-        {step !== 5 && step > 0 ? (
+        {step !== 6 && step > 0 ? (
           <TouchableOpacity
             onPress={() => {
               setStep(step - 1);

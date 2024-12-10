@@ -21,8 +21,13 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
     navigation.navigate("Instructions");
   }
 
+
+
   return (
-    <BlurView intensity={50} tint="dark" style={styles.blurContainer}>
+    <View
+    // intensity={50}
+    // tint="dark"
+    style={styles.blurContainer}>
       <View style={styles.modalContainer}>
         <Text style={styles.modalText}>
           Quitting now means you’ll lose your Pledge. You’ve come this far—just
@@ -42,7 +47,7 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
           <Text style={styles.surrenderText}>Yes, I’m an addict</Text>
         </TouchableOpacity>
       </View>
-    </BlurView>
+    </View>
   );
 };
 

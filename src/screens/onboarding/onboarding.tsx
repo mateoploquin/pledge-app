@@ -134,10 +134,10 @@ const Onboarding: React.FC = () => {
           )}
 
           <Animated.View style={[textAnimatedStyle]}>
-            <Animated.Text style={[font1AnimatedStyle, { color: "black" }]}>
+            <Animated.Text style={[font1AnimatedStyle, { color: "white" }]}>
               Pledge
             </Animated.Text>
-            <Animated.Text style={[font2AnimatedStyle, { color: "black" }]}>
+            <Animated.Text style={[font2AnimatedStyle, { color: "white" }]}>
               the bet to break free
             </Animated.Text>
             {iconSwitched ? (

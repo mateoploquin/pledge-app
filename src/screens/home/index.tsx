@@ -36,6 +36,13 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
     navigation.navigate("Details");
   };
 
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+  const [selectedPrice, setSelectedPrice] = useState(10);
+  const handlePaymentSuccess = () => {
+    setShowPaymentPopup(false);
+    // Add any additional logic after successful payment
+  };
+
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
   };
@@ -76,9 +83,9 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
             marginHorizontal: 30,
           }}
         >
-          <BlurView
-            intensity={7.5}
-            tint="light"
+          <View
+            // intensity={7.5}
+            // tint="light"
             style={{
               backgroundColor: "rgba(255, 255, 255, 0.70)",
               padding: 10,
@@ -202,7 +209,7 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
                 <DayProgressBar currentDay={20} />
               </View>
             </HomeCardWrapper>
-          </BlurView>
+          </View>
         </View>
       </ScrollView>
       {/* </> */}
