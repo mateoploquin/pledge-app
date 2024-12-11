@@ -13,7 +13,7 @@
     },
     "ios": {
       "googleServicesFile": "./GoogleService-Info.plist",
-      "supportsTablet": false,
+      "supportsTablet": true,
       "buildNumber": "4",
       "bundleIdentifier": "com.pledgeinc.pledge",
       "infoPlist": {
@@ -55,11 +55,12 @@
       "expo-build-properties",
       {
         "ios": {
+           "deploymentTarget":"13.0",
           "useFrameworks": "static"
         }
       }
     ],
-    [
+    [ 
       "@stripe/stripe-react-native",
       {
         "merchantIdentifier": "merchant.pledge.applepay",
