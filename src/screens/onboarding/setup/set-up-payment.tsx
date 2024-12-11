@@ -13,6 +13,7 @@ interface SetPaymentProps {
   setPaymentSetupComplete: (complete: boolean) => void;
 }
 
+
 const SetPayment: React.FC<SetPaymentProps> = ({
   isButtonDisabled,
   setIsButtonDisabled,
