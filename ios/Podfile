@@ -44,6 +44,9 @@ target 'Pledge' do
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
   use_frameworks! :linkage => :static
 
+  use_frameworks! :linkage => :static
+
+  $RNFirebaseAsStaticFramework = true
 
   use_react_native!(
     :path => config[:reactNativePath],
@@ -55,6 +58,8 @@ target 'Pledge' do
   # Specify modular headers for specific dependencies
   pod 'GoogleUtilities', :modular_headers => true
   pod 'FirebaseCoreInternal', :modular_headers => true
+  
+  pod 'Firebase', :modular_headers => true
   # Prevent multiple definitions of ReactCommon
   pod 'ReactCommon', :path => "../node_modules/react-native/ReactCommon"
 
@@ -91,3 +96,5 @@ target 'Pledge' do
     end
   end
 end
+
+

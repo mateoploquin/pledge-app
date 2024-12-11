@@ -1,3 +1,4 @@
+// File: src/navigation/index.tsx
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import HomeScreen from "../screens/home";
@@ -43,11 +44,11 @@ const AppNavigator = ({ initialRouteName }) => {
           animationEnabled: false,
         }}
       />
-      <Stack.Screen name="Register" component={RegisterScreen}
-      options={{
-        headerShown: false,
-        animationEnabled: false,
-      }} />
+      <Stack.Screen
+        name="Register"
+        component={RegisterScreen}
+        options={{ headerShown: false, animationEnabled: false }}
+      />
     </Stack.Navigator>
   );
 };

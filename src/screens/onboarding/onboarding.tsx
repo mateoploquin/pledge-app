@@ -1,3 +1,4 @@
+// File: src/screens/onboarding/onboarding.tsx
 // src/screens/onboarding/onboarding.tsx
 
 import React, { useState } from "react";

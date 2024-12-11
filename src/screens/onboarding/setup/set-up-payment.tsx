@@ -4,6 +4,7 @@ import colors from "../../../theme/colors";
 import MainButton from "../../../components/buttons/main-button";
 import { useStripe } from "@stripe/stripe-react-native";
 import { fetchPaymentSheetParams } from "../../../services/stripe-api";
+import { auth } from '../../../../firebaseConfig'; // ensure this is correct
 
 interface SetPaymentProps {
   isButtonDisabled: boolean;
@@ -21,28 +22,41 @@ const SetPayment: React.FC<SetPaymentProps> = ({
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
 
-  const initializePaymentSheet = async () => {
+  const initializePaymentSheet = async (): Promise<boolean> => {
     try {
-      const { setupIntent, ephemeralKey, customer, error } = await fetchPaymentSheetParams();
+      const user = auth.currentUser;
+      if (!user) {
+        console.error('User not authenticated. Cannot fetch payment sheet params.');
+        return false;
+      }
+
+      const idToken = await user.getIdToken();
+      const { setupIntent, ephemeralKey, customer, error } = await fetchPaymentSheetParams(idToken);
       if (error) {
         console.error("Error fetching payment sheet params:", error);
-        return;
+        return false;
       }
 
       const { error: initError } = await initPaymentSheet({
-        merchantDisplayName: "Example, Inc.",
+        merchantDisplayName: "Pledge, Inc.",
         customerId: customer,
         customerEphemeralKeySecret: ephemeralKey,
         setupIntentClientSecret: setupIntent,
+        applePay: {
+          merchantCountryCode: 'ES',
+        },
       });
 
-      if (!initError) {
-        setLoading(true);
-      } else {
+      if (initError) {
         console.error("Error initializing payment sheet:", initError);
+        return false;
       }
+
+      // Initialization succeeded
+      return true;
     } catch (err) {
       console.error("Error initializing payment sheet:", err);
+      return false;
     }
   };
 
@@ -57,10 +71,15 @@ const SetPayment: React.FC<SetPaymentProps> = ({
     }
   };
 
-  useEffect(() => {
-    // Initialize the PaymentSheet when the component mounts
-    initializePaymentSheet();
-  }, []);
+  const handleSetUpPayment = async () => {
+    setLoading(true);
+    const initialized = await initializePaymentSheet();
+    setLoading(false);
+
+    if (initialized) {
+      openPaymentSheet();
+    }
+  };
 
   useEffect(() => {
     setIsButtonDisabled(!paymentSetupComplete);
@@ -83,10 +102,10 @@ const SetPayment: React.FC<SetPaymentProps> = ({
 
       <View style={{ marginVertical: 20, paddingVertical: 10 }}>
         <MainButton
-          onPress={openPaymentSheet}
+          onPress={handleSetUpPayment}
           text={paymentSetupComplete ? "Update Payment Method" : "Set Up Payment"}
-          style={{ opacity: loading ? 1 : 0.5 }}
-          disabled={!loading}
+          style={{ opacity: loading ? 0.5 : 1 }}
+          disabled={loading}
         />
         {paymentSetupComplete && (
           <Text
