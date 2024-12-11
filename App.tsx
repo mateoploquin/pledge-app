@@ -1,24 +1,20 @@
-// import "intl-pluralrules";
-import React, { useCallback } from "react";
-import { View } from "react-native";
+// File: App.tsx
+import React, { useCallback, useState, useEffect } from "react";
+import { View, Text } from "react-native";
 import "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import useAppInit from "./src/hooks/useAppInit";
-// import useNotifications from "./src/hooks/useNotifications";
 import { StripeProvider } from "@stripe/stripe-react-native";
 import AppNavigator from "./src/navigation";
+import { fetchPaymentSheetParams } from "./src/services/stripe-api";
+import { onAuthStateChanged, getIdToken } from "firebase/auth";
+import { auth } from "./firebaseConfig"; 
 
 SplashScreen.preventAutoHideAsync();
 
-const publishableKey = "pk_live_51Q3go300KOFp3VG2iDuNCZxC805si40p87u3LKKC9AcbpSin0WFEyhvOj2e2HiC8g2t9ugc2GctC4ztLTqs69Vwn00YppeC182";
-const merchantId = "merchant.pledge.applepay";
-const merchantSecret = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJHQzJYUlo2SFNKIiwiaWF0IjoxNzMxNDIyMzYxLCJkb21haW5zIjpbImZ1Y2tzY3JvbGxpbmcuY29tIl19.nEIAZQjMvq6E5mmB9AqCD-janc-UvkBt7BtJSfwp09glUmRJ79jyBBpdhtqtafKODNwzEYy4ZwMsJdPauW9ufA1";
-
 function AppContent({ initialRouteName, onLayoutRootView }) {
-  // useNotifications();
-
   return (
     <SafeAreaProvider>
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
@@ -30,9 +26,8 @@ function AppContent({ initialRouteName, onLayoutRootView }) {
 
 export default function App() {
   const { isLoadingComplete, initialRouteName } = useAppInit();
-
-  console.log("isLoadingComplete", isLoadingComplete);
-  console.log("initialRouteName", initialRouteName);
+  const [publishableKey, setPublishableKey] = useState<string>("");
+  const [isUserLoading, setIsUserLoading] = useState(true); // To handle auth state loading
 
   const onLayoutRootView = useCallback(async () => {
     if (isLoadingComplete) {
@@ -40,22 +35,57 @@ export default function App() {
     }
   }, [isLoadingComplete]);
 
-  if (!initialRouteName || !isLoadingComplete) {
-    return null;
+  useEffect(() => {
+    if (!isLoadingComplete) return;
+
+    // Listen for auth state changes.
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const idToken = await getIdToken(user);
+          // Fetch the payment sheet params using the idToken
+          const { publishableKey } = await fetchPaymentSheetParams(idToken);
+          if (publishableKey) {
+            setPublishableKey(publishableKey);
+          }
+        } catch (error) {
+          console.error("Error fetching publishable key:", error);
+        }
+      } else {
+        // User not authenticated, handle this case as needed.
+        // For instance, show a login screen or proceed with no payment methods.
+        setPublishableKey("");
+      }
+      setIsUserLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [isLoadingComplete]);
+
+  // Wait until everything is ready
+  if (!initialRouteName || !isLoadingComplete || isUserLoading) {
+    return null; // Or a loading spinner
   }
 
+  // If publishableKey is empty (and user is logged out), you may choose to handle that differently
+  // if (!publishableKey) {
+  //   return (
+  //     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+  //       <Text>No Publishable Key Found. Please log in.</Text>
+  //     </View>
+  //   );
+  // }
+
   return (
-    <StripeProvider
-      publishableKey={publishableKey}
-      merchantIdentifier={merchantId}
-      urlScheme="your-url-scheme"
-    >
-    <NavigationContainer>
-      <AppContent
-        initialRouteName={initialRouteName}
-        onLayoutRootView={onLayoutRootView}
-      />
-    </NavigationContainer>
+    <StripeProvider publishableKey={publishableKey}
+                    merchantIdentifier="merchant.pledge.applepay" // required for Apple Pay
+    >  
+      <NavigationContainer>
+        <AppContent
+          initialRouteName={initialRouteName}
+          onLayoutRootView={onLayoutRootView}
+        />
+      </NavigationContainer>
     </StripeProvider>
   );
 }
