@@ -1,4 +1,4 @@
 {
-  "compilerOptions": {},
+  "compilerOptions": {"lib": ["ES2015", "DOM"]},
   "extends": "expo/tsconfig.base"
 }
