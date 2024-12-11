@@ -1,3 +1,4 @@
+// File: App.tsx
 import React, { useCallback, useState, useEffect } from "react";
 import { View, Text } from "react-native";
 import "react-native-gesture-handler";
@@ -9,7 +10,7 @@ import { StripeProvider } from "@stripe/stripe-react-native";
 import AppNavigator from "./src/navigation";
 import { fetchPaymentSheetParams } from "./src/services/stripe-api";
 import { onAuthStateChanged, getIdToken } from "firebase/auth";
-import { auth } from "./firebaseConfig";
+import { auth } from "./firebaseConfig"; 
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,7 +27,7 @@ function AppContent({ initialRouteName, onLayoutRootView }) {
 export default function App() {
   const { isLoadingComplete, initialRouteName } = useAppInit();
   const [publishableKey, setPublishableKey] = useState<string>("");
-  const [isUserLoading, setIsUserLoading] = useState(true);
+  const [isUserLoading, setIsUserLoading] = useState(true); // To handle auth state loading
 
   const onLayoutRootView = useCallback(async () => {
     if (isLoadingComplete) {
@@ -37,10 +38,12 @@ export default function App() {
   useEffect(() => {
     if (!isLoadingComplete) return;
 
+    // Listen for auth state changes.
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
           const idToken = await getIdToken(user);
+          // Fetch the payment sheet params using the idToken
           const { publishableKey } = await fetchPaymentSheetParams(idToken);
           if (publishableKey) {
             setPublishableKey(publishableKey);
@@ -49,6 +52,8 @@ export default function App() {
           console.error("Error fetching publishable key:", error);
         }
       } else {
+        // User not authenticated, handle this case as needed.
+        // For instance, show a login screen or proceed with no payment methods.
         setPublishableKey("");
       }
       setIsUserLoading(false);
@@ -57,20 +62,24 @@ export default function App() {
     return () => unsubscribe();
   }, [isLoadingComplete]);
 
+  // Wait until everything is ready
   if (!initialRouteName || !isLoadingComplete || isUserLoading) {
-    return null;
+    return null; // Or a loading spinner
   }
 
-  if (!publishableKey) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>No Publishable Key Found. Please log in.</Text>
-      </View>
-    );
-  }
+  // If publishableKey is empty (and user is logged out), you may choose to handle that differently
+  // if (!publishableKey) {
+  //   return (
+  //     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+  //       <Text>No Publishable Key Found. Please log in.</Text>
+  //     </View>
+  //   );
+  // }
 
   return (
-    <StripeProvider publishableKey={publishableKey}>
+    <StripeProvider publishableKey={publishableKey}
+                    merchantIdentifier="merchant.pledge.applepay" // required for Apple Pay
+    >  
       <NavigationContainer>
         <AppContent
           initialRouteName={initialRouteName}

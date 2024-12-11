@@ -12,22 +12,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": false,
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "supportsTablet": true,
       "buildNumber": "4",
       "bundleIdentifier": "com.pledgeinc.pledge",
       "infoPlist": {
         "NSCameraUsageDescription": "Pledge does not usage camera for any purpose"
       }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.pledge.pledgeApp"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
@@ -35,6 +26,46 @@
       }
     },
     "owner": "pledge",
-    "plugins": ["expo-font", "expo-localization"]
-  }
+    "plugins": [
+      "expo-build-properties"
+    ]
+  },
+  "android": {
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "backgroundColor": "#ffffff"
+    },
+    "package": "com.pledge.pledgeApp"
+  },
+  "web": {
+    "favicon": "./assets/favicon.png"
+  },
+  "extra": {
+    "eas": {
+      "projectId": "e7e2e883-b2f3-4d92-964c-0e0608a1ff96"
+    }
+  },
+  "owner": "pledge",
+  "plugins": [
+    "expo-font",
+    "expo-localization",
+    "@react-native-firebase/app",
+    "@react-native-firebase/auth",
+    [
+      "expo-build-properties",
+      {
+        "ios": {
+           "deploymentTarget":"13.0",
+          "useFrameworks": "static"
+        }
+      }
+    ],
+    [ 
+      "@stripe/stripe-react-native",
+      {
+        "merchantIdentifier": "merchant.pledge.applepay",
+        "enableGooglePay": false
+      }
+    ]
+  ]
 }
