@@ -45,7 +45,11 @@ const AppNavigator = ({ initialRouteName }) => {
           animationEnabled: false,
         }}
       />
-      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen
+        name="Register"
+        component={RegisterScreen}
+        options={{ headerShown: false, animationEnabled: false }}
+      />
       <Stack.Screen
         name="ChallengeCompleted"
         component={ChallengeCompleted}

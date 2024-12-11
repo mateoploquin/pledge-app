@@ -34,6 +34,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
   const [selectionEvent, setSelectionEvent] = useState<SelectionInfo>();
 
   const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
+  const [publishableKey, setPublishableKey] = useState<string>(""); // add publishableKey state
 
   useFocusEffect(
     useCallback(() => {
@@ -96,6 +97,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           paymentSetupComplete={paymentSetupComplete}
           setPaymentSetupComplete={setPaymentSetupComplete}
           pledgeValue={pledgeValue}
+          setPublishableKey={setPublishableKey}
         />
       ) : step == 6 ? ( // Add the new step condition
         <ChallengeOn />
