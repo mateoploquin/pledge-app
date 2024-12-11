@@ -13,10 +13,24 @@ const HomeCardWrapper: React.FC<HomeCardWrapperProps> = ({
   children,
   style,
   onPress,
+  title,
 }) => {
   return (
     <Pressable onPress={onPress} style={[styles.container, style]}>
-      {children}
+      <Text
+        style={{
+          marginTop: 6,
+          marginHorizontal: 10,
+          color: "white",
+          fontWeight: "500",
+          marginBottom: 7,
+        }}
+      >
+        {title}
+      </Text>
+      <View style={{ backgroundColor: colors.white, borderRadius: 17 }}>
+        {children}
+      </View>
     </Pressable>
   );
 };
@@ -24,13 +38,13 @@ const HomeCardWrapper: React.FC<HomeCardWrapperProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignSelf: "center",
-    width: SCREEN_WIDTH * 0.85,
-    backgroundColor: colors.white,
+    width: SCREEN_WIDTH * 0.8,
+    backgroundColor: colors.orange,
     borderWidth: 1,
     borderColor: colors.orange,
     borderRadius: 20,
-    paddingVertical: 9,
-    paddingHorizontal: 19,
+    // paddingVertical: 9,
+    padding: 2,
   },
 });
 

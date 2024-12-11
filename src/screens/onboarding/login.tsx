@@ -20,7 +20,6 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
   return (
     <AppWrapper>
       <MainHeader />
-
       <View
         style={{
           borderBottomWidth: 1,

@@ -13,7 +13,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "buildNumber": "3",
+      "buildNumber": "4",
       "bundleIdentifier": "com.pledgecompany.pledge",
       "infoPlist": {
         "NSCameraUsageDescription": "Pledge does not usage camera for any purpose"
@@ -58,6 +58,13 @@
         {
           "appleTeamId": "GC2XRZ6HSJ",
           "appGroup": "group.GC2XRZ6HSJ"
+        }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.pledge.applepay",
+          "enableGooglePay": false
         }
       ]
     ]

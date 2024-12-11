@@ -6,6 +6,8 @@ import DetailsScreen from "../screens/details";
 import LoginScreen from "../screens/onboarding/login";
 import RegisterScreen from "../screens/onboarding/register";
 import Instructions from "../screens/onboarding/instructions";
+import SharePledge from "../screens/onboarding/share-pledge";
+import ChallengeCompleted from "../screens/challenge-completed";
 
 const Stack = createStackNavigator();
 
@@ -44,6 +46,17 @@ const AppNavigator = ({ initialRouteName }) => {
         }}
       />
       <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen
+        name="ChallengeCompleted"
+        component={ChallengeCompleted}
+        options={{ headerShown: false }}
+      />
+
+      <Stack.Group
+        screenOptions={{ presentation: "modal", headerShown: false }}
+      >
+        <Stack.Screen name="SharePledge" component={SharePledge} />
+      </Stack.Group>
     </Stack.Navigator>
   );
 };

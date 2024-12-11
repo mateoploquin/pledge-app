@@ -1,28 +1,26 @@
 import React from "react";
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import data from "../../assets/data/mock-screen-time";
+import colors from "../theme/colors";
 
 interface ScreenTimeListProps {
   // define your props here
 }
 
 const ScreenTimeList: React.FC<ScreenTimeListProps> = (props) => {
-  const renderBar = (data) => {
+  const renderBar = (value = 0.7) => {
     return (
       <View style={styles.barContainer}>
         <View style={[styles.totalBar]}>
-          {data.map((item, index) => (
-            <View
-              key={index}
-              style={[
-                styles.barSegment,
-                {
-                  width: `${item.progress * 100}%`,
-                  backgroundColor: item.color,
-                },
-              ]}
-            />
-          ))}
+          <View
+            style={[
+              styles.barSegment,
+              {
+                width: `78%`,
+                backgroundColor: "#FB8647",
+              },
+            ]}
+          />
         </View>
         <Text style={styles.limitText}>2h limit</Text>
       </View>
@@ -34,7 +32,7 @@ const ScreenTimeList: React.FC<ScreenTimeListProps> = (props) => {
   return (
     <View>
       {renderBar(data)}
-      <FlatList
+      {/* <FlatList
         data={data}
         keyExtractor={(item) => item.app}
         renderItem={({ item }) => (
@@ -47,7 +45,7 @@ const ScreenTimeList: React.FC<ScreenTimeListProps> = (props) => {
           </View>
         )}
         scrollEnabled={false}
-      />
+      /> */}
     </View>
   );
 };
@@ -56,14 +54,14 @@ const styles = StyleSheet.create({
   barContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    // marginBottom: 20,
     marginTop: 20,
   },
   totalBar: {
     flexDirection: "row",
-    width: "80%",
+    width: "100%",
     height: 30,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: "#F7F7F7",
     borderRadius: 20,
     overflow: "hidden",
   },
@@ -71,9 +69,12 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   limitText: {
+    position: "absolute",
+    top: -18,
+    right: 0,
     marginLeft: 10,
     color: "#F77E45",
-    fontSize: 12,
+    fontSize: 10,
   },
   appRow: {
     flexDirection: "row",

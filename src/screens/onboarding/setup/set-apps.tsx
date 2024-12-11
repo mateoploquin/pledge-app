@@ -59,7 +59,6 @@ const SetApps: React.FC<SetAppsProps> = ({
     <View style={{ flex: 1, marginTop: 69 }}>
       <Text
         style={{
-          marginBottom: 31,
           textAlign: "center",
           fontSize: 24,
           fontWeight: "500",
@@ -106,7 +105,7 @@ const SetApps: React.FC<SetAppsProps> = ({
         <MainButton onPress={onRequestPress} text='Grant access'/>
       )}
 
-      <Text
+      {/* <Text
         style={{
           marginTop: 69,
           marginHorizontal: 34,
@@ -116,7 +115,7 @@ const SetApps: React.FC<SetAppsProps> = ({
         }}
       >
         Pick the apps that steal your time, and reclaim it for what matters.
-      </Text>
+      </Text> */}
     </View>
   );
 };

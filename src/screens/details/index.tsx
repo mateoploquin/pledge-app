@@ -11,6 +11,8 @@ import AppWrapper from "../../components/layout/app-wrapper";
 import colors from "../../theme/colors";
 import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
 import { Entypo, Feather, FontAwesome5 } from "@expo/vector-icons";
+import ActivityCircleProgress from "../../components/graphs/activity-circle-progress";
+import ActivityProgressBar from "../../components/graphs/activity-progress-bar";
 
 interface DetailsScreenProps {
   navigation: any;
@@ -89,7 +91,9 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ navigation }) => {
           </View>
         </View>
 
-        <View
+        <ActivityCircleProgress percentage={80} />
+
+        {/* <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
@@ -155,7 +159,9 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ navigation }) => {
               />
             </View>
           </View>
-        </View>
+        </View> */}
+
+        <ActivityProgressBar progress={0.5} />
 
         <View
           style={{
@@ -209,10 +215,6 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ navigation }) => {
             </View>
           </View>
         </View>
-
-        <Text style={{ fontWeight: "500", fontSize: 16, marginTop: 16 }}>
-          Progress bar
-        </Text>
 
         <Text style={{ fontWeight: "500", fontSize: 16, marginTop: 16 }}>
           Usage breakdown
