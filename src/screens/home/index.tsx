@@ -101,7 +101,7 @@ const shieldConfiguration = () => {
       green: 0,
       blue: 0,
     },
-    subtitle: "subtitle",
+    subtitle: "Enough scrolling for today...",
     subtitleColor: {
       red: Math.random() * 1,
       green: Math.random() * 1,
