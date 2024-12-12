@@ -26,6 +26,7 @@
     "expo-splash-screen": "~0.27.6",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
+    "axios": "^1.7.7",
     "react-native": "0.74.5",
     "react-native-device-activity": "^0.0.27",
     "react-native-gesture-handler": "~2.16.1",

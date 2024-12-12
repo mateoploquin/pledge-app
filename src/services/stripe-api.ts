@@ -1,5 +1,5 @@
 // src/services/stripe-api.ts
-const API_URL = 'https://e900-80-39-253-43.ngrok-free.app/stripe'; // Replace with your server's URL
+const API_URL = 'https://6adc-88-1-22-55.ngrok-free.app/stripe/payment-sheet'; // Replace with your server's URL
 
 export const fetchPaymentSheetParams = async (idToken: string) => {
   try {
