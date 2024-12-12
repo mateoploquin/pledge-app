@@ -1,5 +1,7 @@
 // src/services/stripe-api.ts
-const API_URL = 'https://f4f0-88-1-22-55.ngrok-free.app/stripe'; // Replace with your server's URL
+import axios from 'axios';
+
+const API_URL = 'https://7973-88-1-22-55.ngrok-free.app/stripe'; // Replace with your server's URL
 
 export const fetchPaymentSheetParams = async (idToken: string) => {
   try {
@@ -23,3 +25,21 @@ export const fetchPaymentSheetParams = async (idToken: string) => {
     return { error };
   }
 };
+
+export async function sendPayment(signal: 'charge', idToken: string) {
+  try {
+    console.log('Sending pledge data:', signal); // Log the request payload
+    const response = await axios.post(`${API_URL}/charge`, {signal}, {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error sending pledge data:', error);
+    if (error.response) {
+      console.error('Server response:', error.response.data); // Log the server response
+    }
+    throw error;
+  }
+}

@@ -10,25 +10,7 @@ interface PledgeData {
 export async function sendPledgeData(data: PledgeData, idToken: string) {
   try {
     console.log('Sending pledge data:', data); // Log the request payload
-    const response = await axios.post('https://f4f0-88-1-22-55.ngrok-free.app/pledge', data, {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error sending pledge data:', error);
-    if (error.response) {
-      console.error('Server response:', error.response.data); // Log the server response
-    }
-    throw error;
-  }
-}
-
-export async function sendPayment(signal: 'charge', idToken: string) {
-  try {
-    console.log('Sending pledge data:', signal); // Log the request payload
-    const response = await axios.post('https://api.pledge-app.com/payment', {signal}, {
+    const response = await axios.post('https://7973-88-1-22-55.ngrok-free.app/pledge', data, {
       headers: {
         Authorization: `Bearer ${idToken}`,
       },

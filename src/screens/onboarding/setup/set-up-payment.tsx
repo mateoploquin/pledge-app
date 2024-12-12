@@ -1,4 +1,3 @@
-// src/screens/onboarding/setup/set-up-payment.tsx
 import React, { useEffect, useState } from "react";
 import { View, Text, Alert } from "react-native";
 import colors from "../../../theme/colors";
@@ -6,25 +5,27 @@ import MainButton from "../../../components/buttons/main-button";
 import { useStripe } from "@stripe/stripe-react-native";
 import { fetchPaymentSheetParams } from "../../../services/stripe-api";
 import { onAuthStateChanged, getIdToken } from "firebase/auth";
-import { auth } from '../../../../firebaseConfig'; 
+import { auth } from '../../../../firebaseConfig';
+import { sendPledgeData } from "../../../services/sendPledgeData";
 
 interface SetPaymentProps {
   isButtonDisabled: boolean;
   setIsButtonDisabled: (disabled: boolean) => void;
   paymentSetupComplete: boolean;
   setPaymentSetupComplete: (complete: boolean) => void;
-    pledgeValue: number;
-        setPublishableKey: (publishableKey: string) => void; // add the setPublishableKey prop
-
+  pledgeValue: number;
+  timeValue: number;
+  setPublishableKey: (publishableKey: string) => void;
 }
 
 const SetPayment: React.FC<SetPaymentProps> = ({
-    isButtonDisabled,
+  isButtonDisabled,
   setIsButtonDisabled,
   paymentSetupComplete,
   setPaymentSetupComplete,
-    pledgeValue,
-    setPublishableKey
+  pledgeValue,
+  timeValue,
+  setPublishableKey,
 }) => {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
@@ -33,30 +34,30 @@ const SetPayment: React.FC<SetPaymentProps> = ({
     try {
       const user = auth.currentUser;
       if (!user) {
-        console.error('User not authenticated. Cannot fetch payment sheet params.');
+        console.error("User not authenticated. Cannot fetch payment sheet params.");
         return false;
       }
 
       const idToken = await user.getIdToken();
-        console.log('idToken',idToken)
-      const { setupIntent, ephemeralKey, customer, publishableKey , error } = await fetchPaymentSheetParams(idToken);
+      const { setupIntent, ephemeralKey, customer, publishableKey, error } =
+        await fetchPaymentSheetParams(idToken);
       if (error) {
         console.error("Error fetching payment sheet params:", error);
         return false;
       }
 
-         if (publishableKey) {
-            setPublishableKey(publishableKey);
-         }
+      if (publishableKey) {
+        setPublishableKey(publishableKey);
+      }
 
       const { error: initError } = await initPaymentSheet({
         merchantDisplayName: "Pledge, Inc.",
-          customerId: customer,
+        customerId: customer,
         customerEphemeralKeySecret: ephemeralKey,
         setupIntentClientSecret: setupIntent,
-          applePay: {
-              merchantCountryCode: 'ES',
-            },
+        applePay: {
+          merchantCountryCode: "ES",
+        },
       });
 
       if (initError) {
@@ -64,7 +65,6 @@ const SetPayment: React.FC<SetPaymentProps> = ({
         return false;
       }
 
-      // Initialization succeeded
       return true;
     } catch (err) {
       console.error("Error initializing payment sheet:", err);
@@ -78,27 +78,42 @@ const SetPayment: React.FC<SetPaymentProps> = ({
 
     if (error) {
       Alert.alert(`Error code: ${error.code}`, error.message);
+      setLoading(false);
     } else {
-         setPaymentSetupComplete(true)
-      Alert.alert("Success", "Your payment method is successfully set up for future payments!");
+      setPaymentSetupComplete(true);
+      Alert.alert(
+        "Success",
+        "Your payment method is successfully set up for future payments!"
+      );
 
+      // Send pledge data after successful payment setup
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          const idToken = await user.getIdToken();
+          await sendPledgeData({ pledgeValue, timeValue }, idToken);
+          console.log("Pledge data sent successfully");
+        } catch (err) {
+          console.error("Error sending pledge data:", err);
+        }
+      }
+
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-    const handleSetUpPayment = async () => {
-        setLoading(true)
-        const initialized = await initializePaymentSheet();
-        setLoading(false);
-        if(initialized){
-             openPaymentSheet()
-        }
-
+  const handleSetUpPayment = async () => {
+    setLoading(true);
+    const initialized = await initializePaymentSheet();
+    setLoading(false);
+    if (initialized) {
+      openPaymentSheet();
     }
+  };
 
-    useEffect(() => {
-        setIsButtonDisabled(!paymentSetupComplete);
-    }, [paymentSetupComplete, setIsButtonDisabled]);
+  useEffect(() => {
+    setIsButtonDisabled(!paymentSetupComplete);
+  }, [paymentSetupComplete, setIsButtonDisabled]);
 
   return (
     <View>
@@ -116,26 +131,26 @@ const SetPayment: React.FC<SetPaymentProps> = ({
       </Text>
 
       <View style={{ marginVertical: 20, paddingVertical: 10 }}>
-          <MainButton
-              onPress={handleSetUpPayment}
-              text={paymentSetupComplete ? "Update Payment Method" : "Set Up Payment"}
-                style={{ opacity: loading ? 0.5 : 1 }}
-                disabled={loading}
-          />
-          {paymentSetupComplete && (
-              <Text
-                style={{
-                  color: colors.orange,
-                  textAlign: 'center',
-                  marginTop: 50,
-                  fontSize: 20,
-                  fontWeight: '600',
-                  paddingHorizontal: 100,
-                }}
-              >
-                We've received your payment method. You're all set!
-              </Text>
-          )}
+        <MainButton
+          onPress={handleSetUpPayment}
+          text={paymentSetupComplete ? "Update Payment Method" : "Set Up Payment"}
+          style={{ opacity: loading ? 0.5 : 1 }}
+          disabled={loading}
+        />
+        {paymentSetupComplete && (
+          <Text
+            style={{
+              color: colors.orange,
+              textAlign: "center",
+              marginTop: 50,
+              fontSize: 20,
+              fontWeight: "600",
+              paddingHorizontal: 100,
+            }}
+          >
+            We've received your payment method. You're all set!
+          </Text>
+        )}
       </View>
     </View>
   );
