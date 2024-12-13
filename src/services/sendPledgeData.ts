@@ -10,7 +10,7 @@ interface PledgeData {
 export async function sendPledgeData(data: PledgeData, idToken: string) {
   try {
     console.log('Sending pledge data:', data); // Log the request payload
-    const response = await axios.post('https://7973-88-1-22-55.ngrok-free.app/pledge', data, {
+    const response = await axios.post('https://ed4a-165-85-220-34.ngrok-free.app/pledge', data, {
       headers: {
         Authorization: `Bearer ${idToken}`,
       },
