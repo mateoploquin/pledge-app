@@ -1,7 +1,7 @@
 // src/services/stripe-api.ts
 import axios from 'axios';
 
-const API_URL = 'https://ed4a-165-85-220-34.ngrok-free.app/stripe'; // Replace with your server's URL
+const API_URL = 'https://5611-165-85-220-34.ngrok-free.app/stripe'; // Replace with your server's URL
 
 export const fetchPaymentSheetParams = async (idToken: string) => {
   try {
