@@ -39,7 +39,7 @@ export default function App() {
 
   return (
       <StripeProvider
-          publishableKey={publishableKey}
+          publishableKey="pk_test_51Q3go300KOFp3VG2LsNsBXmPxw5URuN3BX1qjKi8iDBZT5Pdmbn6bL47dIfe0OdD27kzJeiQVKSjQ2Q8bEByXzDf009ZrSFsWW"
           merchantIdentifier="merchant.pledge.applepay"
       >
           <NavigationContainer>
