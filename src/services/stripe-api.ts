@@ -3,6 +3,25 @@ import axios from 'axios';
 
 const API_URL = 'https://5611-165-85-220-34.ngrok-free.app/stripe'; // Replace with your server's URL
 
+
+export const fetchPublishableKey = async (): Promise<string> => {
+  try {
+    const response = await fetch(`${API_URL}/publishable-key`, {
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const data = await response.json();
+    return data.publishableKey;
+  } catch (error) {
+    console.error('Error fetching publishable key:', error);
+    throw error;
+  }
+};
+
 export const fetchPaymentSheetParams = async (idToken: string) => {
   try {
     const response = await fetch(`${API_URL}/payment-sheet`, {
