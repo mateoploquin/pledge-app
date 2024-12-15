@@ -32,7 +32,7 @@ export async function signUp(email, password, displayName) {
 
 async function sendTokenToBackend(idToken) {
   try {
-    await axios.post('https://5611-165-85-220-34.ngrok-free.app/auth/firebase/signup', {}, {
+    await axios.post('https://1560-88-1-22-55.ngrok-free.app/auth/firebase/signup', {}, {
       headers: {
         Authorization: `Bearer ${idToken}`,
       },
