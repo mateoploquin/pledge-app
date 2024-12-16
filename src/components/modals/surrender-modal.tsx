@@ -1,7 +1,10 @@
+// src/components/modals/surrender-modal.tsx
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { BlurView } from "expo-blur";
 import colors from "../../theme/colors";
+import { sendPayment } from "../../services/stripe-api"; // Importing sendPayment Fucntion
+import { auth } from "../../../firebaseConfig";
 
 interface SurrenderModalProps {
   isVisible: boolean;
@@ -15,6 +18,22 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
   onSurrender
 }) => {
   if (!isVisible) return null;
+
+  const handleSurrender = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const idToken = await user.getIdToken();
+        const response = await sendPayment("charge", idToken); // Use sendPayment function
+        console.log("Payment response:", response);
+      } else {
+        console.error("User not authenticated. Cannot send payment.");
+      }
+    } catch (error) {
+      console.error("Error processing payment:", error);
+    }
+    onSurrender(); // Call the original onSurrender to navigate to the next step.
+  };
 
   return (
     <View
@@ -36,7 +55,7 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
         <TouchableOpacity onPress={onClose} style={styles.modalButton}>
           <Text style={styles.modalButtonText}>No, go back</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onSurrender}>
+        <TouchableOpacity onPress={handleSurrender}>
           <Text style={styles.surrenderText}>Yes, I’m an addict</Text>
         </TouchableOpacity>
       </View>
