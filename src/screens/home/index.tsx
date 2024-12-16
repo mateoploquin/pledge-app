@@ -23,22 +23,10 @@ import HomeHeader from "../../components/headers/home-header";
 import HomeWrapper from "../../components/layout/home-wrapper";
 import { BlurView } from "expo-blur";
 import DayProgressBar from "../../components/bars/days-progress-bar";
-
-type SelectionInfo = {
-  familyActivitySelection: string;
-  applicationCount: number;
-  categoryCount: number;
-  webDomainCount: number;
-};
+import { PledgeSettings } from '../../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type HomeScreenProps = {
-  route: {
-    params: {
-      selectionEvent: SelectionInfo;
-      pledgeValue: number;
-      timeValue: number;
-    }
-  };
   navigation: NavigationProp<ReactNavigation.RootParamList>
 }
 
@@ -126,7 +114,7 @@ const shieldConfiguration = () => {
 }
 
 const HomeScreen: FC<HomeScreenProps> = (props) => {
-  const {selectionEvent, pledgeValue, timeValue} = props.route.params;
+  const [settings, setSettings] = useState<PledgeSettings | undefined>(undefined);
   const {navigation} = props;
   const [isModalVisible, setModalVisible] = useState(false);
 
@@ -134,21 +122,6 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
     const events = getEvents();
     console.log('events', JSON.stringify(events, null, 2))
   }, []);
-
-  useEffect(() => {
-    startMonitoring(selectionEvent.familyActivitySelection, timeValue);
-
-    shieldConfiguration();
-    const listener = ReactNativeDeviceActivity.addEventReceivedListener(
-      (event) => {
-        console.log("got event, refreshing events!", event);
-        refreshEvents();
-      },
-    );
-    return () => {
-      listener.remove();
-    };
-  }, [refreshEvents]);
 
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState(10);
@@ -173,6 +146,35 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
     navigation.navigate("Instructions");
     setModalVisible(false);
   }
+
+  useEffect(() => {
+    let listener: (() => void) | undefined;
+    AsyncStorage.getItem('pledgeSettings').then((s) => {
+      if (s) {
+        const settings = JSON.parse(s);
+        setSettings(settings)
+        startMonitoring(settings.selectionEvent.familyActivitySelection, timeValue);
+
+        shieldConfiguration();
+        listener = ReactNativeDeviceActivity.addEventReceivedListener(
+          (event) => {
+            console.log("got event, refreshing events!", event);
+            refreshEvents();
+          },
+        ).remove;
+      }
+    })
+
+    return () => {
+      listener?.();
+    }
+  }, []);
+
+  if (!settings) {
+    return null
+  }
+
+  const {pledgeValue,selectionEvent,timeValue} = settings;
 
   return (
     <HomeWrapper style={{}}>

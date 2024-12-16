@@ -8,12 +8,14 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import SetPledge from "./setup/set-pledge";
 import ChallengeOn from "./setup/challenge-on";
 import SetTimeLimit from "./setup/set-time-limit";
-import SetApps, { SelectionInfo } from "./setup/set-apps";
+import SetApps from "./setup/set-apps";
 import InstructionCarousel from "../../components/carousels/instructions-carousel";
 import AcceptTerms from "./setup/accept-terms";
 import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
 import { getAuthorizationStatus } from 'react-native-device-activity';
 import SetPayment from "./setup/set-up-payment"; // Import the new component
+import { SelectionInfo } from '../../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 interface InstructionsProps {
@@ -30,7 +32,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
   const [timeValue, setTimeValue] = useState(10);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatus>(getAuthorizationStatus);
+  const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatus>(getAuthorizationStatus());
   const [selectionEvent, setSelectionEvent] = useState<SelectionInfo>();
 
   const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
@@ -154,7 +156,12 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         <MainButton
           onPress={() => {
             if (step == 5) {
-              navigation.navigate("Home", {selectionEvent, pledgeValue, timeValue});
+              AsyncStorage.setItem(
+                'pledgeSettings',
+                JSON.stringify({selectionEvent, pledgeValue, timeValue})
+              ).then(() => {
+                navigation.navigate("Home");
+              })
             } else if (step === 3 && authorizationStatus !== AuthorizationStatus.approved) {
               return;
             } else {

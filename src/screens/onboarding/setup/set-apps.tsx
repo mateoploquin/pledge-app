@@ -1,16 +1,10 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { View, Text, StyleSheet, NativeSyntheticEvent, Alert, Linking } from "react-native";
 import colors from "../../../theme/colors";
 import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
 import { DeviceActivitySelectionView, requestAuthorization, revokeAuthorization } from 'react-native-device-activity';
 import MainButton from '../../../components/buttons/main-button';
-
-export type SelectionInfo = {
-  familyActivitySelection: string;
-  applicationCount: number;
-  categoryCount: number;
-  webDomainCount: number;
-};
+import { SelectionInfo } from '../../../types';
 
 interface SetAppsProps {
   authorizationStatus: AuthorizationStatus
