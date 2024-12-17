@@ -5,6 +5,7 @@ import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNat
 import { DeviceActivitySelectionView, requestAuthorization, revokeAuthorization } from 'react-native-device-activity';
 import MainButton from '../../../components/buttons/main-button';
 import { SelectionInfo } from '../../../types';
+import AppsOnboardingGrid from '../../../lists/apps-onboarding-grid';
 
 interface SetAppsProps {
   authorizationStatus: AuthorizationStatus
@@ -61,43 +62,23 @@ const SetApps: React.FC<SetAppsProps> = ({
         The <Text style={{ color: colors.orange }}>Pledge</Text> includes
       </Text>
 
-      {authorizationStatus === AuthorizationStatus.approved ? (
-        <DeviceActivitySelectionView
-          style={{
-            alignSelf: 'center',
-            borderRadius: 25,
-          }}
-          onSelectionChange={onSelectionChange}
-          familyActivitySelection={selectionEvent?.familyActivitySelection}
-        >
-          <View
-            pointerEvents="none"
-            style={{
-              width: 200,
-              backgroundColor: colors.orange,
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 25,
-              paddingHorizontal: 17,
-              paddingVertical: 12,
-            }}
-          >
-            <Text
-              style={{ 
-                color: colors.white,
-                fontSize: 16,
-                fontWeight: "500",
-                textAlign: 'center'
-              }}>
-            {selectionEvent
-              ? `You selected ${selectionEvent.applicationCount} apps, ${selectionEvent.categoryCount} categories and ${selectionEvent.webDomainCount} websites`
-              : 'Select apps'}
-            </Text>
-          </View>
-        </DeviceActivitySelectionView>
-      ) : (
-        <MainButton onPress={onRequestPress} text='Grant access'/>
-      )}
+      <Text
+        style={{
+          marginTop: 10,
+          marginBottom: 25,
+          alignSelf: 'center',
+          fontSize: 13
+        }}
+      >
+          Choose among other apps
+      </Text>
+
+      <AppsOnboardingGrid
+        onAskPermissions={onRequestPress}
+        onSelectionChange={onSelectionChange}
+        permissionsGranted={authorizationStatus === AuthorizationStatus.approved}
+        selectionEvent={selectionEvent}
+      />
 
       {/* <Text
         style={{

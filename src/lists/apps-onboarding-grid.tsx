@@ -5,9 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
+  NativeSyntheticEvent,
 } from "react-native";
 import { Entypo, FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import colors from "../theme/colors";
+import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
+import { SelectionInfo } from '../types';
+import { DeviceActivitySelectionView } from 'react-native-device-activity';
 
 const appData = [
   {
@@ -57,22 +61,53 @@ const appData = [
 ];
 
 interface AppsOnboardingListProps {
-  selectedApps: [];
-  setSelectedApps: () => void;
+  onSelectionChange: (event: NativeSyntheticEvent<SelectionInfo>) => void
+  onAskPermissions: () => Promise<void>;
+  permissionsGranted: boolean;
+  selectionEvent: SelectionInfo | undefined
 }
 
 const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
-  selectedApps,
-  setSelectedApps,
+  onSelectionChange,
+  onAskPermissions,
+  permissionsGranted,
+  selectionEvent
 }) => {
   const renderApp = ({ item }) => {
-    const isSelected = selectedApps.includes(item.id);
     return (
       <View style={styles.appContainer}>
         <View style={styles.iconContainer}>{item.icon}</View>
       </View>
     );
   };
+
+  const renderButton = () => {
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <Text style={{ textAlign: 'center', marginHorizontal: 20, fontSize: 16, color: colors.orange }}>
+          {
+            permissionsGranted
+              ? selectionEvent
+                ? `You selected ${selectionEvent.applicationCount} apps, ${selectionEvent.categoryCount} categories and ${selectionEvent.webDomainCount} websites`
+                : 'Choose apps'
+              : 'Grant permissions'
+          }
+        </Text>
+        <Entypo
+          name="chevron-thin-down"
+          size={17}
+          style={{ marginRight: 17 }}
+          color={colors.orange}
+        />
+      </View>
+    )
+  }
 
   return (
     <View>
@@ -85,38 +120,45 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
         contentContainerStyle={styles.grid}
       />
 
-      <TouchableOpacity
-        style={{
-          backgroundColor: "white",
-          width: "75%",
-          height: 50,
-          borderRadius: 10,
-          justifyContent: "center",
-          // alignItems: "center",
-          alignSelf: "center",
-          marginTop: 38,
-          borderWidth: 2,
-          borderColor: colors.orange,
-        }}
-      >
-        <View
+      {permissionsGranted ? (
+
+        <DeviceActivitySelectionView
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
+            backgroundColor: "white",
+            width: "75%",
+            height: 50,
+            borderRadius: 10,
+            justifyContent: "center",
+            // alignItems: "center",
+            alignSelf: "center",
+            marginTop: 38,
+            borderWidth: 2,
+            borderColor: colors.orange,
+          }}
+          onSelectionChange={onSelectionChange}
+          familyActivitySelection={selectionEvent?.familyActivitySelection}
+          >
+            {renderButton()}
+        </DeviceActivitySelectionView>
+      ) : (
+        <TouchableOpacity
+          onPress={onAskPermissions}
+          style={{
+            backgroundColor: "white",
+            width: "75%",
+            height: 50,
+            borderRadius: 10,
+            justifyContent: "center",
+            // alignItems: "center",
+            alignSelf: "center",
+            marginTop: 38,
+            borderWidth: 2,
+            borderColor: colors.orange,
           }}
         >
-          <Text style={{ marginLeft: 20, fontSize: 16, color: colors.orange }}>
-            Choose apps
-          </Text>
-          <Entypo
-            name="chevron-thin-down"
-            size={17}
-            style={{ marginRight: 17 }}
-            color={colors.orange}
-          />
-        </View>
+          {renderButton()}
       </TouchableOpacity>
+      )}
     </View>
   );
 };

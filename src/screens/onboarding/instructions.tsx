@@ -32,7 +32,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
   const [timeValue, setTimeValue] = useState(10);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatus>(getAuthorizationStatus());
+  const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatus>();
   const [selectionEvent, setSelectionEvent] = useState<SelectionInfo>();
 
   const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
@@ -59,6 +59,11 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
 
     return unsubscribe;
   }, [navigation]);
+
+  useEffect(() => {
+    const status = getAuthorizationStatus();
+    setAuthorizationStatus(status)
+  }, [])
 
   return (
     <AppWrapper style={{}}>

@@ -144,6 +144,7 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
   const onSurrender = () => {
     stopMonitoring();
     navigation.navigate("Instructions");
+    AsyncStorage.removeItem('pledgeSettings');
     setModalVisible(false);
   }
 
