@@ -38,12 +38,14 @@ const potentialMaxEvents = Math.floor(
 );
 
 const monitoringEventName = 'GeneralMonitoring';
+const eventNameTick = 'minutes_reached';
+const eventNameFinish = 'tresholdReached';
 
 const startMonitoring = (activitySelection: string, thresholdMinutes: number) => {
   const events: DeviceActivityEvent[] = [];
 
   for (let i = 0; i < potentialMaxEvents; i++) {
-    const eventName = `minutes_reached_${initialMinutes + i * postponeMinutes}`;
+    const eventName = `${eventNameTick}_${initialMinutes + i * postponeMinutes}`;
     const event: DeviceActivityEvent = {
       eventName,
       familyActivitySelection: activitySelection,
@@ -53,7 +55,7 @@ const startMonitoring = (activitySelection: string, thresholdMinutes: number) =>
   }
 
   events.push({
-    eventName: 'tresholdReached',
+    eventName: eventNameFinish,
     familyActivitySelection: activitySelection,
     threshold: {minute: thresholdMinutes},
   });
@@ -66,8 +68,7 @@ const startMonitoring = (activitySelection: string, thresholdMinutes: number) =>
       intervalEnd: { hour: 23, minute: 59, second: 59 },
       repeats: true,
     },
-    []
-    // events,
+    events,
   );
 };
 
@@ -76,8 +77,8 @@ const stopMonitoring = () => {
   ReactNativeDeviceActivity.unblockApps();
 }
 
-const blockApps = (activitySelection: string) => {
-  ReactNativeDeviceActivity.blockApps(activitySelection);
+const blockApps = async (activitySelection: string) => {
+  await ReactNativeDeviceActivity.blockApps(activitySelection);
 }
 
 const shieldConfiguration = () => {
@@ -113,27 +114,53 @@ const shieldConfiguration = () => {
   });
 }
 
+const parseMinutes = (total: number): Timer => {
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  const remainingMinutes = total - (hours * 60 + minutes);
+  return { hours, minutes, remainingMinutes };
+}
+
+type Timer = {
+  hours: number;
+  minutes: number;
+  remainingMinutes: number
+}
+
 const HomeScreen: FC<HomeScreenProps> = (props) => {
   const [settings, setSettings] = useState<PledgeSettings | undefined>(undefined);
   const {navigation} = props;
   const [isModalVisible, setModalVisible] = useState(false);
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+  const [{hours, minutes, remainingMinutes}, setTotalTime] = useState<Timer>({
+    hours: 0,
+    minutes: 0,
+    remainingMinutes: 0
+  });
 
-  const refreshEvents = useCallback(() => {
+  const refreshEvents = useCallback(async () => {
     const events = getEvents();
-    console.log('events', JSON.stringify(events, null, 2))
+    let totalMinutes = 0;
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      if (event.callbackName !== 'eventDidReachThreshold') {
+        continue;
+      } else if (event.eventName.includes(eventNameTick)) {
+        totalMinutes++;
+      } else if (event.eventName.includes(eventNameFinish)) {
+        await blockApps(settings.selectionEvent.familyActivitySelection);
+      }
+    }
+
+    setTotalTime(parseMinutes(totalMinutes))
   }, []);
 
-  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
-  const [selectedPrice, setSelectedPrice] = useState(10);
   const handlePaymentSuccess = () => {
     setShowPaymentPopup(false);
     // Add any additional logic after successful payment
   };
 
   const toggleModal = () => {
-    // CAUTION! Just for testing. Don't forget to remove.
-    // You need to block apps only when you get total events information
-    blockApps(selectionEvent.familyActivitySelection);
     setModalVisible(!isModalVisible);
   };
 
@@ -155,8 +182,8 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
         const settings = JSON.parse(s);
         setSettings(settings)
         startMonitoring(settings.selectionEvent.familyActivitySelection, timeValue);
-
         shieldConfiguration();
+
         listener = ReactNativeDeviceActivity.addEventReceivedListener(
           (event) => {
             console.log("got event, refreshing events!", event);
@@ -311,9 +338,9 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
                   paddingHorizontal: 16,
                 }}
               >
-                <Text style={{ fontSize: 48, fontWeight: "500" }}>1h 21m</Text>
+                <Text style={{ fontSize: 48, fontWeight: "500" }}>{hours}h {minutes}m</Text>
                 <Text style={{ fontSize: 15 }}>
-                  <Text style={{ fontWeight: "500" }}>39m</Text> left for your daily limit
+                  <Text style={{ fontWeight: "500" }}>{remainingMinutes}m</Text> left for your daily limit
                 </Text>
 
                 <ScreenTimeList />
