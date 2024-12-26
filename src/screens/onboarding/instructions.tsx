@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
@@ -11,6 +11,12 @@ import SetTimeLimit from "./setup/set-time-limit";
 import SetApps from "./setup/set-apps";
 import InstructionCarousel from "../../components/carousels/instructions-carousel";
 import AcceptTerms from "./setup/accept-terms";
+import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
+import { getAuthorizationStatus } from 'react-native-device-activity';
+import SetPayment from "./setup/set-up-payment"; // Import the new component
+import { SelectionInfo } from '../../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 interface InstructionsProps {
   // define your props here
@@ -18,23 +24,49 @@ interface InstructionsProps {
 
 const Instructions: React.FC<InstructionsProps> = (props) => {
   const navigation = useNavigation();
-  const [step, setStep] = useState<Number>(0);
-  const [isButtonDisabled, setIsButtonDisabled] = useState<Boolean>(false);
+  const [step, setStep] = useState(0);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
-  const [pledgeValue, setPledgeValue] = useState<Number>(10);
-  const [timeValue, setTimeValue] = useState<Number>(10);
-  const [selectedApps, setSelectedApps] = useState([]);
-  const [termsAccepted, setTermsAccepted] = useState<Boolean>(false);
+  const isReturningFromShare = useRef(false);
+  const [pledgeValue, setPledgeValue] = useState(10);
+  const [timeValue, setTimeValue] = useState(10);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatus>();
+  const [selectionEvent, setSelectionEvent] = useState<SelectionInfo>();
+
+  const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
+  const [publishableKey, setPublishableKey] = useState<string>(""); // add publishableKey state
 
   useFocusEffect(
     useCallback(() => {
-      // Reset the step to 0 when the screen is focused
-      setStep(0);
+      // Only reset step if we're not returning from SharePledge
+      if (!isReturningFromShare.current) {
+        setStep(0);
+      }
+      // Reset the flag
+      isReturningFromShare.current = false;
     }, [])
   );
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      // Set the flag when navigating to SharePledge
+      if ((navigation as any).getState().routes.slice(-1)[0]?.name === 'SharePledge') {
+        isReturningFromShare.current = true;
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  useEffect(() => {
+    const status = getAuthorizationStatus();
+    setAuthorizationStatus(status)
+  }, [])
+
   return (
-    <AppWrapper>
+    <AppWrapper style={{}}>
       {step !== 4 && <MainHeader />}
 
       {step === 0 ? (
@@ -55,21 +87,68 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         />
       ) : step == 3 ? (
         <SetApps
-          isButtonDisabled={isButtonDisabled}
-          setIsButtonDisabled={setIsButtonDisabled}
-          selectedApps={selectedApps}
-          setSelectedApps={setSelectedApps}
+          authorizationStatus={authorizationStatus}
+          setAuthorizationStatus={setAuthorizationStatus}
+          selectionEvent={selectionEvent}
+          setSelectionEvent={setSelectionEvent}
         />
       ) : step == 4 ? (
         <AcceptTerms
-          isButtonDisabled={isButtonDisabled}
-          setIsButtonDisabled={setIsButtonDisabled}
           termsAccepted={termsAccepted}
           setTermsAccepted={setTermsAccepted}
         />
       ) : step == 5 ? (
+        <SetPayment
+          isButtonDisabled={isButtonDisabled}
+          setIsButtonDisabled={setIsButtonDisabled}
+          paymentSetupComplete={paymentSetupComplete}
+          setPaymentSetupComplete={setPaymentSetupComplete}
+          pledgeValue={pledgeValue} // Pass pledgeValue
+          timeValue={timeValue} // Pass timeValue
+          setPublishableKey={setPublishableKey}
+        />
+      ) : step == 6 ? ( // Add the new step condition
         <ChallengeOn />
       ) : null}
+
+      {/* <View
+        style={{
+          position: "absolute",
+          bottom: step == 5 || step == 0 ? 71 : 38,
+          zIndex: 100,
+          alignSelf: "center",
+        }}
+      >
+        <MainButton
+          onPress={() => {
+            if (step == 6) {
+              navigation.navigate("Home");
+            } else {
+              setStep(step + 1);
+            }
+          }}
+          text={step == 6 ? "Track My Pledge" : "Continue"}
+          style={{ width: 162 }}
+        />
+        {step !== 6 && step > 0 ? (
+          <TouchableOpacity
+            onPress={() => {
+              setStep(step - 1);
+            }}
+          >
+            <Text
+              style={{
+                textDecorationLine: "underline",
+                color: colors.orange,
+                textAlign: "center",
+                marginTop: 16,
+              }}
+            >
+              Go Back
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+      </View> */}
 
       <View
         style={{
@@ -82,13 +161,21 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         <MainButton
           onPress={() => {
             if (step == 5) {
-              navigation.navigate("Home");
+              AsyncStorage.setItem(
+                'pledgeSettings',
+                JSON.stringify({selectionEvent, pledgeValue, timeValue})
+              ).then(() => {
+                navigation.navigate("Home");
+              })
+            } else if (step === 3 && authorizationStatus !== AuthorizationStatus.approved) {
+              return;
             } else {
               setStep(step + 1);
             }
           }}
           text={step == 5 ? "Track My Pledge" : "Continue"}
           style={{ width: 162 }}
+          disabled={step === 4 && !termsAccepted} // Disable only on AcceptTerms step if unchecked
         />
         {step !== 5 && step > 0 ? (
           <TouchableOpacity

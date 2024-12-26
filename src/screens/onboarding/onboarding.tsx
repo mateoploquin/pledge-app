@@ -13,10 +13,11 @@ import OnboardingMenIconHarmsOpen from "../../../assets/icons/onboarding-men-ico
 import SecondaryButton from "../../components/buttons/secondary-button";
 import colors from "../../theme/colors";
 import LoginScreen from "./login";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation,NavigationProp } from "@react-navigation/native";
+import { RootStackParamList } from "../../navigation/types";
 
 const Onboarding: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const [isPledged, setIsPledged] = useState(false);
   const [iconSwitched, setIconSwitched] = useState(false);
@@ -82,9 +83,19 @@ const Onboarding: React.FC = () => {
     setTimeout(() => setIconSwitched(true), 500);
   };
 
-  const handleNavigateLogin = () => {
+  // const handleNavigateLogin = () => {
+  //   navigation.navigate("Login");
+  // };
+   // Handler for navigating to Login
+   const handleNavigateLogin = () => {
     navigation.navigate("Login");
   };
+
+  // **New Handler for Navigating to Register**
+  const handleNavigateRegister = () => {
+    navigation.navigate("Register");
+  };
+
 
   return (
     <Animated.View style={[styles.container, backgroundColorStyle]}>
@@ -101,10 +112,14 @@ const Onboarding: React.FC = () => {
             }}
           >
             <Animated.View style={[textAnimatedStyle]}>
-              <Animated.Text style={[font1AnimatedStyle, { color: "white" }]}>
+              <Animated.Text
+                style={[font1AnimatedStyle, { color: "white" }]}
+              >
                 Pledge
               </Animated.Text>
-              <Animated.Text style={[font2AnimatedStyle, { color: "white" }]}>
+              <Animated.Text
+                style={[font2AnimatedStyle, { color: "white" }]}
+              >
                 the bet to break free
               </Animated.Text>
             </Animated.View>
@@ -134,10 +149,14 @@ const Onboarding: React.FC = () => {
           )}
 
           <Animated.View style={[textAnimatedStyle]}>
-            <Animated.Text style={[font1AnimatedStyle, { color: "white" }]}>
+            <Animated.Text
+              style={[font1AnimatedStyle, { color: "white" }]}
+            >
               Pledge
             </Animated.Text>
-            <Animated.Text style={[font2AnimatedStyle, { color: "white" }]}>
+            <Animated.Text
+              style={[font2AnimatedStyle, { color: "white" }]}
+            >
               the bet to break free
             </Animated.Text>
             {iconSwitched ? (
@@ -159,7 +178,8 @@ const Onboarding: React.FC = () => {
                 />
 
                 <SecondaryButton
-                  text={"Sign Up"}
+                  onPress={handleNavigateRegister} // **Added onPress Handler**
+                  text="Sign Up"
                   style={{ width: 230, marginTop: 22 }}
                 />
               </>

@@ -1,38 +1,374 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { FC, useCallback, useEffect, useState } from "react";
+import * as ReactNativeDeviceActivity from "react-native-device-activity";
+import { getEvents } from 'react-native-device-activity';
+import { DeviceActivityEvent, EventParsed, UIBlurEffectStyle } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
+import {
+  View,
+  Text,
+  Button,
+  SafeAreaView,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
 import HomeSwitch from "../../components/switches/home-switch";
 import HomeCardWrapper from "../../components/cards/home-card-wrapper";
 import colors from "../../theme/colors";
 import ScreenTimeList from "../../lists/screen-time-list";
-import { useNavigation } from "@react-navigation/native";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
+import SurrenderModal from "../../components/modals/surrender-modal";
+import HomeHeader from "../../components/headers/home-header";
+import HomeWrapper from "../../components/layout/home-wrapper";
+import { BlurView } from "expo-blur";
+import DayProgressBar from "../../components/bars/days-progress-bar";
+import { PledgeSettings } from '../../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface HomeScreenProps {
-  // define your props here
+type HomeScreenProps = {
+  navigation: NavigationProp<ReactNavigation.RootParamList>
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = (props) => {
-  const navigation = useNavigation();
-  const [openedTab, setOpenedTab] = useState("today");
+const initialMinutes = 1;
+const postponeMinutes = 1;
 
-  const handleSurrender = () => {
+const potentialMaxEvents = Math.floor(
+  (60 * 24 - initialMinutes) / postponeMinutes,
+);
+
+const monitoringEventName = 'GeneralMonitoring';
+const eventNameTick = 'minutes_reached';
+const eventNameFinish = 'tresholdReached';
+
+const startMonitoring = (activitySelection: string, thresholdMinutes: number) => {
+  const events: DeviceActivityEvent[] = [];
+
+  for (let i = 0; i < potentialMaxEvents; i++) {
+    const eventName = `${eventNameTick}_${initialMinutes + i * postponeMinutes}`;
+    const event: DeviceActivityEvent = {
+      eventName,
+      familyActivitySelection: activitySelection,
+      threshold: { minute: initialMinutes + i * postponeMinutes },
+    };
+    events.push(event);
+  }
+
+  events.push({
+    eventName: eventNameFinish,
+    familyActivitySelection: activitySelection,
+    threshold: {minute: thresholdMinutes},
+  });
+
+  ReactNativeDeviceActivity.startMonitoring(
+    monitoringEventName,
+    {
+      warningTime: { minute: 1 },
+      intervalStart: { hour: 0, minute: 0, second: 0 },
+      intervalEnd: { hour: 23, minute: 59, second: 59 },
+      repeats: true,
+    },
+    events,
+  );
+};
+
+const stopMonitoring = () => {
+  ReactNativeDeviceActivity.stopMonitoring([monitoringEventName])
+  ReactNativeDeviceActivity.unblockApps();
+}
+
+const blockApps = async (activitySelection: string) => {
+  await ReactNativeDeviceActivity.blockApps(activitySelection);
+}
+
+const shieldConfiguration = () => {
+  ReactNativeDeviceActivity.updateShieldConfiguration({
+    title: 'App blocked by Pledge',
+    backgroundBlurStyle: UIBlurEffectStyle.systemMaterialDark,
+    titleColor: {
+      red: 1,
+      green: 0,
+      blue: 0,
+    },
+    subtitle: "Enough scrolling for today...",
+    subtitleColor: {
+      red: Math.random() * 1,
+      green: Math.random() * 1,
+      blue: Math.random() * 1,
+    },
+    primaryButtonBackgroundColor: {
+      red: Math.random() * 1,
+      green: Math.random() * 1,
+      blue: Math.random() * 1,
+    },
+    primaryButtonLabelColor: {
+      red: Math.random() * 1,
+      green: Math.random() * 1,
+      blue: Math.random() * 1,
+    },
+    secondaryButtonLabelColor: {
+      red: Math.random() * 1,
+      green: Math.random() * 1,
+      blue: Math.random() * 1,
+    },
+  });
+}
+
+const parseMinutes = (total: number): Timer => {
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  const remainingMinutes = total - (hours * 60 + minutes);
+  return { hours, minutes, remainingMinutes };
+}
+
+type Timer = {
+  hours: number;
+  minutes: number;
+  remainingMinutes: number
+}
+
+const HomeScreen: FC<HomeScreenProps> = (props) => {
+  const [settings, setSettings] = useState<PledgeSettings | undefined>(undefined);
+  const {navigation} = props;
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+  const [{hours, minutes, remainingMinutes}, setTotalTime] = useState<Timer>({
+    hours: 0,
+    minutes: 0,
+    remainingMinutes: 0
+  });
+
+  const refreshEvents = useCallback(async () => {
+    const events = getEvents();
+    let totalMinutes = 0;
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      if (event.callbackName !== 'eventDidReachThreshold') {
+        continue;
+      } else if (event.eventName.includes(eventNameTick)) {
+        totalMinutes++;
+      } else if (event.eventName.includes(eventNameFinish)) {
+        await blockApps(settings.selectionEvent.familyActivitySelection);
+      }
+    }
+
+    setTotalTime(parseMinutes(totalMinutes))
+  }, []);
+
+  const handlePaymentSuccess = () => {
+    setShowPaymentPopup(false);
+    // Add any additional logic after successful payment
+  };
+
+  const toggleModal = () => {
+    setModalVisible(!isModalVisible);
+  };
+
+  const toggleChallengeCompleted = () => {
+    navigation.navigate("ChallengeCompleted");
+  };
+
+  const onSurrender = () => {
+    stopMonitoring();
     navigation.navigate("Instructions");
-  };
+    AsyncStorage.removeItem('pledgeSettings');
+    setModalVisible(false);
+  }
 
-  const handleOpenDetails = () => {
-    navigation.navigate("Details");
-  };
+  useEffect(() => {
+    let listener: (() => void) | undefined;
+    AsyncStorage.getItem('pledgeSettings').then((s) => {
+      if (s) {
+        const settings = JSON.parse(s);
+        setSettings(settings)
+        startMonitoring(settings.selectionEvent.familyActivitySelection, timeValue);
+        shieldConfiguration();
+
+        listener = ReactNativeDeviceActivity.addEventReceivedListener(
+          (event) => {
+            console.log("got event, refreshing events!", event);
+            refreshEvents();
+          },
+        ).remove;
+      }
+    })
+
+    return () => {
+      listener?.();
+    }
+  }, []);
+
+  if (!settings) {
+    return null
+  }
+
+  const {pledgeValue,selectionEvent,timeValue} = settings;
 
   return (
-    <AppWrapper>
-      <MainHeader />
+    <HomeWrapper style={{}}>
+      <HomeHeader />
 
-      <HomeSwitch openedTab={openedTab} setOpenedTab={setOpenedTab} />
+      {/* <HomeSwitch openedTab={openedTab} setOpenedTab={setOpenedTab} /> */}
 
-      {openedTab === "today" ? (
-        <>
-          <HomeCardWrapper style={{ marginTop: 25 }}>
+      {/* {openedTab === "today" ? ( */}
+      {/* <> */}
+
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text
+          style={{
+            fontSize: 24,
+            fontWeight: "700",
+            marginHorizontal: 30,
+            color: colors.white,
+            marginTop: 20,
+            marginBottom: 17,
+          }}
+        >
+          My Challenge
+        </Text>
+        <View
+          style={{
+            borderRadius: 25,
+            overflow: "hidden",
+            marginHorizontal: 30,
+          }}
+        >
+          <View
+            // intensity={7.5}
+            // tint="light"
+            style={{
+              backgroundColor: "rgba(255, 255, 255, 0.70)",
+              padding: 10,
+            }}
+          >
+            <HomeCardWrapper title={"Countdown"}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-evenly",
+                  alignItems: "center",
+                  marginHorizontal: 10,
+                  marginVertical: 12,
+                }}
+              >
+                <View
+                  style={{ justifyContent: "center", alignItems: "center" }}
+                >
+                  <Text style={{ fontSize: 36, color: colors.orange }}>19</Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: "rgba(0, 0, 0, 0.70)",
+                      textTransform: "uppercase",
+                      textAlign: "center",
+                    }}
+                  >
+                    Days
+                  </Text>
+                </View>
+
+                <Text>:</Text>
+
+                <View
+                  style={{ justifyContent: "center", alignItems: "center" }}
+                >
+                  <Text style={{ fontSize: 36, color: colors.orange }}>12</Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: "rgba(0, 0, 0, 0.70)",
+                      textTransform: "uppercase",
+                      textAlign: "center",
+                    }}
+                  >
+                    Hours
+                  </Text>
+                </View>
+
+                <Text>:</Text>
+
+                <View
+                  style={{ justifyContent: "center", alignItems: "center" }}
+                >
+                  <Text style={{ fontSize: 36, color: colors.orange }}>70</Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: "rgba(0, 0, 0, 0.70)",
+                      textTransform: "uppercase",
+                      textAlign: "center",
+                    }}
+                  >
+                    Minutes
+                  </Text>
+                </View>
+
+                <Text>:</Text>
+
+                <View
+                  style={{ justifyContent: "center", alignItems: "center" }}
+                >
+                  <Text style={{ fontSize: 36, color: colors.orange }}>44</Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: "rgba(0, 0, 0, 0.70)",
+                      textTransform: "uppercase",
+                      textAlign: "center",
+                    }}
+                  >
+                    Seconds
+                  </Text>
+                </View>
+              </View>
+            </HomeCardWrapper>
+
+            <HomeCardWrapper
+              // onPress={handleOpenDetails}
+              style={{ marginTop: 17 }}
+              title={"Daily Consumption"}
+            >
+              <View
+                style={{
+                  paddingTop: 14,
+                  paddingBottom: 19,
+                  paddingHorizontal: 16,
+                }}
+              >
+                <Text style={{ fontSize: 48, fontWeight: "500" }}>{hours}h {minutes}m</Text>
+                <Text style={{ fontSize: 15 }}>
+                  <Text style={{ fontWeight: "500" }}>{remainingMinutes}m</Text> left for your daily limit
+                </Text>
+
+                <ScreenTimeList />
+              </View>
+            </HomeCardWrapper>
+
+            <HomeCardWrapper
+              // onPress={handleOpenDetails}
+              style={{ marginTop: 17 }}
+              title={"Progress Bar"}
+            >
+              <View
+                style={{
+                  paddingTop: 14,
+                  paddingBottom: 19,
+                  paddingHorizontal: 16,
+                }}
+              >
+                <DayProgressBar currentDay={20} />
+              </View>
+            </HomeCardWrapper>
+          </View>
+        </View>
+      </ScrollView>
+      {/* </> */}
+      {/* ) : ( */}
+      {/* <> */}
+      {/* <HomeCardWrapper style={{ marginTop: 25 }}>
             <View
               style={{
                 flexDirection: "row",
@@ -54,23 +390,19 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
                 </Text>
               </View>
 
-              <Text>:</Text>
+      <Button
+        title="Get activities"
+        onPress={() =>
+          setActivities(ReactNativeDeviceActivity.getActivities())
+        }
+      />
 
-              <View style={{ justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ fontSize: 36, color: colors.orange }}>12</Text>
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(0, 0, 0, 0.70)",
-                    textTransform: "uppercase",
-                    textAlign: "center",
-                  }}
-                >
-                  Hours
-                </Text>
-              </View>
+      <Button title="Get events" onPress={refreshEvents} />
 
-              <Text>:</Text>
+      <Button
+        title="Block all apps"
+        onPress={() => ReactNativeDeviceActivity.blockApps(selectionEvent.familyActivitySelection)}
+      />
 
               <View style={{ justifyContent: "center", alignItems: "center" }}>
                 <Text style={{ fontSize: 36, color: colors.orange }}>70</Text>
@@ -116,14 +448,11 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
             <ScreenTimeList />
           </HomeCardWrapper>
         </>
-      ) : (
-        // <Text>Total</Text>
-        <></>
-      )}
+      )} */}
 
-      <TouchableOpacity
-        onPress={handleSurrender}
-        style={{ position: "absolute", bottom: 43, alignSelf: "center" }}
+      {/* <TouchableOpacity
+        onPress={toggleChallengeCompleted}
+        style={{ position: "absolute", bottom: 110, alignSelf: "center" }}
       >
         <Text
           style={{
@@ -132,18 +461,46 @@ const HomeScreen: React.FC<HomeScreenProps> = (props) => {
             fontSize: 16,
           }}
         >
-          I surrender
+          Challenge complete
+        </Text>
+      </TouchableOpacity> */}
+
+      <TouchableOpacity
+        onPress={toggleModal}
+        style={{
+          position: "absolute",
+          bottom: 43,
+          alignSelf: "center",
+          backgroundColor: colors.orange,
+          width: "75%",
+          paddingVertical: 16,
+          borderRadius: 50,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text
+          style={{
+            color: colors.white,
+            // textDecorationLine: "underline",
+            fontSize: 16,
+            fontWeight: "600",
+          }}
+        >
+          I surrender / Unlock my apps
         </Text>
       </TouchableOpacity>
-    </AppWrapper>
+
+      <SurrenderModal onSurrender={onSurrender} isVisible={isModalVisible} onClose={toggleModal} />
+    </HomeWrapper>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    margin: 10,
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#fff",
   },
 });
 

@@ -1,16 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  ScrollView,
-  Pressable,
-} from "react-native";
-import {
-  SCREEN_HEIGHT,
-  SCREEN_WIDTH,
-} from "../../../utils/constants/dimensions";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import colors from "../../../theme/colors";
 
 interface AcceptTermsProps {
@@ -18,104 +7,70 @@ interface AcceptTermsProps {
   setTermsAccepted: (value: boolean) => void;
 }
 
+const rules = [
+  {
+    id: 1,
+    title: "No Deleting the App 📲",
+    description: "Deleting the app means you lose the challenge. Stay committed!",
+  },
+  {
+    id: 2,
+    title: "Keep Tracking On ⏲️",
+    description: "Disabling screen time tracking = automatic loss. We need to see your progress!",
+  },
+  {
+    id: 3,
+    title: "No Upfront Charge 💳",
+    description: "You only pay if you lose. Win the challenge, and no charge is due.",
+  },
+  {
+    id: 4,
+    title: "Respect Your Daily Limit 🎯",
+    description: "Going over your limit, means you’re out.",
+  },
+  {
+    id: 5,
+    title: "If You Lose, You Give Back 💙",
+    description:
+      "If you don’t succeed, your pledge becomes meaningful 💙: It will be donated to the Make-A-Wish France, our partner charity, with a small €5 fee to support the app! :).",
+  },
+];
+
 const AcceptTerms: React.FC<AcceptTermsProps> = ({
   termsAccepted,
   setTermsAccepted,
 }) => {
   return (
     <View>
-      <Text
-        style={{
-          marginHorizontal: 21,
-          color: colors.orange,
-          marginTop: 20,
-          fontSize: 24,
-          fontWeight: "600",
-        }}
-      >
-        Accept Terms
-      </Text>
+      <Text style={styles.title}>Challenge Rules 🏆</Text>
 
-      <Text style={{ fontSize: 13, alignSelf: "center", marginTop: 15 }}>
-        Official partner
-      </Text>
-      <Image
-        style={{ width: SCREEN_WIDTH * 0.8, alignSelf: "center" }}
-        source={require("../../../../assets/images/partners/make-a-wish-logo.png")}
-        resizeMode="contain"
-      />
-
-      <ScrollView
-        style={{
-          height: SCREEN_HEIGHT * 0.5,
-          marginHorizontal: 22,
-          borderWidth: 1,
-          borderColor: colors.black,
-          backgroundColor: colors.white,
-          marginTop: 25,
-        }}
-      >
-        <Text style={{ marginHorizontal: 21, marginTop: 20, fontSize: 14, textAlign: 'left', lineHeight: 24 }}>
-          1. Acceptance of Terms{"\n"}
-          By accessing and using this app, you accept and agree to be bound by the terms and provision of this agreement. In addition, when using this app, you shall be subject to any posted guidelines or rules applicable to such services. Any participation in this service will constitute acceptance of this agreement. If you do not agree to abide by the above, please do not use this service.{"\n\n"}
-          2. Privacy Policy{"\n"}
-          We respect your privacy and are committed to protecting it. Our Privacy Policy, which explains how we collect, use, and disclose information, is hereby incorporated by reference into these Terms of Service.{"\n\n"}
-          3. User Conduct{"\n"}
-          You agree to use the app only for lawful purposes. You agree not to take any action that might compromise the security of the app, render the app inaccessible to others, or otherwise cause damage to the app or its content.{"\n\n"}
-          4. Intellectual Property{"\n"}
-          The app and its original content, features, and functionality are and will remain the exclusive property of the app developers and its licensors. The app is protected by copyright, trademark, and other laws of both the United States and foreign countries.{"\n\n"}
-          5. Termination{"\n"}
-          We may terminate or suspend access to our app immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.{"\n\n"}
-          6. Limitation of Liability{"\n"}
-          In no event shall the app developers, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from (i) your use or inability to use the app; (ii) any unauthorized access to or use of our servers and/or any personal information stored therein.{"\n\n"}
-          7. Governing Law{"\n"}
-          These Terms shall be governed and construed in accordance with the laws of the State of California, United States, without regard to its conflict of law provisions.{"\n\n"}
-          8. Changes to Terms{"\n"}
-          We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will try to provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.{"\n\n"}
-          9. Contact Us{"\n"}
-          If you have any questions about these Terms, please contact us at thebettobreakfree@gmail.com.
+      <View style={styles.rulesContainer}>
+        {rules.map((rule) => (
+          <View key={rule.id} style={styles.ruleRow}>
+            <Text style={styles.ruleNumber}>{rule.id}.</Text>
+            <Text style={styles.ruleText}>
+              <Text style={styles.boldText}>{rule.title}:</Text> {rule.description}
+            </Text>
+          </View>
+        ))}
+        <Text style={styles.footerText}>
+          By starting the challenge, you agree to these rules. Let’s do this! 🎯
         </Text>
-      </ScrollView>
+      </View>
 
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          marginHorizontal: 21,
-          marginTop: 27,
-        }}
-      >
+      <View style={styles.agreementContainer}>
         <Pressable
           onPress={() => setTermsAccepted(!termsAccepted)}
-          style={{
-            width: 20,
-            height: 20,
-            borderRadius: 5,
-            borderWidth: 1,
-            borderColor: colors.orange,
-            backgroundColor: termsAccepted ? colors.orange : "transparent",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
+          style={[
+            styles.checkbox,
+            termsAccepted && { backgroundColor: colors.orange },
+          ]}
         >
-          {termsAccepted && (
-            <Text
-              style={{
-                color: colors.white,
-                fontSize: 12,
-                textAlign: "center",
-                lineHeight: 20,
-              }}
-            >
-              ✓
-            </Text>
-          )}
+          {termsAccepted && <Text style={styles.checkmark}>✓</Text>}
         </Pressable>
-        <Text style={{ marginLeft: 7, fontWeight: "400" }}>
+        <Text style={styles.agreementText}>
           I Agree to the{" "}
-          <Text style={{ textDecorationLine: "underline" }}>
-            Terms and Conditions
-          </Text>
+          <Text style={styles.linkText}>Terms and Conditions</Text>
         </Text>
       </View>
     </View>
@@ -123,10 +78,68 @@ const AcceptTerms: React.FC<AcceptTermsProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  title: {
+    marginHorizontal: 21,
+    color: colors.orange,
+    marginTop: 20,
+    fontSize: 24,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  rulesContainer: {
+    marginHorizontal: 32,
+    marginTop: 21,
+  },
+  ruleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginTop: 10,
+  },
+  ruleNumber: {
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  ruleText: {
+    marginLeft: 4,
+    fontSize: 17,
+  },
+  boldText: {
+    fontWeight: "600",
+  },
+  highlightText: {
+    color: "#236AB3",
+  },
+  footerText: {
+    marginTop: 15,
+    fontSize: 17,
+  },
+  agreementContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 21,
+    marginTop: 27,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: colors.orange,
     justifyContent: "center",
     alignItems: "center",
+  },
+  checkmark: {
+    color: colors.white,
+    fontSize: 12,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  agreementText: {
+    marginLeft: 7,
+    fontWeight: "400",
+  },
+  linkText: {
+    textDecorationLine: "underline",
   },
 });
 

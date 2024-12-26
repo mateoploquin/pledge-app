@@ -13,18 +13,23 @@
     },
     "ios": {
       "supportsTablet": false,
-      "buildNumber": "3",
-      "bundleIdentifier": "com.pledgeinc.pledge",
+      "buildNumber": "4",
+      "bundleIdentifier": "com.pledgecompany.pledge",
       "infoPlist": {
         "NSCameraUsageDescription": "Pledge does not usage camera for any purpose"
-      }
+      },
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "appleTeamId": "GC2XRZ6HSJ"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.pledge.pledgeApp"
+      "package": "com.pledgecompany.pledge"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,6 +40,33 @@
       }
     },
     "owner": "pledge",
-    "plugins": ["expo-font", "expo-localization"]
+    "plugins": [
+      "expo-font",
+      "expo-localization",
+      "@react-native-firebase/app",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "deploymentTarget": "16.0"
+          }
+        }
+      ],
+      [
+        "react-native-device-activity",
+        {
+          "appleTeamId": "GC2XRZ6HSJ",
+          "appGroup": "group.GC2XRZ6HSJ"
+        }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.pledge.applepay",
+          "enableGooglePay": false
+        }
+      ]
+    ]
   }
 }

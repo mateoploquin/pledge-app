@@ -4,10 +4,13 @@ import colors from "../../theme/colors";
 
 interface AppWrapperProps {
   children: React.ReactNode;
+  style: object;
 }
 
-const AppWrapper: React.FC<AppWrapperProps> = ({ children }) => {
-  return <SafeAreaView style={styles.container}>{children}</SafeAreaView>;
+const AppWrapper: React.FC<AppWrapperProps> = ({ children, style }) => {
+  return (
+    <SafeAreaView style={[styles.container, style]}>{children}</SafeAreaView>
+  );
 };
 
 const styles = StyleSheet.create({
