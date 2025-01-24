@@ -4,15 +4,35 @@
   },
   "build": {
     "development": {
-      "developmentClient": true,
-      "distribution": "internal"
+      "developmentClient": false,
+      "distribution": "development",
+      "ios": {
+        "resourceClass": "m-medium",
+        "developmentTeam": "GC2XRZ6HSJ"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "development",
+      "ios": {
+        "resourceClass": "m-medium",
+        "developmentTeam": "GC2XRZ6HSJ"
+      }
     },
-    "production": {}
+    "production": {
+      "distribution": "development",
+      "ios": {
+        "resourceClass": "m-medium",
+        "developmentTeam": "GC2XRZ6HSJ"
+      }
+    }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "mateoploquina@gmail.com",
+        "ascAppId": "6738790677",
+        "appleTeamId": "GC2XRZ6HSJ"
+      }
+    }
   }
 }

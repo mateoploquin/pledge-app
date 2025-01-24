@@ -23,6 +23,7 @@ import HomeHeader from "../../components/headers/home-header";
 import HomeWrapper from "../../components/layout/home-wrapper";
 import { BlurView } from "expo-blur";
 import DayProgressBar from "../../components/bars/days-progress-bar";
+import CountdownDisplay from "../../components/countdown/countdown-display";
 import { PledgeSettings } from '../../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -138,6 +139,11 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
     remainingMinutes: 0
   });
 
+  const [challengeStartDate, setChallengeStartDate] = useState<Date | null>(null);
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [currentDay, setCurrentDay] = useState(1);
+  const CHALLENGE_DURATION = 30; // 30 days challenge
+
   const refreshEvents = useCallback(async () => {
     const events = getEvents();
     let totalMinutes = 0;
@@ -198,6 +204,55 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
     }
   }, []);
 
+  useEffect(() => {
+    const loadChallengeStartDate = async () => {
+      try {
+        const startDateStr = await AsyncStorage.getItem('challengeStartDate');
+        if (startDateStr) {
+          const startDate = new Date(startDateStr);
+          setChallengeStartDate(startDate);
+        }
+      } catch (error) {
+        console.error('Error loading challenge start date:', error);
+      }
+    };
+    
+    loadChallengeStartDate();
+  }, []);
+
+  useEffect(() => {
+    if (!challengeStartDate) return;
+
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const endDate = new Date(challengeStartDate);
+      endDate.setDate(endDate.getDate() + CHALLENGE_DURATION);
+      
+      const difference = endDate.getTime() - now.getTime();
+      
+      if (difference <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      setCountdown({ days, hours, minutes, seconds });
+      
+      // Calculate current day (1-based)
+      const daysPassed = Math.min(Math.ceil((now.getTime() - new Date(challengeStartDate).getTime()) / (1000 * 60 * 60 * 24)), CHALLENGE_DURATION);
+      setCurrentDay(Math.max(1, daysPassed));
+    };
+
+    const timer = setInterval(calculateTimeLeft, 1000);
+    calculateTimeLeft(); // Initial calculation
+
+    return () => clearInterval(timer);
+  }, [challengeStartDate]);
+
   if (!settings) {
     return null
   }
@@ -207,12 +262,6 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
   return (
     <HomeWrapper style={{}}>
       <HomeHeader />
-
-      {/* <HomeSwitch openedTab={openedTab} setOpenedTab={setOpenedTab} /> */}
-
-      {/* {openedTab === "today" ? ( */}
-      {/* <> */}
-
       <ScrollView
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
@@ -237,8 +286,6 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
           }}
         >
           <View
-            // intensity={7.5}
-            // tint="light"
             style={{
               backgroundColor: "rgba(255, 255, 255, 0.70)",
               padding: 10,
@@ -254,10 +301,8 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
                   marginVertical: 12,
                 }}
               >
-                <View
-                  style={{ justifyContent: "center", alignItems: "center" }}
-                >
-                  <Text style={{ fontSize: 36, color: colors.orange }}>19</Text>
+                <View style={{ justifyContent: "center", alignItems: "center" }}>
+                  <Text style={{ fontSize: 36, color: colors.orange }}>{countdown.days}</Text>
                   <Text
                     style={{
                       fontSize: 10,
@@ -272,10 +317,8 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
 
                 <Text>:</Text>
 
-                <View
-                  style={{ justifyContent: "center", alignItems: "center" }}
-                >
-                  <Text style={{ fontSize: 36, color: colors.orange }}>12</Text>
+                <View style={{ justifyContent: "center", alignItems: "center" }}>
+                  <Text style={{ fontSize: 36, color: colors.orange }}>{countdown.hours}</Text>
                   <Text
                     style={{
                       fontSize: 10,
@@ -290,10 +333,8 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
 
                 <Text>:</Text>
 
-                <View
-                  style={{ justifyContent: "center", alignItems: "center" }}
-                >
-                  <Text style={{ fontSize: 36, color: colors.orange }}>70</Text>
+                <View style={{ justifyContent: "center", alignItems: "center" }}>
+                  <Text style={{ fontSize: 36, color: colors.orange }}>{countdown.minutes}</Text>
                   <Text
                     style={{
                       fontSize: 10,
@@ -308,10 +349,8 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
 
                 <Text>:</Text>
 
-                <View
-                  style={{ justifyContent: "center", alignItems: "center" }}
-                >
-                  <Text style={{ fontSize: 36, color: colors.orange }}>44</Text>
+                <View style={{ justifyContent: "center", alignItems: "center" }}>
+                  <Text style={{ fontSize: 36, color: colors.orange }}>{countdown.seconds}</Text>
                   <Text
                     style={{
                       fontSize: 10,
@@ -327,7 +366,6 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
             </HomeCardWrapper>
 
             <HomeCardWrapper
-              // onPress={handleOpenDetails}
               style={{ marginTop: 17 }}
               title={"Daily Consumption"}
             >
@@ -348,7 +386,6 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
             </HomeCardWrapper>
 
             <HomeCardWrapper
-              // onPress={handleOpenDetails}
               style={{ marginTop: 17 }}
               title={"Progress Bar"}
             >
@@ -359,100 +396,20 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
                   paddingHorizontal: 16,
                 }}
               >
-                <DayProgressBar currentDay={20} />
+                <DayProgressBar
+                  currentDay={currentDay}
+                  daysRemaining={countdown.days}
+                  totalDays={CHALLENGE_DURATION}
+                />
               </View>
             </HomeCardWrapper>
           </View>
         </View>
       </ScrollView>
-      {/* </> */}
-      {/* ) : ( */}
-      {/* <> */}
-      {/* <HomeCardWrapper style={{ marginTop: 25 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-evenly",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ fontSize: 36, color: colors.orange }}>19</Text>
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(0, 0, 0, 0.70)",
-                    textTransform: "uppercase",
-                    textAlign: "center",
-                  }}
-                >
-                  Days
-                </Text>
-              </View>
 
-      <Button
-        title="Get activities"
-        onPress={() =>
-          setActivities(ReactNativeDeviceActivity.getActivities())
-        }
-      />
-
-      <Button title="Get events" onPress={refreshEvents} />
-
-      <Button
-        title="Block all apps"
-        onPress={() => ReactNativeDeviceActivity.blockApps(selectionEvent.familyActivitySelection)}
-      />
-
-              <View style={{ justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ fontSize: 36, color: colors.orange }}>70</Text>
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(0, 0, 0, 0.70)",
-                    textTransform: "uppercase",
-                    textAlign: "center",
-                  }}
-                >
-                  Minutes
-                </Text>
-              </View>
-
-              <Text>:</Text>
-
-              <View style={{ justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ fontSize: 36, color: colors.orange }}>44</Text>
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(0, 0, 0, 0.70)",
-                    textTransform: "uppercase",
-                    textAlign: "center",
-                  }}
-                >
-                  Seconds
-                </Text>
-              </View>
-            </View>
-          </HomeCardWrapper>
-
-          <HomeCardWrapper
-            onPress={handleOpenDetails}
-            style={{ marginTop: 17 }}
-          >
-            <Text style={{ fontSize: 48, fontWeight: "500" }}>1h 21m</Text>
-            <Text style={{ fontSize: 15 }}>
-              <Text style={{ fontWeight: "500" }}>39m</Text> less than yesterday
-            </Text>
-
-            <ScreenTimeList />
-          </HomeCardWrapper>
-        </>
-      )} */}
-
-      {/* <TouchableOpacity
-        onPress={toggleChallengeCompleted}
-        style={{ position: "absolute", bottom: 110, alignSelf: "center" }}
+      <TouchableOpacity
+        onPress={toggleModal}
+        style={{ position: "absolute", bottom: 40, alignSelf: "center" }}
       >
         <Text
           style={{
@@ -461,37 +418,15 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
             fontSize: 16,
           }}
         >
-          Challenge complete
-        </Text>
-      </TouchableOpacity> */}
-
-      <TouchableOpacity
-        onPress={toggleModal}
-        style={{
-          position: "absolute",
-          bottom: 43,
-          alignSelf: "center",
-          backgroundColor: colors.orange,
-          width: "75%",
-          paddingVertical: 16,
-          borderRadius: 50,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text
-          style={{
-            color: colors.white,
-            // textDecorationLine: "underline",
-            fontSize: 16,
-            fontWeight: "600",
-          }}
-        >
-          I surrender / Unlock my apps
+          Surrender Challenge
         </Text>
       </TouchableOpacity>
 
-      <SurrenderModal onSurrender={onSurrender} isVisible={isModalVisible} onClose={toggleModal} />
+      <SurrenderModal
+        isVisible={isModalVisible}
+        onClose={toggleModal}
+        onSurrender={onSurrender}
+      />
     </HomeWrapper>
   );
 };

@@ -6,6 +6,7 @@ import { useStripe, isPlatformPaySupported } from "@stripe/stripe-react-native";
 import { fetchPaymentSheetParams } from "../../../services/stripe-api";
 import { auth } from '../../../../firebaseConfig';
 import { sendPledgeData } from "../../../services/sendPledgeData";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SetPaymentProps {
   isButtonDisabled: boolean;
@@ -100,7 +101,12 @@ const SetPayment: React.FC<SetPaymentProps> = ({
         try {
           const idToken = await user.getIdToken();
           await sendPledgeData({ pledgeValue, timeValue }, idToken);
-          console.log("Pledge data sent successfully");
+          
+          // Set the challenge start date
+          const startDate = new Date().toISOString();
+          await AsyncStorage.setItem('challengeStartDate', startDate);
+          
+          console.log("Pledge data and challenge start date set successfully");
         } catch (err) {
           console.error("Error sending pledge data:", err);
         }

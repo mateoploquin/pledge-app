@@ -4,10 +4,14 @@ import colors from "../../theme/colors";
 import { AntDesign } from "@expo/vector-icons";
 
 interface DayProgressBarProps {
-  currentDay: number; // Value between 1 and 30
+  currentDay: number;
+  daysRemaining: number;
+  totalDays: number;
 }
 
-const DayProgressBar: React.FC<DayProgressBarProps> = ({ currentDay }) => {
+const DayProgressBar: React.FC<DayProgressBarProps> = ({ currentDay, daysRemaining, totalDays }) => {
+  const progress = ((totalDays - daysRemaining) / totalDays) * 100;
+  
   return (
     <>
       <View
@@ -19,7 +23,7 @@ const DayProgressBar: React.FC<DayProgressBarProps> = ({ currentDay }) => {
         }}
       >
         <View>
-          <Text style={styles.limitText}>Day 1</Text>
+          <Text style={styles.limitText}>Day {currentDay}</Text>
           <AntDesign
             name="caretdown"
             size={8}
@@ -28,7 +32,7 @@ const DayProgressBar: React.FC<DayProgressBarProps> = ({ currentDay }) => {
           />
         </View>
         <View style={{ alignItems: "flex-end" }}>
-          <Text style={styles.limitText}>Day 30</Text>
+          <Text style={styles.limitText}>Day {totalDays}</Text>
           <AntDesign
             name="caretdown"
             size={8}
@@ -43,32 +47,18 @@ const DayProgressBar: React.FC<DayProgressBarProps> = ({ currentDay }) => {
             style={[
               styles.barSegment,
               {
-                width: `78%`,
-                backgroundColor: "#FB8647",
+                width: `${progress}%`,
+                backgroundColor: colors.orange,
               },
             ]}
           />
-          <View
-            style={{
-              borderStyle: "dotted",
-              borderWidth: 0.2,
-              borderRadius: 1,
-              marginLeft: 30,
-              backgroundColor: "rgba(251, 134, 71, 0.80);",
-            }}
-          ></View>
+          {daysRemaining > 0 && progress < 100 && (
+            <Text style={styles.almostText}>
+              {daysRemaining === 1 ? "Last day!" : "Almost there!"}
+            </Text>
+          )}
         </View>
       </View>
-      <Text
-        style={{
-          alignSelf: "flex-end",
-          fontSize: 10,
-          color: colors.orange,
-          marginTop: 3,
-        }}
-      >
-        Almost there!
-      </Text>
     </>
   );
 };
@@ -77,23 +67,28 @@ const styles = StyleSheet.create({
   barContainer: {
     flexDirection: "row",
     alignItems: "center",
-    // marginBottom: 20,
     marginTop: 10,
   },
   totalBar: {
-    flexDirection: "row",
+    height: 8,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 4,
     width: "100%",
-    height: 30,
-    backgroundColor: "#F7F7F7",
-    borderRadius: 20,
     overflow: "hidden",
   },
   barSegment: {
     height: "100%",
+    borderRadius: 4,
   },
   limitText: {
     color: colors.black,
     fontSize: 10,
+  },
+  almostText: {
+    alignSelf: "flex-end",
+    fontSize: 10,
+    color: colors.orange,
+    marginTop: 3,
   },
 });
 
