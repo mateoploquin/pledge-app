@@ -178,6 +178,7 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
     stopMonitoring();
     navigation.navigate("Instructions");
     AsyncStorage.removeItem('pledgeSettings');
+    AsyncStorage.removeItem('challengeStartDate');
     setModalVisible(false);
   }
 
@@ -232,6 +233,10 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
       
       if (difference <= 0) {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        stopMonitoring();
+        AsyncStorage.removeItem('pledgeSettings');
+        AsyncStorage.removeItem('challengeStartDate');
+        navigation.navigate("Instructions");
         return;
       }
 

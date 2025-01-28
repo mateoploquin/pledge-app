@@ -5,24 +5,21 @@
   "build": {
     "development": {
       "developmentClient": false,
-      "distribution": "development",
+      "distribution": "internal",
       "ios": {
-        "resourceClass": "m-medium",
-        "developmentTeam": "GC2XRZ6HSJ"
+        "resourceClass": "m-medium"
       }
     },
     "preview": {
-      "distribution": "development",
+      "distribution": "internal",
       "ios": {
-        "resourceClass": "m-medium",
-        "developmentTeam": "GC2XRZ6HSJ"
+        "resourceClass": "m-medium"
       }
     },
     "production": {
-      "distribution": "development",
+      "distribution": "store",
       "ios": {
-        "resourceClass": "m-medium",
-        "developmentTeam": "GC2XRZ6HSJ"
+        "resourceClass": "m-medium"
       }
     }
   },

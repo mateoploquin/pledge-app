@@ -175,7 +175,10 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           }}
           text={step == 5 ? "Track My Pledge" : "Continue"}
           style={{ width: 162 }}
-          disabled={step === 4 && !termsAccepted} // Disable only on AcceptTerms step if unchecked
+          disabled={
+            (step === 4 && !termsAccepted) || // Disable on AcceptTerms step if unchecked
+            (step === 5 && !paymentSetupComplete) // Disable on Payment step if setup not complete
+          }
         />
         {step !== 5 && step > 0 ? (
           <TouchableOpacity
