@@ -1,7 +1,7 @@
 // src/services/stripe-api.ts
 import axios from 'axios';
 
-const API_URL = 'https://b033-88-1-22-55.ngrok-free.app/stripe'; // Replace with your server's URL
+const API_URL = 'https://6354-79-148-143-156.ngrok-free.app/stripe'; // Replace with your server's URL
 
 
 export const fetchPublishableKey = async (): Promise<string> => {
