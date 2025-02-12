@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, NativeSyntheticEvent, Alert, Linking } from "react-native";
 import colors from "../../../theme/colors";
 import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
@@ -20,34 +20,63 @@ const SetApps: React.FC<SetAppsProps> = ({
   selectionEvent,
   setSelectionEvent
 }) => {
-  const onRequestPress = useCallback(async () => {
-    let status: AuthorizationStatus;
-    if (authorizationStatus === AuthorizationStatus.notDetermined) {
-      status = await requestAuthorization();
-    } else if (authorizationStatus === AuthorizationStatus.denied) {
-      Alert.alert(
-        "You didn't grant access",
-        "Please go to settings and enable it",
-        [
-          {
-            text: "Open settings",
-            onPress: Linking.openSettings,
-          },
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-        ],
-      );
-    } else {
-      status = await revokeAuthorization();
-    }
+  const [isRequesting, setIsRequesting] = useState(false);
 
-    setAuthorizationStatus(status);
-  }, [authorizationStatus]);
+  const onRequestPress = useCallback(async () => {
+    if (isRequesting) return; // Prevent multiple rapid clicks
+    
+    try {
+      setIsRequesting(true);
+      let status: AuthorizationStatus;
+      
+      if (authorizationStatus === AuthorizationStatus.notDetermined) {
+        status = await requestAuthorization();
+      } else if (authorizationStatus === AuthorizationStatus.denied) {
+        Alert.alert(
+          "Screen Time Access Required",
+          "Please enable Screen Time access in Settings to continue",
+          [
+            {
+              text: "Open Settings",
+              onPress: Linking.openSettings,
+            },
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+          ],
+        );
+        return;
+      } else if (authorizationStatus === AuthorizationStatus.approved) {
+        status = await revokeAuthorization();
+      } else {
+        console.warn('Unexpected authorization status:', authorizationStatus);
+        return;
+      }
+
+      setAuthorizationStatus(status);
+    } catch (error) {
+      console.error('Error handling authorization:', error);
+      Alert.alert(
+        "Error",
+        "There was an error setting up app monitoring. Please try again."
+      );
+    } finally {
+      setIsRequesting(false);
+    }
+  }, [authorizationStatus, isRequesting]);
 
   const onSelectionChange = useCallback((event: NativeSyntheticEvent<SelectionInfo>) => {
+    if (!event.nativeEvent) return;
     setSelectionEvent(event.nativeEvent)
+  }, []);
+
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      // Reset selection when component unmounts
+      setSelectionEvent(undefined);
+    };
   }, []);
 
   return (

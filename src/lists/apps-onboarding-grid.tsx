@@ -129,16 +129,17 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
             height: 50,
             borderRadius: 10,
             justifyContent: "center",
-            // alignItems: "center",
             alignSelf: "center",
             marginTop: 38,
             borderWidth: 2,
             borderColor: colors.orange,
+            overflow: 'hidden', // Prevent touch events from leaking
           }}
           onSelectionChange={onSelectionChange}
           familyActivitySelection={selectionEvent?.familyActivitySelection}
-          >
-            {renderButton()}
+          pointerEvents="auto" // Ensure touch events are captured
+        >
+          {renderButton()}
         </DeviceActivitySelectionView>
       ) : (
         <TouchableOpacity
@@ -149,7 +150,6 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
             height: 50,
             borderRadius: 10,
             justifyContent: "center",
-            // alignItems: "center",
             alignSelf: "center",
             marginTop: 38,
             borderWidth: 2,
@@ -174,12 +174,10 @@ const styles = StyleSheet.create({
   appContainer: {
     width: 75,
     height: 75,
-    // backgroundColor: colors.orange,
     borderRadius: 10,
     marginBottom: 20,
     justifyContent: "center",
     alignItems: "center",
-    // position: "relative",
     marginHorizontal: 4,
   },
   iconContainer: {

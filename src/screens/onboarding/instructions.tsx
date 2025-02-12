@@ -61,9 +61,12 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
   }, [navigation]);
 
   useEffect(() => {
-    const status = getAuthorizationStatus();
-    setAuthorizationStatus(status)
-  }, [])
+    const initializeAuth = async () => {
+      const status = await getAuthorizationStatus();
+      setAuthorizationStatus(status);
+    };
+    initializeAuth();
+  }, []);
 
   return (
     <AppWrapper style={{}}>
