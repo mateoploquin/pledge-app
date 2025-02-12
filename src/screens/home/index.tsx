@@ -414,18 +414,11 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
 
       <TouchableOpacity
         onPress={toggleModal}
-        style={{ position: "absolute", bottom: 40, alignSelf: "center" }}
+        style={styles.surrenderButton}
       >
-        <Text
-          style={{
-            color: colors.orange,
-            textDecorationLine: "underline",
-            fontSize: 16,
-          }}
-        >
-          Surrender Challenge
-        </Text>
+        <Text style={styles.surrenderText}>I surrender / Unlock my apps</Text>
       </TouchableOpacity>
+
 
       <SurrenderModal
         isVisible={isModalVisible}
@@ -437,11 +430,27 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    margin: 10,
-    flex: 1,
-    backgroundColor: "#fff",
+  surrenderButton: {
+    backgroundColor: "white", // White background
+    paddingVertical: 12, // Button height
+    paddingHorizontal: 24, // Button width
+    borderRadius: 30, // Makes it oval
+    alignSelf: "center", // Centers the button
+    position: "absolute", // Keeps it at the bottom
+    bottom: 40, // Positions it above the bottom edge
+    shadowColor: "#000", // Adds a subtle shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3, // Shadow for Android
+  },
+  surrenderText: {
+    color: "#FF3D00", // Orange text color
+    fontSize: 14,
+    fontWeight: "normal",
+    textAlign: "center",
   },
 });
+
 
 export default HomeScreen;

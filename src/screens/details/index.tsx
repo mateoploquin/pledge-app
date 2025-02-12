@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import AppWrapper from "../../components/layout/app-wrapper";
 import colors from "../../theme/colors";
 import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
@@ -25,6 +26,10 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ navigation }) => {
 
   return (
     <AppWrapper>
+      <LinearGradient
+        colors={["#FF8C42", "#FF3D00"]} // Orange gradient colors
+        style={styles.background} // Applied new gradient background style
+      >
       <TouchableOpacity
         onPress={handleGoBack}
         style={{
@@ -220,6 +225,8 @@ const DetailsScreen: React.FC<DetailsScreenProps> = ({ navigation }) => {
           Usage breakdown
         </Text>
       </View>
+      </LinearGradient>
+      {/* End of LinearGradient */}
     </AppWrapper>
   );
 };
