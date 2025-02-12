@@ -1,20 +1,18 @@
-// import "intl-pluralrules";
-import React, { useCallback } from "react";
+// App.tsx
+import React, { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import useAppInit from "./src/hooks/useAppInit";
-// import useNotifications from "./src/hooks/useNotifications";
-// import { StripeProvider } from "@stripe/stripe-react-native";
+import { StripeProvider } from "@stripe/stripe-react-native";
 import AppNavigator from "./src/navigation";
+import { fetchPublishableKey } from "./src/services/stripe-api"; // Import the fetch function
 
 SplashScreen.preventAutoHideAsync();
 
 function AppContent({ initialRouteName, onLayoutRootView }) {
-  // useNotifications();
-
   return (
     <SafeAreaProvider>
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
@@ -26,32 +24,44 @@ function AppContent({ initialRouteName, onLayoutRootView }) {
 
 export default function App() {
   const { isLoadingComplete, initialRouteName } = useAppInit();
+  const [publishableKey, setPublishableKey] = useState<string>("");
 
-  console.log("isLoadingComplete", isLoadingComplete);
-  console.log("initialRouteName", initialRouteName);
+  useEffect(() => {
+    const loadPublishableKey = async () => {
+      try {
+        // If you have authentication, get the ID token from auth:
+        // const user = auth.currentUser;
+        // const idToken = user ? await user.getIdToken() : undefined;
+        
+        const key = await fetchPublishableKey();
+        setPublishableKey(key);
+      } catch (error) {
+        console.error("Failed to load publishable key:", error);
+      }
+    };
+
+    loadPublishableKey();
+  }, []);
 
   const onLayoutRootView = useCallback(async () => {
-    if (isLoadingComplete) {
+    if (isLoadingComplete && publishableKey) {
       await SplashScreen.hideAsync();
     }
-  }, [isLoadingComplete]);
+  }, [isLoadingComplete, publishableKey]);
 
-  if (!initialRouteName || !isLoadingComplete) {
+  if (!initialRouteName || !isLoadingComplete || !publishableKey) {
+    // Render a loading state until we have both initialRouteName and publishableKey
     return null;
   }
 
   return (
-    // <StripeProvider
-    //   publishableKey={
-    //     process.env.EXPO_PUBLIC_NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-    //   }
-    // >
-    <NavigationContainer>
-      <AppContent
-        initialRouteName={initialRouteName}
-        onLayoutRootView={onLayoutRootView}
-      />
-    </NavigationContainer>
-    // /* </StripeProvider> */
+    <StripeProvider publishableKey={publishableKey} merchantIdentifier="merchant.pledge.applepay">
+      <NavigationContainer>
+        <AppContent
+          initialRouteName={initialRouteName}
+          onLayoutRootView={onLayoutRootView}
+        />
+      </NavigationContainer>
+    </StripeProvider>
   );
 }

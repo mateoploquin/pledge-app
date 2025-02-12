@@ -1,106 +1,113 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
+  NativeSyntheticEvent,
 } from "react-native";
-import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
+import { Entypo, FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import colors from "../theme/colors";
+import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
+import { SelectionInfo } from '../types';
+import { DeviceActivitySelectionView } from 'react-native-device-activity';
 
 const appData = [
   {
     id: 1,
     name: "LinkedIn",
-    icon: <FontAwesome name="linkedin-square" size={30} color="white" />,
+    icon: (
+      <FontAwesome name="linkedin-square" size={41} color={colors.orange} />
+    ),
   },
   {
     id: 2,
     name: "WhatsApp",
-    icon: <FontAwesome name="whatsapp" size={30} color="white" />,
+    icon: <FontAwesome name="whatsapp" size={41} color={colors.orange} />,
   },
   {
     id: 3,
     name: "Facebook",
-    icon: <FontAwesome name="facebook-square" size={30} color="white" />,
+    icon: (
+      <FontAwesome name="facebook-square" size={41} color={colors.orange} />
+    ),
   },
   {
     id: 4,
     name: "Snapchat",
-    icon: <FontAwesome name="snapchat-ghost" size={30} color="white" />,
+    icon: <FontAwesome name="snapchat-ghost" size={41} color={colors.orange} />,
   },
   {
     id: 5,
     name: "X",
-    icon: <FontAwesome5 name="twitter" size={30} color="white" />,
+    icon: <FontAwesome5 name="twitter" size={41} color={colors.orange} />,
   },
   {
     id: 6,
     name: "YouTube",
-    icon: <FontAwesome name="youtube-play" size={30} color="white" />,
+    icon: <FontAwesome name="youtube-play" size={41} color={colors.orange} />,
   },
   {
     id: 7,
     name: "Instagram",
-    icon: <FontAwesome name="instagram" size={30} color="white" />,
+    icon: <FontAwesome name="instagram" size={41} color={colors.orange} />,
   },
   {
     id: 8,
     name: "TikTok",
-    icon: <FontAwesome5 name="tiktok" size={30} color="white" />,
-  },
-  {
-    id: 9,
-    name: "Add More",
-    icon: <FontAwesome name="plus" size={30} color="black" />,
+    icon: <FontAwesome5 name="tiktok" size={41} color={colors.orange} />,
   },
 ];
 
 interface AppsOnboardingListProps {
-  selectedApps: string[];
-  setSelectedApps: (apps: string[]) => void;
+  onSelectionChange: (event: NativeSyntheticEvent<SelectionInfo>) => void
+  onAskPermissions: () => Promise<void>;
+  permissionsGranted: boolean;
+  selectionEvent: SelectionInfo | undefined
 }
 
 const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
-  selectedApps,
-  setSelectedApps,
+  onSelectionChange,
+  onAskPermissions,
+  permissionsGranted,
+  selectionEvent
 }) => {
-  const toggleAppSelection = (name: string) => {
-    setSelectedApps((prevSelected) =>
-      prevSelected.includes(name)
-        ? prevSelected.filter((appName) => appName !== name)
-        : [...prevSelected, name]
+  const renderApp = ({ item }) => {
+    return (
+      <View style={styles.appContainer}>
+        <View style={styles.iconContainer}>{item.icon}</View>
+      </View>
     );
   };
 
-  const renderApp = ({ item }) => {
-    const isSelected = selectedApps.includes(item.name);
+  const renderButton = () => {
     return (
-      <TouchableOpacity
-        style={[styles.appContainer, isSelected && {
-          backgroundColor: colors.white,
-          borderWidth: 1,
-          borderColor: colors.orange,
-        }]}
-        onPress={() => toggleAppSelection(item.name)}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
       >
-        <View style={styles.iconContainer}>{item.icon}</View>
-        <View
-          style={{
-            width: 10,
-            height: 10,
-            borderRadius: 5,
-            backgroundColor: "white",
-            alignSelf: "center",
-            marginTop: 7,
-            borderWidth: 1,
-            borderColor: isSelected ? colors.orange : "white",
-          }}
+        <Text style={{ textAlign: 'center', marginHorizontal: 20, fontSize: 16, color: colors.orange }}>
+          {
+            permissionsGranted
+              ? selectionEvent
+                ? `You selected ${selectionEvent.applicationCount} apps, ${selectionEvent.categoryCount} categories and ${selectionEvent.webDomainCount} websites`
+                : 'Choose apps'
+              : 'Grant permissions'
+          }
+        </Text>
+        <Entypo
+          name="chevron-thin-down"
+          size={17}
+          style={{ marginRight: 17 }}
+          color={colors.orange}
         />
-      </TouchableOpacity>
-    );
-  };
+      </View>
+    )
+  }
 
   return (
     <View>
@@ -108,10 +115,50 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
         data={appData}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderApp}
-        numColumns={3}
+        numColumns={4}
         columnWrapperStyle={styles.column}
         contentContainerStyle={styles.grid}
       />
+
+      {permissionsGranted ? (
+
+        <DeviceActivitySelectionView
+          style={{
+            backgroundColor: "white",
+            width: "75%",
+            height: 50,
+            borderRadius: 10,
+            justifyContent: "center",
+            alignSelf: "center",
+            marginTop: 38,
+            borderWidth: 2,
+            borderColor: colors.orange,
+            overflow: 'hidden', // Prevent touch events from leaking
+          }}
+          onSelectionChange={onSelectionChange}
+          familyActivitySelection={selectionEvent?.familyActivitySelection}
+          pointerEvents="auto" // Ensure touch events are captured
+        >
+          {renderButton()}
+        </DeviceActivitySelectionView>
+      ) : (
+        <TouchableOpacity
+          onPress={onAskPermissions}
+          style={{
+            backgroundColor: "white",
+            width: "75%",
+            height: 50,
+            borderRadius: 10,
+            justifyContent: "center",
+            alignSelf: "center",
+            marginTop: 38,
+            borderWidth: 2,
+            borderColor: colors.orange,
+          }}
+        >
+          {renderButton()}
+      </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -119,6 +166,7 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
 const styles = StyleSheet.create({
   grid: {
     alignItems: "center",
+    marginHorizontal: 49,
   },
   column: {
     justifyContent: "space-between",
@@ -126,12 +174,11 @@ const styles = StyleSheet.create({
   appContainer: {
     width: 75,
     height: 75,
-    backgroundColor: colors.orange,
     borderRadius: 10,
     marginBottom: 20,
     justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: 11,
+    marginHorizontal: 4,
   },
   iconContainer: {
     alignItems: "center",

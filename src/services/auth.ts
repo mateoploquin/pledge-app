@@ -1,8 +1,8 @@
-// signUp.js
+// // signUp.js
 import { createUserWithEmailAndPassword, updateProfile, getIdToken } from 'firebase/auth';
 import axios from 'axios';
 import { auth } from '../../firebaseConfig';
-import * as FileSystem from 'expo-file-system';
+// import * as FileSystem from 'expo-file-system';
 
 
 export async function signUp(email, password, displayName) {
@@ -32,7 +32,7 @@ export async function signUp(email, password, displayName) {
 
 async function sendTokenToBackend(idToken) {
   try {
-    await axios.post('http://127.0.0.1:8000/auth/firebase/signup', {}, {
+    await axios.post('https://616d-79-148-143-156.ngrok-free.app/auth/firebase/signup', {}, {
       headers: {
         Authorization: `Bearer ${idToken}`,
       },
@@ -43,14 +43,13 @@ async function sendTokenToBackend(idToken) {
   }
 }
 
-// async function saveIdTokenToFile(idToken) {
-//   try {
-//     const path = `${FileSystem.documentDirectory}idToken.txt`;
-//     await FileSystem.writeAsStringAsync(path, idToken, { encoding: FileSystem.EncodingType.UTF8 });
-//     console.log('ID token saved to', path);
-//   } catch (error) {
-//     console.error('Error saving ID token to file:', error);
-//     throw error;
-//   }
-// }
-
+// // async function saveIdTokenToFile(idToken) {
+// //   try {
+// //     const path = `${FileSystem.documentDirectory}idToken.txt`;
+// //     await FileSystem.writeAsStringAsync(path, idToken, { encoding: FileSystem.EncodingType.UTF8 });
+// //     console.log('ID token saved to', path);
+// //   } catch (error) {
+// //     console.error('Error saving ID token to file:', error);
+// //     throw error;
+// //   }
+// // }

@@ -4,13 +4,13 @@ import axios from 'axios';
 interface PledgeData {
   pledgeValue: number;
   timeValue: number;
-  selectedApps: string[];
+  // selectedApps: string[];
 }
 
 export async function sendPledgeData(data: PledgeData, idToken: string) {
   try {
     console.log('Sending pledge data:', data); // Log the request payload
-    const response = await axios.post('http://127.0.0.1:8000/pledge', data, {
+    const response = await axios.post('https://616d-79-148-143-156.ngrok-free.app/pledge', data, {
       headers: {
         Authorization: `Bearer ${idToken}`,
       },

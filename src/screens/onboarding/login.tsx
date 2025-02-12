@@ -1,3 +1,4 @@
+// File: src/screens/onboarding/login.tsx
 import React, { useState } from "react";
 import { Text, Image, TouchableOpacity, TextInput, View, Alert } from "react-native";
 import OnboardingWrapper from "../../components/layout/app-wrapper";
@@ -52,6 +53,18 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
           value={email}
           onChangeText={setEmail}
         />
+        </View>
+        <View
+          style={{
+            borderBottomWidth: 1,
+            borderBottomColor: "#929292",
+            marginHorizontal: 38,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: 20,
+          }}
+        >
         <TextInput
           placeholder="Enter Your Password"
           style={{ marginVertical: 12, width: "80%" }}

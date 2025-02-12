@@ -1,5 +1,3 @@
-// src/screens/onboarding/onboarding.tsx
-
 import React, { useState } from "react";
 import { StyleSheet, ImageBackground, View, Text } from "react-native";
 import Animated, {
@@ -14,24 +12,22 @@ import MainButton from "../../components/buttons/main-button";
 import OnboardingMenIconHarmsOpen from "../../../assets/icons/onboarding-men-icon-harms-open";
 import SecondaryButton from "../../components/buttons/secondary-button";
 import colors from "../../theme/colors";
-import { useNavigation, NavigationProp } from "@react-navigation/native";
-import { RootStackParamList } from "../../navigation/types"; // Ensure you have defined your navigation types
+import LoginScreen from "./login";
+import { useNavigation,NavigationProp } from "@react-navigation/native";
+import { RootStackParamList } from "../../navigation/types";
 
 const Onboarding: React.FC = () => {
-  // Define navigation with proper typing
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const [isPledged, setIsPledged] = useState(false);
   const [iconSwitched, setIconSwitched] = useState(false);
 
-  // Animation values
   const topValue = useSharedValue(SCREEN_HEIGHT / 2 - 100);
   const sliderOpacity = useSharedValue(1);
   const fontSize1 = useSharedValue(100);
   const fontSize2 = useSharedValue(19.2);
   const letterSpacing2 = useSharedValue(0.29);
 
-  // Animated styles
   const textAnimatedStyle = useAnimatedStyle(() => {
     return {
       top: withTiming(isPledged ? 75 : SCREEN_HEIGHT / 2 - 100, {
@@ -82,14 +78,16 @@ const Onboarding: React.FC = () => {
     };
   });
 
-  // Handler for making a pledge
   const handlePledge = () => {
     setIsPledged(true);
     setTimeout(() => setIconSwitched(true), 500);
   };
 
-  // Handler for navigating to Login
-  const handleNavigateLogin = () => {
+  // const handleNavigateLogin = () => {
+  //   navigation.navigate("Login");
+  // };
+   // Handler for navigating to Login
+   const handleNavigateLogin = () => {
     navigation.navigate("Login");
   };
 
@@ -97,6 +95,7 @@ const Onboarding: React.FC = () => {
   const handleNavigateRegister = () => {
     navigation.navigate("Register");
   };
+
 
   return (
     <Animated.View style={[styles.container, backgroundColorStyle]}>

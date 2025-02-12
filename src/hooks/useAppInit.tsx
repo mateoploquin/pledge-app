@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { loadFonts } from "../utils/fonts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { PledgeSettings } from '../types';
 // import * as Localization from "expo-localization";
 // import { useSetAtom } from "jotai";
 // import { userAtom } from "../store/user-atom";
@@ -17,7 +18,9 @@ export default function useAppInit() {
       try {
         await loadFonts();
         // const setUpValue = await AsyncStorage.getItem("isSetUp");
-        setInitialRouteName("Splash");
+
+        const settings = await AsyncStorage.getItem('pledgeSettings');
+        setInitialRouteName(settings ? "Home" : "Splash");
       } catch (e) {
         console.error("Failed to initialize app:", e);
       } finally {
