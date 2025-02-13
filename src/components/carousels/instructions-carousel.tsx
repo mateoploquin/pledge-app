@@ -187,7 +187,7 @@ const InstructionCarousel: React.FC<InstructionCarouselProps> = (props) => {
           useNativeDriver: true,
         }).start();
       });
-    }, 4000);
+    }, 2500);
 
     return () => clearInterval(interval);
   }, []);

@@ -1,7 +1,7 @@
 // src/services/stripe-api.ts
 import axios from 'axios';
 
-const API_URL = 'https://616d-79-148-143-156.ngrok-free.app/stripe'; // Replace with your server's URL
+const API_URL = 'https://dragon-vocal-magpie.ngrok-free.app/stripe'; // Replace with your server's URL
 
 
 export const fetchPublishableKey = async (): Promise<string> => {
