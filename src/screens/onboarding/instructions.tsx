@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Alert } from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
 import MainButton from "../../components/buttons/main-button";
@@ -40,6 +40,8 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
 
   useFocusEffect(
     useCallback(() => {
+      // Reset payment status and step when screen is focused
+      setPaymentSetupComplete(false);
       // Only reset step if we're not returning from SharePledge
       if (!isReturningFromShare.current) {
         setStep(0);
@@ -114,45 +116,6 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         <ChallengeOn />
       ) : null}
 
-      {/* <View
-        style={{
-          position: "absolute",
-          bottom: step == 5 || step == 0 ? 71 : 38,
-          zIndex: 100,
-          alignSelf: "center",
-        }}
-      >
-        <MainButton
-          onPress={() => {
-            if (step == 6) {
-              navigation.navigate("Home");
-            } else {
-              setStep(step + 1);
-            }
-          }}
-          text={step == 6 ? "Track My Pledge" : "Continue"}
-          style={{ width: 162 }}
-        />
-        {step !== 6 && step > 0 ? (
-          <TouchableOpacity
-            onPress={() => {
-              setStep(step - 1);
-            }}
-          >
-            <Text
-              style={{
-                textDecorationLine: "underline",
-                color: colors.orange,
-                textAlign: "center",
-                marginTop: 16,
-              }}
-            >
-              Go Back
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-      </View> */}
-
       <View
         style={{
           position: "absolute",
@@ -164,12 +127,24 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         <MainButton
           onPress={() => {
             if (step == 5) {
+              if (!paymentSetupComplete) {
+                Alert.alert(
+                  "Payment Required",
+                  "Please complete the payment setup before proceeding."
+                );
+                return;
+              }
               AsyncStorage.setItem(
                 'pledgeSettings',
-                JSON.stringify({selectionEvent, pledgeValue, timeValue})
+                JSON.stringify({
+                  selectionEvent,
+                  pledgeValue,
+                  timeValue,
+                  paymentSetupComplete: true
+                })
               ).then(() => {
                 navigation.navigate("Home");
-              })
+              });
             } else if (step === 3 && authorizationStatus !== AuthorizationStatus.approved) {
               return;
             } else {

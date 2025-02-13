@@ -187,6 +187,11 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
     AsyncStorage.getItem('pledgeSettings').then((s) => {
       if (s) {
         const settings = JSON.parse(s);
+        if (!settings.paymentSetupComplete) {
+          // Redirect to Instructions screen if payment is not complete
+          navigation.replace("Instructions");
+          return;
+        }
         setSettings(settings)
         startMonitoring(settings.selectionEvent.familyActivitySelection, timeValue);
         shieldConfiguration();
