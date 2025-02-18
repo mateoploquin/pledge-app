@@ -16,7 +16,11 @@
       "buildNumber": "7",
       "bundleIdentifier": "com.pledgecompany.pledge",
       "infoPlist": {
-        "NSCameraUsageDescription": "Pledge does not use the camera for any purpose"
+        "NSCameraUsageDescription": "Pledge does not use the camera for any purpose",
+        "UIBackgroundModes": ["fetch", "processing"],
+        "BGTaskSchedulerPermittedIdentifiers": [
+          "com.pledgecompany.pledge.monitoring"
+        ]
       },
       "entitlements": {
         "com.apple.security.application-groups": [

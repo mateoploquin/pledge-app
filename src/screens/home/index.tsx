@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useState } from "react";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
 import { getEvents } from 'react-native-device-activity';
-import { DeviceActivityEvent, EventParsed, UIBlurEffectStyle } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
+import { DeviceActivityEvent, EventParsed, UIBlurEffectStyle, AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
 import {
   View,
   Text,
@@ -31,12 +31,10 @@ type HomeScreenProps = {
   navigation: NavigationProp<ReactNavigation.RootParamList>
 }
 
-const initialMinutes = 1;
-const postponeMinutes = 1;
+const initialMinutes = 15;
+const postponeMinutes = 15;
 
-const potentialMaxEvents = Math.floor(
-  (60 * 24 - initialMinutes) / postponeMinutes,
-);
+const potentialMaxEvents = Math.ceil(60 * 24 / postponeMinutes);
 
 const monitoringEventName = 'GeneralMonitoring';
 const eventNameTick = 'minutes_reached';
@@ -45,26 +43,28 @@ const eventNameFinish = 'tresholdReached';
 const startMonitoring = (activitySelection: string, thresholdMinutes: number) => {
   const events: DeviceActivityEvent[] = [];
 
-  for (let i = 0; i < potentialMaxEvents; i++) {
-    const eventName = `${eventNameTick}_${initialMinutes + i * postponeMinutes}`;
-    const event: DeviceActivityEvent = {
+  const interval = 15;
+  const maxEvents = Math.ceil(thresholdMinutes / interval);
+
+  for (let i = 0; i < maxEvents; i++) {
+    const minutes = (i + 1) * interval;
+    const eventName = `${eventNameTick}_${minutes}`;
+    events.push({
       eventName,
       familyActivitySelection: activitySelection,
-      threshold: { minute: initialMinutes + i * postponeMinutes },
-    };
-    events.push(event);
+      threshold: { minute: minutes },
+    });
   }
 
   events.push({
     eventName: eventNameFinish,
     familyActivitySelection: activitySelection,
-    threshold: {minute: thresholdMinutes},
+    threshold: { minute: thresholdMinutes },
   });
 
   ReactNativeDeviceActivity.startMonitoring(
     monitoringEventName,
     {
-      warningTime: { minute: 1 },
       intervalStart: { hour: 0, minute: 0, second: 0 },
       intervalEnd: { hour: 23, minute: 59, second: 59 },
       repeats: true,
@@ -145,21 +145,24 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
   const CHALLENGE_DURATION = 30; // 30 days challenge
 
   const refreshEvents = useCallback(async () => {
-    const events = getEvents();
+    const events = await getEvents();
     let totalMinutes = 0;
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      if (event.callbackName !== 'eventDidReachThreshold') {
-        continue;
-      } else if (event.eventName.includes(eventNameTick)) {
-        totalMinutes++;
-      } else if (event.eventName.includes(eventNameFinish)) {
-        await blockApps(settings.selectionEvent.familyActivitySelection);
+    
+    for (const event of events) {
+      if (event.callbackName !== 'eventDidReachThreshold') continue;
+      
+      if (event.eventName.includes(eventNameTick)) {
+        const minutes = parseInt(event.eventName.split('_')[1]);
+        totalMinutes = Math.max(totalMinutes, minutes);
+      } else if (event.eventName === eventNameFinish) {
+        console.log('Threshold reached, blocking apps');
+        await blockApps(settings?.selectionEvent?.familyActivitySelection);
+        await AsyncStorage.setItem('appsBlocked', 'true');
       }
     }
-
-    setTotalTime(parseMinutes(totalMinutes))
-  }, []);
+    
+    setTotalTime(parseMinutes(totalMinutes));
+  }, [settings]);
 
   const handlePaymentSuccess = () => {
     setShowPaymentPopup(false);
@@ -182,32 +185,53 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
     setModalVisible(false);
   }
 
+  const checkAuthorization = async () => {
+    const status = await ReactNativeDeviceActivity.getAuthorizationStatus();
+    if (status !== AuthorizationStatus.approved) {
+      navigation.replace("Instructions");
+      return false;
+    }
+    return true;
+  };
+
   useEffect(() => {
     let listener: (() => void) | undefined;
-    AsyncStorage.getItem('pledgeSettings').then((s) => {
-      if (s) {
-        const settings = JSON.parse(s);
+    
+    const initializeMonitoring = async () => {
+      const isAuthorized = await checkAuthorization();
+      if (!isAuthorized) return;
+
+      const settingsStr = await AsyncStorage.getItem('pledgeSettings');
+      if (settingsStr) {
+        const settings = JSON.parse(settingsStr);
+
         if (!settings.paymentSetupComplete) {
-          // Redirect to Instructions screen if payment is not complete
           navigation.replace("Instructions");
           return;
         }
-        setSettings(settings)
-        startMonitoring(settings.selectionEvent.familyActivitySelection, timeValue);
-        shieldConfiguration();
+        setSettings(settings);
+        
+        const appsBlocked = await AsyncStorage.getItem('appsBlocked');
+        if (appsBlocked === 'true') {
+          await blockApps(settings.selectionEvent.familyActivitySelection);
+        } else {
+          const timeLimit = settings.timeValue || initialMinutes;
+          startMonitoring(settings.selectionEvent.familyActivitySelection, timeLimit);
+          shieldConfiguration();
+        }
 
-        listener = ReactNativeDeviceActivity.addEventReceivedListener(
-          (event) => {
-            console.log("got event, refreshing events!", event);
-            refreshEvents();
-          },
-        ).remove;
+        listener = ReactNativeDeviceActivity.addEventReceivedListener((event) => {
+          console.log("Screen time event received:", event);
+          refreshEvents();
+        });
       }
-    })
+    };
+
+    initializeMonitoring();
 
     return () => {
       listener?.();
-    }
+    };
   }, []);
 
   useEffect(() => {
@@ -252,7 +276,6 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
 
       setCountdown({ days, hours, minutes, seconds });
       
-      // Calculate current day (1-based)
       const daysPassed = Math.min(Math.ceil((now.getTime() - new Date(challengeStartDate).getTime()) / (1000 * 60 * 60 * 24)), CHALLENGE_DURATION);
       setCurrentDay(Math.max(1, daysPassed));
     };
@@ -456,6 +479,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-
 
 export default HomeScreen;

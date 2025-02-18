@@ -17,14 +17,26 @@ const HomeHeader: React.FC = ({}) => {
       <Text
         style={[
           {
-            fontSize: 100,
+            fontSize: 35,
             fontWeight: "900",
             color: 'white',
-            letterSpacing: -8,
+            letterSpacing: -1,
           },
         ]}
       >
         Pledge
+      </Text>
+      <Text
+        style={[
+          {
+            fontSize: 16,
+            color: 'white',
+            marginTop: 15,
+            letterSpacing: 6,
+          },
+        ]}
+      >
+        Live more, scroll less
       </Text>
     </View>
   );
