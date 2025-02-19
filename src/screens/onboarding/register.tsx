@@ -1,4 +1,3 @@
-// File: src/screens/onboarding/register.tsx
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -11,8 +10,14 @@ const RegisterScreen: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(""); // New state for confirm password
 
   const handleSignUp = async () => {
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match.");
+      return; // Stop function execution if passwords don't match
+    }
+
     try {
       await signUp(email, password, name);
       Alert.alert("Success", "Registration complete!");
@@ -49,8 +54,20 @@ const RegisterScreen: React.FC = () => {
           onChangeText={setPassword}
           secureTextEntry
         />
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm Your Password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+        />
         <TouchableOpacity style={styles.button} onPress={handleSignUp}>
           <Text style={styles.buttonText}>Sign Up</Text>
+        </TouchableOpacity>
+
+        {/* Go Back Button */}
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.goBackButton}>
+          <Text style={styles.goBackText}>Go Back</Text>
         </TouchableOpacity>
       </View>
     </AppWrapper>
@@ -82,11 +99,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
     borderRadius: 8,
+    marginTop: 12,
   },
   buttonText: {
     color: "#FFF",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  goBackButton: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  goBackText: {
+    textDecorationLine: "underline",
+    color: "#FF5900",
+    fontSize: 16,
   },
 });
 

@@ -208,6 +208,7 @@ const InstructionCarousel: React.FC<InstructionCarouselProps> = (props) => {
           />
         ))}
       </View>
+      
     </View>
   );
 };
