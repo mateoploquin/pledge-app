@@ -421,7 +421,7 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
         onPress={toggleModal}
         style={styles.surrenderButton}
       >
-        <Text style={styles.surrenderText}>I surrender / Unlock my apps</Text>
+        <Text style={styles.surrenderText}>I surrender</Text>
       </TouchableOpacity>
 
 
