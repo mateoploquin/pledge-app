@@ -77,11 +77,11 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
       {step === 0 ? (
         <InstructionCarousel />
       ) : step == 1 ? (
-        <SetPledge
-          isButtonDisabled={isButtonDisabled}
-          setIsButtonDisabled={setIsButtonDisabled}
-          pledgeValue={pledgeValue}
-          setPledgeValue={setPledgeValue}
+        <SetApps
+          authorizationStatus={authorizationStatus}
+          setAuthorizationStatus={setAuthorizationStatus}
+          selectionEvent={selectionEvent}
+          setSelectionEvent={setSelectionEvent}
         />
       ) : step == 2 ? (
         <SetTimeLimit
@@ -91,11 +91,11 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           setTimeValue={setTimeValue}
         />
       ) : step == 3 ? (
-        <SetApps
-          authorizationStatus={authorizationStatus}
-          setAuthorizationStatus={setAuthorizationStatus}
-          selectionEvent={selectionEvent}
-          setSelectionEvent={setSelectionEvent}
+        <SetPledge
+          isButtonDisabled={isButtonDisabled}
+          setIsButtonDisabled={setIsButtonDisabled}
+          pledgeValue={pledgeValue}
+          setPledgeValue={setPledgeValue}
         />
       ) : step == 4 ? (
         <AcceptTerms
@@ -108,11 +108,11 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           setIsButtonDisabled={setIsButtonDisabled}
           paymentSetupComplete={paymentSetupComplete}
           setPaymentSetupComplete={setPaymentSetupComplete}
-          pledgeValue={pledgeValue} // Pass pledgeValue
-          timeValue={timeValue} // Pass timeValue
+          pledgeValue={pledgeValue}
+          timeValue={timeValue}
           setPublishableKey={setPublishableKey}
         />
-      ) : step == 6 ? ( // Add the new step condition
+      ) : step == 6 ? (
         <ChallengeOn />
       ) : null}
 
@@ -145,7 +145,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
               ).then(() => {
                 navigation.navigate("Home");
               });
-            } else if (step === 3 && authorizationStatus !== AuthorizationStatus.approved) {
+            } else if (step === 1 && authorizationStatus !== AuthorizationStatus.approved) {
               return;
             } else {
               setStep(step + 1);
