@@ -17,10 +17,10 @@ const HomeHeader: React.FC = ({}) => {
       <Text
         style={[
           {
-            fontSize: 35,
-            fontWeight: "900",
+            fontSize: 40,
+            letterSpacing: -3,
+            fontWeight: "800",
             color: 'white',
-            letterSpacing: -1,
           },
         ]}
       >
@@ -32,11 +32,11 @@ const HomeHeader: React.FC = ({}) => {
             fontSize: 16,
             color: 'white',
             marginTop: 15,
-            letterSpacing: 6,
+            letterSpacing: 4,
           },
         ]}
       >
-        Live more, scroll less
+        Live more, scroll less.
       </Text>
     </View>
   );

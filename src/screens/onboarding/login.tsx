@@ -85,7 +85,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
       </TouchableOpacity>
 
       <Image
-        source={require("../../../assets/images/onboarding/login-phone.png")}
+        source={require("../../../assets/images/onboarding/Phone_withicons.png")}
         style={{ position: "absolute", alignSelf: "center", bottom: 0 }}
       />
     </AppWrapper>

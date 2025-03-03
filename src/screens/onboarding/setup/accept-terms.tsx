@@ -11,12 +11,12 @@ const rules = [
   {
     id: 1,
     title: "No Deleting the App 📲",
-    description: "Deleting the app means you lose the challenge. Stay committed!",
+    description: "Deleting the app means you lose the challenge.",
   },
   {
     id: 2,
     title: "Keep Tracking On ⏲️",
-    description: "Disabling screen time tracking = automatic loss. We need to see your progress!",
+    description: "Disabling your app blocker means you're out.",
   },
   {
     id: 3,
@@ -25,14 +25,9 @@ const rules = [
   },
   {
     id: 4,
-    title: "Respect Your Daily Limit 🎯",
-    description: "Going over your limit, means you’re out.",
-  },
-  {
-    id: 5,
-    title: "If You Lose, You Give Back 💙",
+    title: "If you don’t succeed, your pledge becomes meaningful 💙:",
     description:
-      "If you don’t succeed, your pledge becomes meaningful 💙: It will be donated to the Make-A-Wish France, our partner charity, with a small €5 fee to support the app! :).",
+      " With Make-A-Wish France, with a small fee to support the app!",
   },
 ];
 
@@ -81,27 +76,27 @@ const styles = StyleSheet.create({
   title: {
     marginHorizontal: 21,
     color: colors.orange,
-    marginTop: 20,
-    fontSize: 24,
-    fontWeight: "600",
+    marginTop: 40,
+    fontSize: 30,
+    fontWeight: "700",
     textAlign: "center",
   },
   rulesContainer: {
-    marginHorizontal: 32,
-    marginTop: 21,
+    marginHorizontal: 40,
+    marginTop: 40,
   },
   ruleRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginTop: 10,
+    marginTop: 20,
   },
   ruleNumber: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: "600",
   },
   ruleText: {
     marginLeft: 4,
-    fontSize: 17,
+    fontSize: 20,
   },
   boldText: {
     fontWeight: "600",
@@ -111,7 +106,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     marginTop: 15,
-    fontSize: 17,
+    fontSize: 20,
   },
   agreementContainer: {
     flexDirection: "row",

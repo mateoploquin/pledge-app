@@ -11,25 +11,25 @@
 //     image: require("../../../assets/images/onboarding/instructions/instruction-1.png"),
 //     title: "Set Your Limit",
 //     subtitle:
-//       "Choose how many hours you want to spend on social media each day.",
+//       "Choose how many hours you want to spend on social media and selected apps each day.",
 //   },
 //   {
 //     image: require("../../../assets/images/onboarding/instructions/instruction-2.png"),
 //     title: "Make a Pledge",
 //     subtitle:
-//       "Put your money where your intentions are. Pledge an amount between €10 and €1000.",
+//       "Put your money where your intentions are. Pledge an amount between €10 and €100!",
 //   },
 //   {
 //     image: require("../../../assets/images/onboarding/instructions/instruction-3.png"),
 //     title: "We Keep You Accountable",
 //     subtitle:
-//       "Track your social media screen time daily and monthly to stay on target.",
+//       "Track your progress daily to stay on target.",
 //   },
 //   {
 //     image: require("../../../assets/images/onboarding/instructions/instruction-4.png"),
 //     title: "Stay Strong",
 //     subtitle:
-//       "If you meet your screen time goal, you win. But if, after 30 days, your daily usage goes over your limit, we’ll donate your Pledge to a charity.",
+//       "If you meet your screen time goal, you win. But if you forfeit your challenge, we’ll donate your Pledge to a charity.",
 //   },
 // ];
 
@@ -107,7 +107,7 @@
 //     fontFamily: 'InstrumentSerif-Regular',
 //     textAlign: "center",
 //     color: "#666",
-//     paddingHorizontal: 20,
+//     paddingHorizontal: 30,
 //   },
 //   dotContainer: {
 //     position: "absolute",
@@ -143,13 +143,13 @@ const items: CarouselItem[] = [
     image: require("../../../assets/images/onboarding/instructions/instruction-1.png"),
     title: "Set Your Limit",
     subtitle:
-      "Choose how many hours you want to spend on social media each day.",
+      "Choose how many hours you want to spend on social media and selected apps each day.",
   },
   {
     image: require("../../../assets/images/onboarding/instructions/instruction-2.png"),
     title: "Make a Pledge",
     subtitle:
-      "Put your money where your intentions are. Pledge an amount between €10 and €1000.",
+      "Turn intention into action! Pledge €10–€100 and stay committed—financial incentives make you 3x more likely to reach your goal! ",
   },
   {
     image: require("../../../assets/images/onboarding/instructions/instruction-3.png"),
@@ -161,7 +161,7 @@ const items: CarouselItem[] = [
     image: require("../../../assets/images/onboarding/instructions/instruction-4.png"),
     title: "Stay Strong",
     subtitle:
-      "If you meet your screen time goal, you win. But if, after 30 days, your daily usage goes over your limit, we’ll donate your Pledge to a charity.",
+      "If you meet your screen time goal, you win. But if you forfeit your challenge, we’ll donate your Pledge to a charity.",
   },
 ];
 

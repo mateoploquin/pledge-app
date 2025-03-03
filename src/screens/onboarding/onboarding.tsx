@@ -120,7 +120,7 @@ const Onboarding: React.FC = () => {
               <Animated.Text
                 style={[font2AnimatedStyle, { color: "white" }]}
               >
-                the bet to break free
+                Live more, scroll less.
               </Animated.Text>
             </Animated.View>
           </ImageBackground>
@@ -150,14 +150,14 @@ const Onboarding: React.FC = () => {
 
           <Animated.View style={[textAnimatedStyle]}>
             <Animated.Text
-              style={[font1AnimatedStyle, { color: "white" }]}
+              style={[font1AnimatedStyle, { color: "black" }]}
             >
               Pledge
             </Animated.Text>
             <Animated.Text
               style={[font2AnimatedStyle, { color: "white" }]}
             >
-              the bet to break free
+              Live more, scroll less.
             </Animated.Text>
             {iconSwitched ? (
               <>

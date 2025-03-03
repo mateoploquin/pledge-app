@@ -17,8 +17,9 @@ const MainHeader: React.FC = ({}) => {
       <Text
         style={[
           {
-            fontSize: 35,
-            fontWeight: "700",
+            fontSize: 40,
+            letterSpacing: -3,
+            fontWeight: "800",
             color: colors.black,
           },
         ]}
@@ -36,7 +37,7 @@ const MainHeader: React.FC = ({}) => {
           },
         ]}
       >
-        the bet to break free
+        Live more, scroll less.
       </Text>
     </View>
   );

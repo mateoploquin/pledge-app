@@ -141,7 +141,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
           fontWeight: "600",
         }}
       >
-        Set Up Your Payment
+        Select a Payment Method
       </Text>
 
       <View style={{ marginVertical: 20, paddingVertical: 10 }}>

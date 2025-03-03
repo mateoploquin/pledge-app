@@ -1,10 +1,11 @@
-// File: src/screens/onboarding/register.tsx
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { signUp } from "../../services/auth";
 import MainHeader from "../../components/headers/main-header";
 import AppWrapper from "../../components/layout/app-wrapper";
+import { Feather } from "@expo/vector-icons";
+import colors from "../../theme/colors";
 
 const RegisterScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -26,68 +27,83 @@ const RegisterScreen: React.FC = () => {
   return (
     <AppWrapper>
       <MainHeader />
-      <View style={styles.container}>
-        <Text style={styles.title}>Register</Text>
+
+      <View
+        style={{
+          borderBottomWidth: 1,
+          borderBottomColor: "#929292",
+          marginHorizontal: 38,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginTop: 90,
+        }}
+      >
         <TextInput
-          style={styles.input}
           placeholder="Enter Your Name"
+          style={{ marginVertical: 12, width: "80%" }}
+          placeholderTextColor={"#929292"}
           value={name}
           onChangeText={setName}
         />
+      </View>
+
+      <View
+        style={{
+          borderBottomWidth: 1,
+          borderBottomColor: "#929292",
+          marginHorizontal: 38,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginTop: 20,
+        }}
+      >
         <TextInput
-          style={styles.input}
           placeholder="Enter Your Email"
+          style={{ marginVertical: 12, width: "80%" }}
+          placeholderTextColor={"#929292"}
           value={email}
           onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
         />
+      </View>
+
+      <View
+        style={{
+          borderBottomWidth: 1,
+          borderBottomColor: "#929292",
+          marginHorizontal: 38,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginTop: 20,
+        }}
+      >
         <TextInput
-          style={styles.input}
           placeholder="Enter Your Password"
+          style={{ marginVertical: 12, width: "80%" }}
+          placeholderTextColor={"#929292"}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
-        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-          <Text style={styles.buttonText}>Sign Up</Text>
+        <TouchableOpacity onPress={handleSignUp}>
+          <Feather name="chevron-right" size={20} color={colors.orange} />
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+        <Text style={{ color: colors.orange, textAlign: "center", marginTop: 50 }}>
+          Already have an account? Login
+        </Text>
+      </TouchableOpacity>
+
+      <Image
+        source={require("../../../assets/images/onboarding/Phone_withicons.png")}
+        style={{ position: "absolute", alignSelf: "center", bottom: 0 }}
+      />
     </AppWrapper>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 16,
-    marginTop: 100,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  input: {
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 8,
-  },
-  button: {
-    backgroundColor: "#FF5900",
-    paddingVertical: 12,
-    alignItems: "center",
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});
 
 export default RegisterScreen;
