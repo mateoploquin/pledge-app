@@ -121,8 +121,9 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
       />
 
       {permissionsGranted ? (
-
-        <DeviceActivitySelectionView
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => {}}  // Empty onPress to handle touch feedback
           style={{
             backgroundColor: "white",
             width: "75%",
@@ -133,16 +134,27 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
             marginTop: 38,
             borderWidth: 2,
             borderColor: colors.orange,
-            overflow: 'hidden', // Prevent touch events from leaking
+            overflow: 'hidden',
           }}
-          onSelectionChange={onSelectionChange}
-          familyActivitySelection={selectionEvent?.familyActivitySelection}
-          pointerEvents="auto" // Ensure touch events are captured
         >
+          <DeviceActivitySelectionView
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'transparent'
+            }}
+            onSelectionChange={onSelectionChange}
+            familyActivitySelection={selectionEvent?.familyActivitySelection}
+            pointerEvents="auto"
+          />
           {renderButton()}
-        </DeviceActivitySelectionView>
+        </TouchableOpacity>
       ) : (
         <TouchableOpacity
+          activeOpacity={0.8}
           onPress={onAskPermissions}
           style={{
             backgroundColor: "white",
@@ -157,7 +169,7 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
           }}
         >
           {renderButton()}
-      </TouchableOpacity>
+        </TouchableOpacity>
       )}
     </View>
   );
