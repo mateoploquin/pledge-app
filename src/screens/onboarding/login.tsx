@@ -43,7 +43,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          marginTop: 90,
+          marginTop: 40,
         }}
       >
         <TextInput
@@ -86,7 +86,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
 
       <Image
         source={require("../../../assets/images/onboarding/Phone_withicons.png")}
-        style={{ position: "absolute", alignSelf: "center", bottom: 0 }}
+        style={{ position: "absolute", alignSelf: "center", bottom: -50 }}
       />
     </AppWrapper>
   );

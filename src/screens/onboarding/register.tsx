@@ -12,8 +12,14 @@ const RegisterScreen: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSignUp = async () => {
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+
     try {
       await signUp(email, password, name);
       Alert.alert("Success", "Registration complete!");
@@ -36,7 +42,7 @@ const RegisterScreen: React.FC = () => {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          marginTop: 90,
+          marginTop: 40,
         }}
       >
         <TextInput
@@ -56,7 +62,7 @@ const RegisterScreen: React.FC = () => {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          marginTop: 20,
+          marginTop: 10,
         }}
       >
         <TextInput
@@ -76,7 +82,7 @@ const RegisterScreen: React.FC = () => {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          marginTop: 20,
+          marginTop: 10,
         }}
       >
         <TextInput
@@ -87,20 +93,41 @@ const RegisterScreen: React.FC = () => {
           onChangeText={setPassword}
           secureTextEntry
         />
+      </View>
+
+      <View
+        style={{
+          borderBottomWidth: 1,
+          borderBottomColor: "#929292",
+          marginHorizontal: 38,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginTop: 10,
+        }}
+      >
+        <TextInput
+          placeholder="Confirm Your Password"
+          style={{ marginVertical: 12, width: "80%" }}
+          placeholderTextColor={"#929292"}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+        />
         <TouchableOpacity onPress={handleSignUp}>
           <Feather name="chevron-right" size={20} color={colors.orange} />
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-        <Text style={{ color: colors.orange, textAlign: "center", marginTop: 50 }}>
+        <Text style={{ color: colors.orange, textAlign: "center", marginTop: 30 }}>
           Already have an account? Login
         </Text>
       </TouchableOpacity>
 
       <Image
         source={require("../../../assets/images/onboarding/Phone_withicons.png")}
-        style={{ position: "absolute", alignSelf: "center", bottom: 0 }}
+        style={{ position: "absolute", alignSelf: "center", bottom: -50 }}
       />
     </AppWrapper>
   );
