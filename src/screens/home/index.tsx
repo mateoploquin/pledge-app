@@ -175,11 +175,13 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
   };
 
   const onSurrender = () => {
+    // Payment is handled in the SurrenderModal component
+    // We just need to handle the navigation and cleanup here
     stopMonitoring();
-    navigation.navigate("Instructions");
     AsyncStorage.removeItem('pledgeSettings');
     AsyncStorage.removeItem('challengeStartDate');
     setModalVisible(false);
+    navigation.navigate("ChallengeCompleted", { result: "failure" });
   }
 
   useEffect(() => {
@@ -239,9 +241,13 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
       if (difference <= 0) {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         stopMonitoring();
+        
+        // Clear all challenge-related data
         AsyncStorage.removeItem('pledgeSettings');
         AsyncStorage.removeItem('challengeStartDate');
-        navigation.navigate("Instructions");
+        
+        // Navigate to challenge completed screen with success result
+        navigation.navigate("ChallengeCompleted", { result: "success" });
         return;
       }
 

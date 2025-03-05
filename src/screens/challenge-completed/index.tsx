@@ -1,27 +1,49 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Image, Pressable } from "react-native";
 import colors from "../../theme/colors";
 import MainHeaderLight from "../../components/headers/main-header-light";
 import AppWrapper from "../../components/layout/app-wrapper";
 import PledgeFormIcon from "../../../assets/images/icons/pledge-form";
 import { SCREEN_HEIGHT } from "../../utils/constants/dimensions";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ReactNativeDeviceActivity from "react-native-device-activity";
 
 interface ChallengeCompletedProps {
   navigation: any;
-  result: string;
+  route: {
+    params?: {
+      result?: string;
+    }
+  };
 }
 
 const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
   navigation,
-  result,
+  route,
 }) => {
-  const handleGoBack = () => {
-    navigation.goBack();
-  };
+  const result = route.params?.result || "success";
 
-  const handleRestart = () => {
+  const handleRestart = async () => {
+    // Ensure all monitoring is stopped
+    ReactNativeDeviceActivity.stopMonitoring();
+    ReactNativeDeviceActivity.unblockApps();
+    
+    // Clear all challenge data
+    await AsyncStorage.removeItem('pledgeSettings');
+    await AsyncStorage.removeItem('challengeStartDate');
+    
+    // Navigate to instructions to start a new challenge
     navigation.navigate("Instructions");
   };
+
+  // Only stop monitoring if this is a success result
+  // For failure (surrender), the payment process has already handled this
+  useEffect(() => {
+    if (result === "success") {
+      ReactNativeDeviceActivity.stopMonitoring();
+      ReactNativeDeviceActivity.unblockApps();
+    }
+  }, [result]);
 
   return (
     <AppWrapper style={{ backgroundColor: colors.orange }}>
@@ -46,18 +68,25 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
           paddingVertical: 30,
           justifyContent: "center",
           alignItems: "center",
-          marginTop: SCREEN_HEIGHT * 0.15,
+          marginTop: SCREEN_HEIGHT * 0.10,
           borderRadius: 20,
+          paddingTop: 50,
         }}
       >
         <View style={{ justifyContent: "center", alignItems: "center" }}>
           <Image
             source={
-              result == "success"
+              result === "success"
                 ? require("../../../assets/images/challenge-completed/golden-cup.png")
                 : require("../../../assets/images/challenge-completed/failed-challenge.png")
             }
-            style={{ width: 170, height: 180, marginBottom: -130, zIndex: 100 }}
+            style={{ 
+              width: 170, 
+              height: 180, 
+              marginBottom: -100, 
+              zIndex: 100,
+              resizeMode: 'contain'
+            }}
           />
           <PledgeFormIcon size={130} />
         </View>
@@ -66,12 +95,12 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
           style={{
             fontSize: 20,
             textAlign: "center",
-            marginTop: 10,
+            marginTop: 40,
             marginBottom: 20,
             marginHorizontal: 50,
           }}
         >
-          {result == "success" ? (
+          {result === "success" ? (
             "Congratulations!\nYou Are a Certified Pledger!"
           ) : (
             <Text>
@@ -84,7 +113,7 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
         </Text>
       </View>
 
-      <View style={{ alignSelf: "center", position: "absolute", bottom: 60 }}>
+      <View style={{ alignSelf: "center", position: "absolute", bottom: 40 }}>
         <Pressable
           onPress={() => handleRestart()}
           style={{
@@ -100,20 +129,6 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
             New Challenge
           </Text>
         </Pressable>
-
-        <Text
-          onPress={() => handleGoBack()}
-          style={{
-            textDecorationLine: "underline",
-            fontSize: 16,
-            color: colors.white,
-            textAlign: "center",
-            fontWeight: "500",
-            marginTop: 7,
-          }}
-        >
-          Maybe later
-        </Text>
       </View>
     </AppWrapper>
   );
