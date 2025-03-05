@@ -8,30 +8,11 @@ interface ScreenTimeListProps {
 }
 
 const ScreenTimeList: React.FC<ScreenTimeListProps> = (props) => {
-  const renderBar = (value = 0.7) => {
-    return (
-      <View style={styles.barContainer}>
-        <View style={[styles.totalBar]}>
-          <View
-            style={[
-              styles.barSegment,
-              {
-                width: `78%`,
-                backgroundColor: "#FB8647",
-              },
-            ]}
-          />
-        </View>
-        <Text style={styles.limitText}>2h limit</Text>
-      </View>
-    );
-  };
-
   console.log(data);
 
   return (
     <View>
-      {renderBar(data)}
+      {/* Progress bar removed as requested */}
       {/* <FlatList
         data={data}
         keyExtractor={(item) => item.app}
