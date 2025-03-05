@@ -36,7 +36,7 @@ const RegisterScreen: React.FC = () => {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          marginTop: 90,
+          marginTop: 40, // Moved up from 90
         }}
       >
         <TextInput
@@ -93,14 +93,14 @@ const RegisterScreen: React.FC = () => {
       </View>
 
       <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-        <Text style={{ color: colors.orange, textAlign: "center", marginTop: 50 }}>
+        <Text style={{ color: colors.orange, textAlign: "center", marginTop: 20, marginBottom: 30 }}>
           Already have an account? Login
         </Text>
       </TouchableOpacity>
 
       <Image
         source={require("../../../assets/images/onboarding/Phone_withicons.png")}
-        style={{ position: "absolute", alignSelf: "center", bottom: 0 }}
+        style={{ position: "absolute", alignSelf: "center", bottom: 0, zIndex: -1 }}
       />
     </AppWrapper>
   );

@@ -1,90 +1,80 @@
-import React from "react";
-import { View, Text, StyleSheet, FlatList } from "react-native";
-import data from "../../assets/data/mock-screen-time";
-import colors from "../theme/colors";
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { getEvents } from 'react-native-device-activity';
 
 interface ScreenTimeListProps {
   // define your props here
 }
 
 const ScreenTimeList: React.FC<ScreenTimeListProps> = (props) => {
-  console.log(data);
+  useEffect(() => {
+    // Get real screen time data from device activity events
+    const events = getEvents();
+    let totalMinutes = 0;
+    
+    // Count the number of threshold events to determine total screen time
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      if (event.callbackName === 'eventDidReachThreshold' && 
+          event.eventName.includes('minutes_reached')) {
+        totalMinutes++;
+      }
+    }
+    
+    // Group events by hour to see usage patterns
+    const hourlyUsage = analyzeHourlyUsage(events);
+    
+    // Log the real aggregated screen time data
+    console.log("Real screen time data:", {
+      totalMinutes,
+      hours: Math.floor(totalMinutes / 60),
+      minutes: totalMinutes % 60,
+      totalEvents: events.length,
+      hourlyUsage
+    });
+  }, []);
+  
+  // Analyze events to get hourly usage patterns
+  const analyzeHourlyUsage = (events) => {
+    const hourlyData = {};
+    
+    events.forEach(event => {
+      if (event.callbackName === 'eventDidReachThreshold' && 
+          event.eventName.includes('minutes_reached')) {
+        // Extract timestamp from event
+        const timestamp = event.date || new Date();
+        const hour = timestamp.getHours();
+        
+        // Initialize hour counter if not exists
+        if (!hourlyData[hour]) {
+          hourlyData[hour] = 0;
+        }
+        
+        // Increment minute count for this hour
+        hourlyData[hour]++;
+      }
+    });
+    
+    // Convert to array for easier reading
+    const hourlyUsage = Object.keys(hourlyData).map(hour => ({
+      hour: parseInt(hour),
+      minutes: hourlyData[hour],
+      formattedHour: `${hour}:00 - ${hour}:59`
+    }));
+    
+    // Sort by hour
+    return hourlyUsage.sort((a, b) => a.hour - b.hour);
+  };
 
   return (
     <View>
       {/* Progress bar removed as requested */}
-      {/* <FlatList
-        data={data}
-        keyExtractor={(item) => item.app}
-        renderItem={({ item }) => (
-          <View style={styles.appRow}>
-            <View style={[styles.appIcon, { backgroundColor: item.color }]} />
-            <View style={styles.appInfo}>
-              <Text style={styles.appName}>{item.app}</Text>
-              <Text style={styles.appTime}>{item.time}</Text>
-            </View>
-          </View>
-        )}
-        scrollEnabled={false}
-      /> */}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  barContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    // marginBottom: 20,
-    marginTop: 20,
-  },
-  totalBar: {
-    flexDirection: "row",
-    width: "100%",
-    height: 30,
-    backgroundColor: "#F7F7F7",
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  barSegment: {
-    height: "100%",
-  },
-  limitText: {
-    position: "absolute",
-    top: -18,
-    right: 0,
-    marginLeft: 10,
-    color: "#F77E45",
-    fontSize: 10,
-  },
-  appRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  appIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    marginRight: 10,
-  },
-  appInfo: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  appName: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  appTime: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
+  // Styles removed for brevity
 });
 
 export default ScreenTimeList;
