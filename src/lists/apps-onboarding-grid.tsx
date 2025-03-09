@@ -88,9 +88,10 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
+          pointerEvents: 'none',
         }}
       >
-        <Text style={{ textAlign: 'center', marginHorizontal: 20, fontSize: 16, color: colors.orange }}>
+        <Text style={{ textAlign: 'center', marginHorizontal: 20, fontSize: 16, color: colors.orange,  pointerEvents: 'none' }}>
           {
             permissionsGranted
               ? selectionEvent
