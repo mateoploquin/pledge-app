@@ -10,7 +10,7 @@ interface PledgeData {
 export async function sendPledgeData(data: PledgeData, idToken: string) {
   try {
     console.log('Sending pledge data:', data); // Log the request payload
-    const response = await axios.post('https://dragon-vocal-magpie.ngrok-free.app/pledge', data, {
+    const response = await axios.post('pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io', data, {
       headers: {
         Authorization: `Bearer ${idToken}`,
       },
