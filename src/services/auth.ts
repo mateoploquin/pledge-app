@@ -32,7 +32,7 @@ export async function signUp(email, password, displayName) {
 
 async function sendTokenToBackend(idToken) {
   try {
-    await axios.post('pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io', {}, {
+    await axios.post('https://pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io/auth/firebase/signup', {}, {
       headers: {
         Authorization: `Bearer ${idToken}`,
       },
