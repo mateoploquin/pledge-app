@@ -1,7 +1,7 @@
 // src/services/stripe-api.ts
 import axios from 'axios';
 
-const API_URL = 'pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io'; // Replace with your server's URL
+const API_URL = 'https://pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io/stripe'; // Replace with your server's URL
 
 
 export const fetchPublishableKey = async (): Promise<string> => {
