@@ -44,14 +44,14 @@ const RegisterScreen: React.FC = () => {
           style={{ marginVertical: 12, width: "80%" }}
           placeholderTextColor={"#929292"}
           value={name}
+          autoCapitalize="words"
           onChangeText={setName}
         />
       </View>
 
       <View
         style={{
-          borderBottomWidth: 1,
-          borderBottomColor: "#929292",
+          borderBottomWidth: 1,          borderBottomColor: "#929292",
           marginHorizontal: 38,
           flexDirection: "row",
           alignItems: "center",
@@ -64,6 +64,8 @@ const RegisterScreen: React.FC = () => {
           style={{ marginVertical: 12, width: "80%" }}
           placeholderTextColor={"#929292"}
           value={email}
+          autoCapitalize='none'
+          textContentType="newPassword"
           onChangeText={setEmail}
         />
       </View>

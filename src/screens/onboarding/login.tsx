@@ -50,6 +50,9 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
           placeholder="Enter Your Email"
           style={{ marginVertical: 12, width: "80%" }}
           placeholderTextColor={"#929292"}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          textContentType="emailAddress"
           value={email}
           onChangeText={setEmail}
         />
@@ -72,6 +75,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
           value={password}
           onChangeText={setPassword}
           onSubmitEditing={handleLogin}
+          textContentType="password"
           secureTextEntry
         />
         <TouchableOpacity onPress={handleLogin}>
