@@ -31,11 +31,13 @@ const SelectAppsView = ({ navigation, route }: SelectAppsViewProps) => {
     event: NativeSyntheticEvent<DeviceActivitySelectionEvent>
   ) => {
     setDeviceActivitySelection(event.nativeEvent);
-    route.params.setDeviceActivitySelection(event);
-    setFamilyActivitySelectionId({
-      id: pledgeActivitySelectionId,
-      familyActivitySelection: event.nativeEvent.familyActivitySelection,
-    });
+    if (event.nativeEvent.familyActivitySelection) {
+      route.params.setDeviceActivitySelection(event);
+      setFamilyActivitySelectionId({
+        id: pledgeActivitySelectionId,
+        familyActivitySelection: event.nativeEvent.familyActivitySelection,
+      });
+    }
   };
 
   return (
