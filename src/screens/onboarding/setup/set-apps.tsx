@@ -1,33 +1,46 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, NativeSyntheticEvent, Alert, Linking } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  NativeSyntheticEvent,
+  Alert,
+  Linking,
+} from "react-native";
 import colors from "../../../theme/colors";
-import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
-import { DeviceActivitySelectionView, requestAuthorization, revokeAuthorization } from 'react-native-device-activity';
-import MainButton from '../../../components/buttons/main-button';
-import { SelectionInfo } from '../../../types';
-import AppsOnboardingGrid from '../../../lists/apps-onboarding-grid';
+import {
+  AuthorizationStatus,
+  AuthorizationStatusType,
+} from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
+import {
+  requestAuthorization,
+  revokeAuthorization,
+} from "react-native-device-activity";
+import { SelectionInfo } from "../../../types";
+import AppsOnboardingGrid from "../../../lists/apps-onboarding-grid";
+import { getAuthorizationStatus } from "react-native-device-activity";
 
 interface SetAppsProps {
-  authorizationStatus: AuthorizationStatus
-  setAuthorizationStatus: (status: AuthorizationStatus) => void
+  authorizationStatus: AuthorizationStatusType;
+  setAuthorizationStatus: (status: AuthorizationStatusType) => void;
   selectionEvent: SelectionInfo;
-  setSelectionEvent: (event: SelectionInfo) => void
+  setSelectionEvent: (event: SelectionInfo) => void;
 }
 
 const SetApps: React.FC<SetAppsProps> = ({
   authorizationStatus,
   setAuthorizationStatus,
   selectionEvent,
-  setSelectionEvent
+  setSelectionEvent,
 }) => {
   const [isRequesting, setIsRequesting] = useState(false);
 
   const onRequestPress = useCallback(async () => {
     if (isRequesting) return; // Prevent multiple rapid clicks
-    
+
     try {
       setIsRequesting(true);
-      let status: typeof AuthorizationStatus;
+      let status: AuthorizationStatusType;
 
       if (authorizationStatus === AuthorizationStatus.notDetermined) {
         await requestAuthorization();
@@ -45,21 +58,21 @@ const SetApps: React.FC<SetAppsProps> = ({
               text: "Cancel",
               style: "cancel",
             },
-          ],
+          ]
         );
         return;
       } else if (authorizationStatus === AuthorizationStatus.approved) {
         await revokeAuthorization();
         setAuthorizationStatus(getAuthorizationStatus());
       } else {
-        console.warn('Unexpected authorization status:', authorizationStatus);
+        console.warn("Unexpected authorization status:", authorizationStatus);
         setAuthorizationStatus(getAuthorizationStatus());
         return;
       }
 
       setAuthorizationStatus(status);
     } catch (error) {
-      console.error('Error handling authorization:', error);
+      console.error("Error handling authorization:", error);
       Alert.alert(
         "Error",
         "There was an error setting up app monitoring. Please try again."
@@ -69,10 +82,13 @@ const SetApps: React.FC<SetAppsProps> = ({
     }
   }, [authorizationStatus, isRequesting]);
 
-  const onSelectionChange = useCallback((event: NativeSyntheticEvent<SelectionInfo>) => {
-    if (!event.nativeEvent) return;
-    setSelectionEvent(event.nativeEvent)
-  }, []);
+  const onSelectionChange = useCallback(
+    (event: NativeSyntheticEvent<SelectionInfo>) => {
+      if (!event.nativeEvent) return;
+      setSelectionEvent(event.nativeEvent);
+    },
+    []
+  );
 
   // Cleanup effect
   useEffect(() => {
@@ -98,17 +114,19 @@ const SetApps: React.FC<SetAppsProps> = ({
         style={{
           marginTop: 10,
           marginBottom: 25,
-          alignSelf: 'center',
-          fontSize: 13
+          alignSelf: "center",
+          fontSize: 13,
         }}
       >
-          Choose among other apps
+        Choose among other apps
       </Text>
 
       <AppsOnboardingGrid
         onAskPermissions={onRequestPress}
         onSelectionChange={onSelectionChange}
-        permissionsGranted={authorizationStatus === AuthorizationStatus.approved}
+        permissionsGranted={
+          authorizationStatus === AuthorizationStatus.approved
+        }
         selectionEvent={selectionEvent}
       />
 

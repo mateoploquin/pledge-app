@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { signUp } from "../../services/auth";
 import MainHeader from "../../components/headers/main-header";
@@ -65,7 +73,7 @@ const RegisterScreen: React.FC = () => {
           style={{ marginVertical: 12, width: "80%" }}
           placeholderTextColor={"#929292"}
           value={email}
-          autoCapitalize='none'
+          autoCapitalize="none"
           textContentType="newPassword"
           onChangeText={setEmail}
         />
@@ -97,14 +105,26 @@ const RegisterScreen: React.FC = () => {
       </View>
 
       <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-        <Text style={{ color: colors.orange, textAlign: "center", marginTop: 20, marginBottom: 30 }}>
+        <Text
+          style={{
+            color: colors.orange,
+            textAlign: "center",
+            marginTop: 20,
+            marginBottom: 30,
+          }}
+        >
           Already have an account? Login
         </Text>
       </TouchableOpacity>
 
       <Image
         source={require("../../../assets/images/onboarding/Phone_withicons.png")}
-        style={{ position: "absolute", alignSelf: "center", bottom: 0, zIndex: -1 }}
+        style={{
+          position: "absolute",
+          alignSelf: "center",
+          bottom: 0,
+          zIndex: -1,
+        }}
       />
     </AppWrapper>
   );

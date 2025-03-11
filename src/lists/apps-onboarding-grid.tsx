@@ -9,10 +9,8 @@ import {
 } from "react-native";
 import { Entypo, FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import colors from "../theme/colors";
-import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
-import { SelectionInfo } from '../types';
-import { DeviceActivitySelectionView } from 'react-native-device-activity';
-
+import { SelectionInfo } from "../types";
+import { useNavigation } from "@react-navigation/native";
 const appData = [
   {
     id: 1,
@@ -61,17 +59,17 @@ const appData = [
 ];
 
 interface AppsOnboardingListProps {
-  onSelectionChange: (event: NativeSyntheticEvent<SelectionInfo>) => void
+  onSelectionChange: (event: NativeSyntheticEvent<SelectionInfo>) => void;
   onAskPermissions: () => Promise<void>;
   permissionsGranted: boolean;
-  selectionEvent: SelectionInfo | undefined
+  selectionEvent: SelectionInfo | undefined;
 }
 
 const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
   onSelectionChange,
   onAskPermissions,
   permissionsGranted,
-  selectionEvent
+  selectionEvent,
 }) => {
   const renderApp = ({ item }) => {
     return (
@@ -90,14 +88,20 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
           justifyContent: "space-between",
         }}
       >
-        <Text style={{ textAlign: 'center', marginHorizontal: 20, fontSize: 16, color: colors.orange,  pointerEvents: 'none' }}>
-          {
-            permissionsGranted
-              ? selectionEvent
-                ? `You selected ${selectionEvent.applicationCount} apps, ${selectionEvent.categoryCount} categories and ${selectionEvent.webDomainCount} websites`
-                : 'Choose apps'
-              : 'Grant permissions'
-          }
+        <Text
+          style={{
+            textAlign: "center",
+            marginHorizontal: 20,
+            fontSize: 16,
+            color: colors.orange,
+            pointerEvents: "none",
+          }}
+        >
+          {permissionsGranted
+            ? selectionEvent
+              ? `You selected ${selectionEvent.applicationCount} apps, ${selectionEvent.categoryCount} categories and ${selectionEvent.webDomainCount} websites`
+              : "Choose apps"
+            : "Grant permissions"}
         </Text>
         <Entypo
           name="chevron-thin-down"
@@ -106,8 +110,8 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
           color={colors.orange}
         />
       </View>
-    )
-  }
+    );
+  };
 
   const navigation = useNavigation();
 

@@ -12,12 +12,10 @@ import MainButton from "../../components/buttons/main-button";
 import OnboardingMenIconHarmsOpen from "../../../assets/icons/onboarding-men-icon-harms-open";
 import SecondaryButton from "../../components/buttons/secondary-button";
 import colors from "../../theme/colors";
-import LoginScreen from "./login";
-import { useNavigation,NavigationProp } from "@react-navigation/native";
-import { RootStackParamList } from "../../navigation/types";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
 
 const Onboarding: React.FC = () => {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NavigationProp<any>>();
 
   const [isPledged, setIsPledged] = useState(false);
   const [iconSwitched, setIconSwitched] = useState(false);
@@ -86,8 +84,8 @@ const Onboarding: React.FC = () => {
   // const handleNavigateLogin = () => {
   //   navigation.navigate("Login");
   // };
-   // Handler for navigating to Login
-   const handleNavigateLogin = () => {
+  // Handler for navigating to Login
+  const handleNavigateLogin = () => {
     navigation.navigate("Login");
   };
 
@@ -95,7 +93,6 @@ const Onboarding: React.FC = () => {
   const handleNavigateRegister = () => {
     navigation.navigate("Register");
   };
-
 
   return (
     <Animated.View style={[styles.container, backgroundColorStyle]}>
@@ -112,14 +109,10 @@ const Onboarding: React.FC = () => {
             }}
           >
             <Animated.View style={[textAnimatedStyle]}>
-              <Animated.Text
-                style={[font1AnimatedStyle, { color: "white" }]}
-              >
+              <Animated.Text style={[font1AnimatedStyle, { color: "white" }]}>
                 Pledge
               </Animated.Text>
-              <Animated.Text
-                style={[font2AnimatedStyle, { color: "white" }]}
-              >
+              <Animated.Text style={[font2AnimatedStyle, { color: "white" }]}>
                 Live more, scroll less.
               </Animated.Text>
             </Animated.View>
@@ -149,14 +142,10 @@ const Onboarding: React.FC = () => {
           )}
 
           <Animated.View style={[textAnimatedStyle]}>
-            <Animated.Text
-              style={[font1AnimatedStyle, { color: "black" }]}
-            >
+            <Animated.Text style={[font1AnimatedStyle, { color: "black" }]}>
               Pledge
             </Animated.Text>
-            <Animated.Text
-              style={[font2AnimatedStyle, { color: "white" }]}
-            >
+            <Animated.Text style={[font2AnimatedStyle, { color: "white" }]}>
               Live more, scroll less.
             </Animated.Text>
             {iconSwitched ? (
