@@ -64,7 +64,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const status = await getAuthorizationStatus();
+      const status = getAuthorizationStatus();
       setAuthorizationStatus(status);
     };
     initializeAuth();
@@ -145,7 +145,10 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
               ).then(() => {
                 navigation.navigate("Home");
               });
-            } else if (step === 1 && authorizationStatus !== AuthorizationStatus.approved) {
+            } else if (
+              step === 1 &&
+              authorizationStatus !== AuthorizationStatus.approved
+            ) {
               return;
             } else {
               setStep(step + 1);

@@ -41,9 +41,16 @@ const potentialMaxEvents = Math.floor(
 const monitoringEventName = 'GeneralMonitoring';
 const eventNameTick = 'minutes_reached';
 const eventNameFinish = 'tresholdReached';
+export const pledgeActivitySelectionId = "pledgeActivitySelection";
+const pledgeShieldId = "pledgeShield";
 
-const startMonitoring = (activitySelection: string, thresholdMinutes: number) => {
+const startMonitoring = (thresholdMinutes: number) => {
   const events: DeviceActivityEvent[] = [];
+
+  const activitySelection =
+    ReactNativeDeviceActivity.getFamilyActivitySelectionId(
+      pledgeActivitySelectionId
+    );
 
   for (let i = 0; i < potentialMaxEvents; i++) {
     const eventName = `${eventNameTick}_${initialMinutes + i * postponeMinutes}`;
@@ -61,6 +68,19 @@ const startMonitoring = (activitySelection: string, thresholdMinutes: number) =>
     threshold: {minute: thresholdMinutes},
   });
 
+  // this is how to make the blocks work in background
+  ReactNativeDeviceActivity.configureActions({
+    activityName: eventNameFinish,
+    callbackName: "eventDidReachThreshold",
+    actions: [
+      {
+        type: "blockSelection",
+        familyActivitySelectionId: pledgeActivitySelectionId,
+        shieldId: pledgeShieldId,
+      },
+    ],
+  });
+
   ReactNativeDeviceActivity.startMonitoring(
     monitoringEventName,
     {
@@ -74,46 +94,51 @@ const startMonitoring = (activitySelection: string, thresholdMinutes: number) =>
 };
 
 const stopMonitoring = () => {
-  ReactNativeDeviceActivity.stopMonitoring([monitoringEventName])
-  ReactNativeDeviceActivity.unblockApps();
-}
-
-const blockApps = async (activitySelection: string) => {
-  await ReactNativeDeviceActivity.blockApps(activitySelection);
-}
+  ReactNativeDeviceActivity.stopMonitoring([monitoringEventName]);
+  ReactNativeDeviceActivity.unblockAllApps();
+};
 
 const shieldConfiguration = () => {
-  ReactNativeDeviceActivity.updateShieldConfiguration({
-    title: 'App blocked by Pledge',
-    backgroundBlurStyle: UIBlurEffectStyle.systemMaterialDark,
-    titleColor: {
-      red: 1,
-      green: 0,
-      blue: 0,
+  ReactNativeDeviceActivity.updateShieldWithId(
+    {
+      title: "App blocked by Pledge",
+      backgroundBlurStyle: UIBlurEffectStyle.systemMaterialDark,
+      titleColor: {
+        red: 1,
+        green: 0,
+        blue: 0,
+      },
+      subtitle: "Enough scrolling for today...",
+      subtitleColor: {
+        red: Math.random() * 1,
+        green: Math.random() * 1,
+        blue: Math.random() * 1,
+      },
+      primaryButtonBackgroundColor: {
+        red: Math.random() * 1,
+        green: Math.random() * 1,
+        blue: Math.random() * 1,
+      },
+      primaryButtonLabelColor: {
+        red: Math.random() * 1,
+        green: Math.random() * 1,
+        blue: Math.random() * 1,
+      },
+      secondaryButtonLabelColor: {
+        red: Math.random() * 1,
+        green: Math.random() * 1,
+        blue: Math.random() * 1,
+      },
     },
-    subtitle: "Enough scrolling for today...",
-    subtitleColor: {
-      red: Math.random() * 1,
-      green: Math.random() * 1,
-      blue: Math.random() * 1,
+    {
+      primary: {
+        behavior: "close",
+        type: "dismiss",
+      },
     },
-    primaryButtonBackgroundColor: {
-      red: Math.random() * 1,
-      green: Math.random() * 1,
-      blue: Math.random() * 1,
-    },
-    primaryButtonLabelColor: {
-      red: Math.random() * 1,
-      green: Math.random() * 1,
-      blue: Math.random() * 1,
-    },
-    secondaryButtonLabelColor: {
-      red: Math.random() * 1,
-      green: Math.random() * 1,
-      blue: Math.random() * 1,
-    },
-  });
-}
+    pledgeShieldId
+  );
+};
 
 const parseMinutes = (total: number): Timer => {
   const hours = Math.floor(total / 60);
@@ -153,8 +178,6 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
         continue;
       } else if (event.eventName.includes(eventNameTick)) {
         totalMinutes++;
-      } else if (event.eventName.includes(eventNameFinish)) {
-        await blockApps(settings.selectionEvent.familyActivitySelection);
       }
     }
 
@@ -195,10 +218,10 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
           return;
         }
         setSettings(settings)
-        startMonitoring(settings.selectionEvent.familyActivitySelection, timeValue);
+        startMonitoring(timeValue);
         shieldConfiguration();
 
-        listener = ReactNativeDeviceActivity.addEventReceivedListener(
+        listener = ReactNativeDeviceActivity.onDeviceActivityMonitorEvent(
           (event) => {
             console.log("got event, refreshing events!", event);
             refreshEvents();

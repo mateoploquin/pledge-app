@@ -27,10 +27,11 @@ const SetApps: React.FC<SetAppsProps> = ({
     
     try {
       setIsRequesting(true);
-      let status: AuthorizationStatus;
-      
+      let status: typeof AuthorizationStatus;
+
       if (authorizationStatus === AuthorizationStatus.notDetermined) {
-        status = await requestAuthorization();
+        await requestAuthorization();
+        setAuthorizationStatus(getAuthorizationStatus());
       } else if (authorizationStatus === AuthorizationStatus.denied) {
         Alert.alert(
           "Screen Time Access Required",
@@ -48,9 +49,11 @@ const SetApps: React.FC<SetAppsProps> = ({
         );
         return;
       } else if (authorizationStatus === AuthorizationStatus.approved) {
-        status = await revokeAuthorization();
+        await revokeAuthorization();
+        setAuthorizationStatus(getAuthorizationStatus());
       } else {
         console.warn('Unexpected authorization status:', authorizationStatus);
+        setAuthorizationStatus(getAuthorizationStatus());
         return;
       }
 

@@ -18,12 +18,6 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Pledge does not use the camera for any purpose"
       },
-      "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.com.pledgecompany.pledge"
-        ],
-        "com.apple.developer.family-controls": true
-      },
       "googleServicesFile": "./GoogleService-Info.plist",
       "config": {
         "usesNonExemptEncryption": false
@@ -42,45 +36,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "e7e2e883-b2f3-4d92-964c-0e0608a1ff96",
-        "build": {
-          "experimental": {
-            "ios": {
-              "appExtensions": [
-                {
-                  "targetName": "ActivityMonitorExtension",
-                  "bundleIdentifier": "com.pledgecompany.pledge.ActivityMonitorExtension",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.pledgecompany.pledge"
-                    ],
-                    "com.apple.developer.family-controls": true
-                  }
-                },
-                {
-                  "targetName": "ShieldAction",
-                  "bundleIdentifier": "com.pledgecompany.pledge.ShieldAction",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.pledgecompany.pledge"
-                    ],
-                    "com.apple.developer.family-controls": true
-                  }
-                },
-                {
-                  "targetName": "ShieldConfiguration",
-                  "bundleIdentifier": "com.pledgecompany.pledge.ShieldConfiguration",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.pledgecompany.pledge"
-                    ],
-                    "com.apple.developer.family-controls": true
-                  }
-                }
-              ]
-            }
-          }
-        }
+        "projectId": "e7e2e883-b2f3-4d92-964c-0e0608a1ff96"
       }
     },
     "owner": "pledge",
