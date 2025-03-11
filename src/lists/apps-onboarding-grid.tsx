@@ -88,7 +88,6 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          pointerEvents: 'none',
         }}
       >
         <Text style={{ textAlign: 'center', marginHorizontal: 20, fontSize: 16, color: colors.orange,  pointerEvents: 'none' }}>
@@ -110,6 +109,8 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
     )
   }
 
+  const navigation = useNavigation();
+
   return (
     <View>
       <FlatList
@@ -124,7 +125,13 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
       {permissionsGranted ? (
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => {}}  // Empty onPress to handle touch feedback
+          onPress={() => {
+            // @ts-ignore
+            navigation.navigate("SelectApps", {
+              deviceActivitySelection: selectionEvent,
+              setDeviceActivitySelection: onSelectionChange,
+            });
+          }} // Empty onPress to handle touch feedback
           style={{
             backgroundColor: "white",
             width: "75%",
@@ -135,22 +142,9 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
             marginTop: 38,
             borderWidth: 2,
             borderColor: colors.orange,
-            overflow: 'hidden',
+            overflow: "hidden",
           }}
         >
-          <DeviceActivitySelectionView
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'transparent'
-            }}
-            onSelectionChange={onSelectionChange}
-            familyActivitySelection={selectionEvent?.familyActivitySelection}
-            pointerEvents="auto"
-          />
           {renderButton()}
         </TouchableOpacity>
       ) : (
