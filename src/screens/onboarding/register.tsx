@@ -85,6 +85,7 @@ const RegisterScreen: React.FC = () => {
           placeholderTextColor={"#929292"}
           value={password}
           onChangeText={setPassword}
+          onSubmitEditing={handleSignUp}
           secureTextEntry
         />
         <TouchableOpacity onPress={handleSignUp}>

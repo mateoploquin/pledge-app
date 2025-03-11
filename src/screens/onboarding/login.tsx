@@ -71,6 +71,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
           placeholderTextColor={"#929292"}
           value={password}
           onChangeText={setPassword}
+          onSubmitEditing={handleLogin}
           secureTextEntry
         />
         <TouchableOpacity onPress={handleLogin}>
