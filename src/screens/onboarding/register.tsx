@@ -72,7 +72,8 @@ const RegisterScreen: React.FC = () => {
       </View>
 
       <View
-        style={{          borderBottomWidth: 1,
+        style={{
+          borderBottomWidth: 1,
           borderBottomColor: "#929292",
           marginHorizontal: 38,
           flexDirection: "row",
