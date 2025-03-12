@@ -64,7 +64,7 @@ const SelectAppsView = ({ navigation, route }: SelectAppsViewProps) => {
           }}
         />
       </View>
-      <Button title="Close" onPress={() => navigation.goBack()} />
+      <Button title="OK" onPress={() => navigation.goBack()} />
       {isVisible ? (
         <DeviceActivitySelectionView
           familyActivitySelection={
