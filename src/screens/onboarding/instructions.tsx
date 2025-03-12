@@ -52,9 +52,20 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
   );
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('blur', () => {
+    const unsubscribe = navigation.addListener("blur", () => {
       // Set the flag when navigating to SharePledge
-      if ((navigation as any).getState().routes.slice(-1)[0]?.name === 'SharePledge') {
+      if (
+        (navigation as any).getState().routes.slice(-1)[0]?.name ===
+        "SharePledge"
+      ) {
+        isReturningFromShare.current = true;
+      }
+
+      // I'd really have a look at cleaning up this logic :)
+      if (
+        (navigation as any).getState().routes.slice(-1)[0]?.name ===
+        "SelectApps"
+      ) {
         isReturningFromShare.current = true;
       }
     });
