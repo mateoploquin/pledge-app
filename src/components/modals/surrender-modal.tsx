@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { BlurView } from "expo-blur";
 import colors from "../../theme/colors";
 import { sendPayment } from "../../services/stripe-api"; // Importing sendPayment Fucntion
-import { auth } from "../../../firebaseConfig";
+import { auth } from '../../firebaseConfig';
 
 interface SurrenderModalProps {
   isVisible: boolean;

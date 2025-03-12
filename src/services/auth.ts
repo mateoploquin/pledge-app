@@ -1,7 +1,7 @@
 // // signUp.js
 import { createUserWithEmailAndPassword, updateProfile, getIdToken } from 'firebase/auth';
 import axios from 'axios';
-import { auth } from '../../firebaseConfig';
+import { auth } from '../firebaseConfig';
 // import * as FileSystem from 'expo-file-system';
 
 

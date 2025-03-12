@@ -8,7 +8,7 @@ import { Feather } from "@expo/vector-icons";
 import colors from "../../theme/colors";
 import { useNavigation } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../../firebaseConfig';
+import { auth } from '../../firebaseConfig';
 
 interface LoginScreenProps {}
 
