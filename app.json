@@ -13,7 +13,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "buildNumber": "7",
+      "buildNumber": "10",
       "bundleIdentifier": "com.pledgecompany.pledge",
       "infoPlist": {
         "NSCameraUsageDescription": "Pledge does not use the camera for any purpose"
@@ -39,6 +39,7 @@
         "projectId": "e7e2e883-b2f3-4d92-964c-0e0608a1ff96"
       }
     },
+    "sourceExts": ["js", "jsx", "ts", "tsx"],
     "owner": "pledge",
     "plugins": [
       "expo-font",
