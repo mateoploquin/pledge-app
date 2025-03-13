@@ -17,7 +17,7 @@ import HomeSwitch from "../../components/switches/home-switch";
 import HomeCardWrapper from "../../components/cards/home-card-wrapper";
 import colors from "../../theme/colors";
 import ScreenTimeList from "../../lists/screen-time-list";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { NavigationProp, ParamListBase, useNavigation } from "@react-navigation/native";
 import SurrenderModal from "../../components/modals/surrender-modal";
 import HomeHeader from "../../components/headers/home-header";
 import HomeWrapper from "../../components/layout/home-wrapper";
@@ -28,7 +28,10 @@ import { PledgeSettings } from '../../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type HomeScreenProps = {
-  navigation: NavigationProp<ReactNavigation.RootParamList>
+  navigation: NavigationProp<{
+    Instructions: undefined;
+    ChallengeCompleted: { result: string };
+  }>;
 }
 
 const initialMinutes = 1;
@@ -170,19 +173,43 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
   const CHALLENGE_DURATION = 30; // 30 days challenge
 
   const refreshEvents = useCallback(async () => {
-    const events = getEvents();
-    let totalMinutes = 0;
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      if (event.callbackName !== 'eventDidReachThreshold') {
-        continue;
-      } else if (event.eventName.includes(eventNameTick)) {
-        totalMinutes++;
+    try {
+      const events = getEvents();
+      console.log("Screen time events:", JSON.stringify(events));
+      
+      // Filter events to only include threshold events
+      let totalMinutes = 0;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      for (let i = 0; i < events.length; i++) {
+        const event = events[i];
+        // Check if it's a threshold event
+        if (event.callbackName === 'eventDidReachThreshold') {
+          // Since we can't access the date directly, we'll count all threshold events
+          // We'll rely on the fact that events are cleared each day by the system
+          if (event.eventName.includes(eventNameTick)) {
+            totalMinutes++;
+            console.log(`Found valid event: ${event.eventName}, total minutes: ${totalMinutes}`);
+          }
+        }
       }
+      
+      // Calculate daily limit based on settings
+      const dailyLimit = settings?.timeValue || 60; // Default to 60 minutes if not set
+      const remainingMins = Math.max(0, dailyLimit - totalMinutes);
+      
+      console.log(`Total minutes used: ${totalMinutes}, Daily limit: ${dailyLimit}, Remaining: ${remainingMins}`);
+      
+      setTotalTime({
+        hours: Math.floor(totalMinutes / 60),
+        minutes: totalMinutes % 60,
+        remainingMinutes: remainingMins
+      });
+    } catch (error) {
+      console.error("Error refreshing screen time events:", error);
     }
-
-    setTotalTime(parseMinutes(totalMinutes))
-  }, []);
+  }, [settings]);
 
   const handlePaymentSuccess = () => {
     setShowPaymentPopup(false);
@@ -209,31 +236,51 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
 
   useEffect(() => {
     let listener: (() => void) | undefined;
-    AsyncStorage.getItem('pledgeSettings').then((s) => {
-      if (s) {
-        const settings = JSON.parse(s);
-        if (!settings.paymentSetupComplete) {
-          // Redirect to Instructions screen if payment is not complete
-          navigation.replace("Instructions");
-          return;
-        }
-        setSettings(settings)
-        startMonitoring(timeValue);
-        shieldConfiguration();
+    let intervalId: NodeJS.Timeout | undefined;
+    
+    const setupMonitoring = async () => {
+      try {
+        const s = await AsyncStorage.getItem('pledgeSettings');
+        if (s) {
+          const settings = JSON.parse(s);
+          if (!settings.paymentSetupComplete) {
+            // Redirect to Instructions screen if payment is not complete
+            navigation.navigate("Instructions");
+            return;
+          }
+          setSettings(settings);
+          startMonitoring(settings.timeValue);
+          shieldConfiguration();
+          
+          // Initial refresh of events
+          refreshEvents();
 
-        listener = ReactNativeDeviceActivity.onDeviceActivityMonitorEvent(
-          (event) => {
-            console.log("got event, refreshing events!", event);
+          // Set up listener for device activity events
+          listener = ReactNativeDeviceActivity.onDeviceActivityMonitorEvent(
+            (event) => {
+              console.log("Device activity event received:", JSON.stringify(event));
+              refreshEvents();
+            }
+          ).remove;
+          
+          // Set up periodic refresh every minute
+          intervalId = setInterval(() => {
+            console.log("Periodic refresh of screen time events");
             refreshEvents();
-          },
-        ).remove;
+          }, 60000); // Refresh every minute
+        }
+      } catch (error) {
+        console.error("Error setting up monitoring:", error);
       }
-    })
+    };
+    
+    setupMonitoring();
 
     return () => {
-      listener?.();
-    }
-  }, []);
+      if (intervalId) clearInterval(intervalId);
+      if (listener) listener();
+    };
+  }, [refreshEvents, navigation]);
 
   useEffect(() => {
     const loadChallengeStartDate = async () => {
@@ -406,7 +453,6 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
 
             <HomeCardWrapper
               style={{ marginTop: 17 }}
-              title={"Daily Consumption"}
             >
               <View
                 style={{
@@ -415,18 +461,35 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
                   paddingHorizontal: 16,
                 }}
               >
+                <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 10 }}>Daily Consumption</Text>
                 <Text style={{ fontSize: 48, fontWeight: "500" }}>{hours}h {minutes}m</Text>
                 <Text style={{ fontSize: 15 }}>
                   <Text style={{ fontWeight: "500" }}>{remainingMinutes}m</Text> left for your daily limit
                 </Text>
 
                 <ScreenTimeList />
+                
+                <TouchableOpacity 
+                  onPress={() => {
+                    // Force refresh the screen time data
+                    console.log("Manual refresh triggered");
+                    refreshEvents();
+                  }}
+                  style={{
+                    alignSelf: 'flex-end',
+                    padding: 8,
+                    marginTop: 10,
+                    backgroundColor: colors.orange,
+                    borderRadius: 8
+                  }}
+                >
+                  <Text style={{ color: 'white', fontWeight: '500' }}>Refresh</Text>
+                </TouchableOpacity>
               </View>
             </HomeCardWrapper>
 
             <HomeCardWrapper
               style={{ marginTop: 17 }}
-              title={"Progress Bar"}
             >
               <View
                 style={{
@@ -435,6 +498,7 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
                   paddingHorizontal: 16,
                 }}
               >
+                <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 10 }}>Progress Bar</Text>
                 <DayProgressBar
                   currentDay={currentDay}
                   daysRemaining={countdown.days}
@@ -485,6 +549,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-
 
 export default HomeScreen;

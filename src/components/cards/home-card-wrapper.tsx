@@ -5,8 +5,9 @@ import colors from "../../theme/colors";
 
 interface HomeCardWrapperProps {
   children: React.ReactNode;
-  style: object;
+  style?: object;
   onPress?: () => void;
+  title?: string;
 }
 
 const HomeCardWrapper: React.FC<HomeCardWrapperProps> = ({
