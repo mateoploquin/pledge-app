@@ -11,12 +11,14 @@ import SetTimeLimit from "./setup/set-time-limit";
 import SetApps from "./setup/set-apps";
 import InstructionCarousel from "../../components/carousels/instructions-carousel";
 import AcceptTerms from "./setup/accept-terms";
-import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
-import { getAuthorizationStatus } from 'react-native-device-activity';
+import {
+  AuthorizationStatus,
+  AuthorizationStatusType,
+} from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
+import { getAuthorizationStatus } from "react-native-device-activity";
 import SetPayment from "./setup/set-up-payment"; // Import the new component
-import { SelectionInfo } from '../../types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { SelectionInfo } from "../../types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface InstructionsProps {
   // define your props here
@@ -32,7 +34,8 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
   const [timeValue, setTimeValue] = useState(10);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatus>();
+  const [authorizationStatus, setAuthorizationStatus] =
+    useState<AuthorizationStatusType>();
   const [selectionEvent, setSelectionEvent] = useState<SelectionInfo>();
 
   const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
@@ -146,12 +149,12 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
                 return;
               }
               AsyncStorage.setItem(
-                'pledgeSettings',
+                "pledgeSettings",
                 JSON.stringify({
                   selectionEvent,
                   pledgeValue,
                   timeValue,
-                  paymentSetupComplete: true
+                  paymentSetupComplete: true,
                 })
               ).then(() => {
                 navigation.navigate("Home");
