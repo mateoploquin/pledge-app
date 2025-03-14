@@ -1,29 +1,22 @@
 import { FC, useCallback, useEffect, useState } from "react";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
 import { getEvents } from 'react-native-device-activity';
-import { DeviceActivityEvent, EventParsed, UIBlurEffectStyle } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
+import { DeviceActivityEvent, UIBlurEffectStyle } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
 import {
   View,
   Text,
-  Button,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
 } from "react-native";
-import AppWrapper from "../../components/layout/app-wrapper";
-import MainHeader from "../../components/headers/main-header";
-import HomeSwitch from "../../components/switches/home-switch";
 import HomeCardWrapper from "../../components/cards/home-card-wrapper";
 import colors from "../../theme/colors";
 import ScreenTimeList from "../../lists/screen-time-list";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { NavigationProp } from "@react-navigation/native";
 import SurrenderModal from "../../components/modals/surrender-modal";
 import HomeHeader from "../../components/headers/home-header";
 import HomeWrapper from "../../components/layout/home-wrapper";
-import { BlurView } from "expo-blur";
 import DayProgressBar from "../../components/bars/days-progress-bar";
-import CountdownDisplay from "../../components/countdown/countdown-display";
 import { PledgeSettings } from '../../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -31,14 +24,15 @@ type HomeScreenProps = {
   navigation: NavigationProp<ReactNavigation.RootParamList>
 }
 
-const initialMinutes = 1;
-const postponeMinutes = 1;
+// tracking every minute is not recommended and might cause issues
+const initialMinutes = 5;
+const postponeMinutes = 5;
 
 const potentialMaxEvents = Math.floor(
   (60 * 24 - initialMinutes) / postponeMinutes,
 );
 
-const monitoringEventName = 'GeneralMonitoring';
+const activityName = 'GeneralMonitoring';
 const eventNameTick = 'minutes_reached';
 const eventNameFinish = 'tresholdReached';
 export const pledgeActivitySelectionId = "pledgeActivitySelection";
@@ -58,6 +52,7 @@ const startMonitoring = (thresholdMinutes: number) => {
       eventName,
       familyActivitySelection: activitySelection,
       threshold: { minute: initialMinutes + i * postponeMinutes },
+      includesPastActivity: true,
     };
     events.push(event);
   }
@@ -66,12 +61,14 @@ const startMonitoring = (thresholdMinutes: number) => {
     eventName: eventNameFinish,
     familyActivitySelection: activitySelection,
     threshold: {minute: thresholdMinutes},
+    includesPastActivity: true,
   });
 
   // this is how to make the blocks work in background
   ReactNativeDeviceActivity.configureActions({
-    activityName: eventNameFinish,
+    activityName: activityName,
     callbackName: "eventDidReachThreshold",
+    eventName: eventNameFinish,
     actions: [
       {
         type: "blockSelection",
@@ -81,10 +78,20 @@ const startMonitoring = (thresholdMinutes: number) => {
     ],
   });
 
+  // needed to remove the shield at end of day
+  ReactNativeDeviceActivity.configureActions({
+    activityName: activityName,
+    callbackName: "intervalDidEnd",
+    actions: [
+      {
+        type: "unblockAllApps"
+      },
+    ],
+  });
+
   ReactNativeDeviceActivity.startMonitoring(
-    monitoringEventName,
+    activityName,
     {
-      warningTime: { minute: 1 },
       intervalStart: { hour: 0, minute: 0, second: 0 },
       intervalEnd: { hour: 23, minute: 59, second: 59 },
       repeats: true,
@@ -94,7 +101,7 @@ const startMonitoring = (thresholdMinutes: number) => {
 };
 
 const stopMonitoring = () => {
-  ReactNativeDeviceActivity.stopMonitoring([monitoringEventName]);
+  ReactNativeDeviceActivity.stopMonitoring([activityName]);
   ReactNativeDeviceActivity.unblockAllApps();
 };
 
