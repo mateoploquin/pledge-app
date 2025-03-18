@@ -21,7 +21,8 @@
       "extends": "base",
       "distribution": "internal",
       "ios": {
-        "resourceClass": "m-medium"
+        "resourceClass": "m-medium",
+        "credentialsSource": "remote"
       }
     },
     "production": {

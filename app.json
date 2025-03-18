@@ -8,12 +8,12 @@
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "cover",
+      "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": false,
-      "buildNumber": "11",
+      "buildNumber": "15",
       "bundleIdentifier": "com.pledgecompany.pledge",
       "infoPlist": {
         "NSCameraUsageDescription": "Pledge does not use the camera for any purpose"
@@ -71,6 +71,14 @@
         {
           "merchantIdentifier": "merchant.pledge.applepay",
           "enableGooglePay": false
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "pledge-jh"
         }
       ]
     ]
