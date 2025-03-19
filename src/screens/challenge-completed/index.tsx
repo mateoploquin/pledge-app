@@ -26,86 +26,49 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
   const handleRestart = async () => {
     // Ensure all monitoring is stopped
     ReactNativeDeviceActivity.stopMonitoring();
-    ReactNativeDeviceActivity.unblockAllApps();
+    ReactNativeDeviceActivity.unblockApps();
 
-    // Clear all challenge data
     await AsyncStorage.removeItem('pledgeSettings');
     await AsyncStorage.removeItem('challengeStartDate');
     
-    // Navigate to instructions to start a new challenge
     navigation.navigate("Instructions");
   };
 
-  // Only stop monitoring if this is a success result
-  // For failure (surrender), the payment process has already handled this
   useEffect(() => {
     if (result === "success") {
       ReactNativeDeviceActivity.stopMonitoring();
-      ReactNativeDeviceActivity.unblockAllApps();
+      ReactNativeDeviceActivity.unblockApps();
     }
   }, [result]);
 
   return (
-    <AppWrapper style={{ backgroundColor: colors.orange }}>
+    <AppWrapper style={styles.wrapper}>
       <MainHeaderLight />
 
-      <Text
-        style={{
-          fontFamily: "InstrumentSerif-Regular",
-          color: "white",
-          fontSize: 20,
-          textAlign: "center",
-          marginTop: 13,
-        }}
-      >
+      <Text style={styles.headerText}>
         Challenge outcome
       </Text>
 
-      <View
-        style={{
-          marginHorizontal: 32,
-          backgroundColor: "white",
-          paddingVertical: 30,
-          justifyContent: "center",
-          alignItems: "center",
-          marginTop: SCREEN_HEIGHT * 0.10,
-          borderRadius: 20,
-          paddingTop: 50,
-        }}
-      >
-        <View style={{ justifyContent: "center", alignItems: "center" }}>
+      <View style={styles.card}>
+        <View style={styles.imageContainer}>
           <Image
             source={
               result === "success"
                 ? require("../../../assets/images/challenge-completed/golden-cup.png")
                 : require("../../../assets/images/challenge-completed/failed-challenge.png")
             }
-            style={{ 
-              width: 170, 
-              height: 180, 
-              marginBottom: -100, 
-              zIndex: 100,
-              resizeMode: 'contain'
-            }}
+            style={styles.resultImage}
           />
           <PledgeFormIcon size={130} />
         </View>
 
-        <Text
-          style={{
-            fontSize: 20,
-            textAlign: "center",
-            marginTop: 40,
-            marginBottom: 20,
-            marginHorizontal: 50,
-          }}
-        >
+        <Text style={styles.resultText}>
           {result === "success" ? (
             "Congratulations!\nYou Are a Certified Pledger!"
           ) : (
             <Text>
               You Gave It a Good Try!{"\n"}
-              <Text style={{ fontSize: 15 }}>
+              <Text style={styles.subText}>
                 Sometimes change is hard, but every effort counts.
               </Text>
             </Text>
@@ -113,19 +76,12 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
         </Text>
       </View>
 
-      <View style={{ alignSelf: "center", position: "absolute", bottom: 40 }}>
+      <View style={styles.buttonContainer}>
         <Pressable
           onPress={() => handleRestart()}
-          style={{
-            backgroundColor: "white",
-            alignSelf: "flex-start",
-            paddingVertical: 12,
-            paddingHorizontal: 17,
-            borderRadius: 50,
-            marginTop: 45,
-          }}
+          style={styles.button}
         >
-          <Text style={{ color: colors.orange, fontWeight: "500" }}>
+          <Text style={styles.buttonText}>
             New Challenge
           </Text>
         </Pressable>
@@ -135,6 +91,64 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
 };
 
 const styles = StyleSheet.create({
+  wrapper: {
+    backgroundColor: colors.orange
+  },
+  headerText: {
+    fontFamily: "InstrumentSerif-Regular",
+    color: colors.white,
+    fontSize: 20,
+    textAlign: "center",
+    marginTop: 13,
+  },
+  card: {
+    marginHorizontal: 32,
+    backgroundColor: colors.white,
+    paddingVertical: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: SCREEN_HEIGHT * 0.10,
+    borderRadius: 20,
+    paddingTop: 50,
+  },
+  imageContainer: {
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  resultImage: {
+    width: 170,
+    height: 180,
+    marginBottom: -100,
+    zIndex: 100,
+    resizeMode: 'contain'
+  },
+  resultText: {
+    fontSize: 20,
+    textAlign: "center",
+    marginTop: 40,
+    marginBottom: 20,
+    marginHorizontal: 50,
+  },
+  subText: {
+    fontSize: 15
+  },
+  buttonContainer: {
+    alignSelf: "center",
+    position: "absolute",
+    bottom: 40
+  },
+  button: {
+    backgroundColor: colors.white,
+    alignSelf: "flex-start",
+    paddingVertical: 12,
+    paddingHorizontal: 17,
+    borderRadius: 50,
+    marginTop: 45,
+  },
+  buttonText: {
+    color: colors.orange,
+    fontWeight: "500"
+  },
   container: {
     flex: 1,
     justifyContent: "center",

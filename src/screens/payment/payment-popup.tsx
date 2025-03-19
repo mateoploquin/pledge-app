@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,30 +7,37 @@ import {
   TouchableOpacity,
   Dimensions,
   Animated,
-} from 'react-native';
+} from "react-native";
 import {
   useStripe,
   CardForm,
   isPlatformPaySupported,
   PlatformPayButton,
-  PlatformPay
-} from '@stripe/stripe-react-native';
-import MainButton from '../../components/buttons/main-button';
+  PlatformPay,
+} from "@stripe/stripe-react-native";
+import MainButton from "../../components/buttons/main-button";
+import colors from "../../theme/colors";
 
-const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess, pledgeValue }) => {
+const PaymentPopup = ({
+  isVisible,
+  onClose,
+  onPaymentSuccess,
+  pledgeValue,
+}) => {
   const stripe = useStripe();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(Dimensions.get('window').height)).current;
+  const slideAnim = useRef(
+    new Animated.Value(Dimensions.get("window").height)
+  ).current;
   const [loading, setLoading] = useState(false);
   const mockMode = true; // Toggle mock mode for testing
 
-  const [pledgePrice, setPledgePrice] = useState(10);
   const [isApplePaySupported, setIsApplePaySupported] = useState(false);
 
   const API_URL = "https://api.stripe.com/v1";
 
   const animatePopup = (visible) => {
-    const toValue = visible ? 0 : Dimensions.get('window').height;
+    const toValue = visible ? 0 : Dimensions.get("window").height;
 
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -61,13 +68,13 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess, pledgeValue }) => 
 
   const fetchPaymentIntentClientSecret = async () => {
     const response = await fetch(`${API_URL}/create-payment-intent`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         amount: pledgeValue, // Make sure this is set to your actual amount
-        currency: 'eur',
+        currency: "eur",
       }),
     });
     const { clientSecret } = await response.json();
@@ -77,36 +84,33 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess, pledgeValue }) => 
   const handleApplePayPress = async () => {
     try {
       const clientSecret = await fetchPaymentIntentClientSecret();
-      
-      const { error } = await stripe.confirmPlatformPayPayment(
-        clientSecret,
-        {
-          applePay: {
-            cartItems: [
-              {
-                label: 'Your Pledge',
-                amount: pledgeValue.toString(),
-                paymentType: PlatformPay.PaymentType.Immediate,
-              }
-            ],
-            merchantCountryCode: 'ES',
-            currencyCode: 'EUR',
-            requiredBillingContactFields: [
-              PlatformPay.ContactField.PhoneNumber,
-              PlatformPay.ContactField.EmailAddress,
-            ],
-          },
-        }
-      );
+
+      const { error } = await stripe.confirmPlatformPayPayment(clientSecret, {
+        applePay: {
+          cartItems: [
+            {
+              label: "Your Pledge",
+              amount: pledgeValue.toString(),
+              paymentType: PlatformPay.PaymentType.Immediate,
+            },
+          ],
+          merchantCountryCode: "ES",
+          currencyCode: "EUR",
+          requiredBillingContactFields: [
+            PlatformPay.ContactField.PhoneNumber,
+            PlatformPay.ContactField.EmailAddress,
+          ],
+        },
+      });
 
       if (error) {
-        console.error('Payment failed:', error);
+        console.error("Payment failed:", error);
       } else {
-        console.log('Payment successful!');
+        console.log("Payment successful!");
         onPaymentSuccess();
       }
     } catch (error) {
-      console.error('Error during Apple Pay:', error);
+      console.error("Error during Apple Pay:", error);
     }
   };
 
@@ -148,17 +152,23 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess, pledgeValue }) => 
     >
       <View style={styles.container}>
         <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
-          <TouchableOpacity style={styles.overlayTouch} onPress={() => animatePopup(false)} />
+          <TouchableOpacity
+            style={styles.overlayTouch}
+            onPress={() => animatePopup(false)}
+          />
         </Animated.View>
-
-        <Animated.View style={[styles.popup, { transform: [{ translateY: slideAnim }] }]}>
+        <Animated.View
+          style={[styles.popup, { transform: [{ translateY: slideAnim }] }]}
+        >
           <View style={styles.header}>
             <Text style={styles.title}>Set Up Payment Method</Text>
-            <TouchableOpacity onPress={() => animatePopup(false)} style={styles.closeButton}>
+            <TouchableOpacity
+              onPress={() => animatePopup(false)}
+              style={styles.closeButton}
+            >
               <Text style={styles.closeText}>×</Text>
             </TouchableOpacity>
           </View>
-
           {isApplePaySupported && (
             <PlatformPayButton
               onPress={handleApplePayPress}
@@ -166,14 +176,15 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess, pledgeValue }) => 
               appearance={PlatformPay.ButtonStyle.Black}
               borderRadius={4}
               style={{
-                width: '100%',
+                width: "100%",
                 height: 50,
               }}
             />
           )}
-
           <View style={styles.content}>
-            <Text style={styles.description}>Please enter your payment details below:</Text>
+            <Text style={styles.description}>
+              Please enter your payment details below:
+            </Text>
             <Text style={styles.priceText}>Price: {pledgeValue} €</Text>
             <View style={styles.cardFormContainer}>
               <CardForm
@@ -184,14 +195,11 @@ const PaymentPopup = ({ isVisible, onClose, onPaymentSuccess, pledgeValue }) => 
               />
             </View>
           </View>
-
-          
-
           <View style={styles.content}>
             <MainButton
               onPress={openPaymentSheet}
               text="Submit"
-              style={[{ opacity: loading ? 0.5 : 1 }]}
+              style={{ opacity: loading ? 0.5 : 1 }}
               disabled={loading}
             />
           </View>
@@ -207,60 +215,60 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   overlayTouch: {
     flex: 1,
   },
   popup: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'white',
+    backgroundColor: colors.white,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    height: Dimensions.get('window').height * 0.75,
+    height: Dimensions.get("window").height * 0.75,
     padding: 20,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
   },
   title: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   closeButton: {
     padding: 5,
   },
   closeText: {
     fontSize: 24,
-    color: '#ff6600',
+    color: colors.orange,
   },
   content: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: 20,
   },
   description: {
-    textAlign: 'center',
-    color: '#666',
+    textAlign: "center",
+    color: colors.gray,
     marginBottom: 20,
   },
   cardFormContainer: {
-    width: '100%',
+    width: "100%",
     marginBottom: 20,
   },
   cardForm: {
-    width: '100%',
+    width: "100%",
     height: 200,
   },
   priceText: {
     fontSize: 18,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 10,
   },
 });

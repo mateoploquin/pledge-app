@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   highlightText: {
-    color: "#236AB3",
+    color: colors.blue,
   },
   footerText: {
     marginTop: 15,

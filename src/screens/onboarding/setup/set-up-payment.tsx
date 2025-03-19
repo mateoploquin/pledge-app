@@ -9,7 +9,6 @@ import { sendPledgeData } from "../../../services/sendPledgeData";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SetPaymentProps {
-  isButtonDisabled: boolean;
   setIsButtonDisabled: (disabled: boolean) => void;
   paymentSetupComplete: boolean;
   setPaymentSetupComplete: (complete: boolean) => void;
@@ -19,7 +18,6 @@ interface SetPaymentProps {
 }
 
 const SetPayment: React.FC<SetPaymentProps> = ({
-  isButtonDisabled,
   setIsButtonDisabled,
   paymentSetupComplete,
   setPaymentSetupComplete,

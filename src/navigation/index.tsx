@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import HomeScreen from "../screens/home";
 import SplashScreen from "../screens/onboarding";
@@ -12,67 +12,68 @@ import SelectAppsView from "../screens/select-apps";
 
 const Stack = createStackNavigator();
 
+const hideHeaderOptions = { headerShown: false };
+const hideHeaderNoGesture = { headerShown: false, gestureEnabled: false };
+const hideHeaderNoAnimation = { headerShown: false, animationEnabled: false };
+const modalOptions = {
+  presentation: "modal" as const,
+  headerShown: false,
+  cardOverlayEnabled: true,
+  cardShadowEnabled: true,
+  gestureEnabled: true,
+  gestureResponseDistance: 400,
+  gestureDirection: "vertical" as const,
+};
+const modalGroupOptions = {
+  presentation: "modal" as const,
+  headerShown: false,
+};
+
 const AppNavigator = ({ initialRouteName }) => {
   return (
     <Stack.Navigator initialRouteName={initialRouteName}>
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{ headerShown: false, gestureEnabled: false }}
+        options={hideHeaderNoGesture}
       />
       <Stack.Screen
         name="Splash"
         component={SplashScreen}
-        options={{ headerShown: false }}
+        options={hideHeaderOptions}
       />
       <Stack.Screen
         name="Instructions"
         component={Instructions}
-        options={{
-          headerShown: false,
-          animationEnabled: false,
-        }}
+        options={hideHeaderNoAnimation}
       />
       <Stack.Screen
         name="Details"
         component={DetailsScreen}
-        options={{ headerShown: false }}
+        options={hideHeaderOptions}
       />
       <Stack.Screen
         name="Login"
         component={LoginScreen}
-        options={{
-          headerShown: false,
-          animationEnabled: false,
-        }}
+        options={hideHeaderNoAnimation}
       />
       <Stack.Screen
         name="Register"
         component={RegisterScreen}
-        options={{ headerShown: false, animationEnabled: false }}
+        options={hideHeaderNoAnimation}
       />
       <Stack.Screen
         name="ChallengeCompleted"
         component={ChallengeCompleted}
-        options={{ headerShown: false }}
+        options={hideHeaderOptions}
       />
       <Stack.Screen
         name="SelectApps"
         component={SelectAppsView}
-        options={{
-          presentation: "modal",
-          headerShown: false,
-          cardOverlayEnabled: true,
-          cardShadowEnabled: true,
-          gestureEnabled: true,
-          gestureResponseDistance: 400,
-          gestureDirection: "vertical",
-        }}
+        options={modalOptions}
       />
 
-      <Stack.Group
-        screenOptions={{ presentation: "modal", headerShown: false }}
-      >
+      <Stack.Group screenOptions={modalGroupOptions}>
         <Stack.Screen name="SharePledge" component={SharePledge} />
       </Stack.Group>
     </Stack.Navigator>

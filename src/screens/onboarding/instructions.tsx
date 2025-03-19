@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
 import MainButton from "../../components/buttons/main-button";
@@ -16,7 +16,7 @@ import {
   AuthorizationStatusType,
 } from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
 import { getAuthorizationStatus } from "react-native-device-activity";
-import SetPayment from "./setup/set-up-payment"; // Import the new component
+import SetPayment from "./setup/set-up-payment";
 import { SelectionInfo } from "../../types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -24,7 +24,7 @@ interface InstructionsProps {
   // define your props here
 }
 
-const Instructions: React.FC<InstructionsProps> = (props) => {
+const Instructions: React.FC<InstructionsProps> = () => {
   const navigation = useNavigation();
   const [step, setStep] = useState(0);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
@@ -43,20 +43,16 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
 
   useFocusEffect(
     useCallback(() => {
-      // Reset payment status and step when screen is focused
       setPaymentSetupComplete(false);
-      // Only reset step if we're not returning from SharePledge
       if (!isReturningFromShare.current) {
         setStep(0);
       }
-      // Reset the flag
       isReturningFromShare.current = false;
     }, [])
   );
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("blur", () => {
-      // Set the flag when navigating to SharePledge
       if (
         (navigation as any).getState().routes.slice(-1)[0]?.name ===
         "SharePledge"
@@ -64,7 +60,6 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         isReturningFromShare.current = true;
       }
 
-      // I'd really have a look at cleaning up this logic :)
       if (
         (navigation as any).getState().routes.slice(-1)[0]?.name ===
         "SelectApps"
@@ -98,19 +93,9 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           setSelectionEvent={setSelectionEvent}
         />
       ) : step == 2 ? (
-        <SetTimeLimit
-          isButtonDisabled={isButtonDisabled}
-          setIsButtonDisabled={setIsButtonDisabled}
-          timeValue={timeValue}
-          setTimeValue={setTimeValue}
-        />
+        <SetTimeLimit timeValue={timeValue} setTimeValue={setTimeValue} />
       ) : step == 3 ? (
-        <SetPledge
-          isButtonDisabled={isButtonDisabled}
-          setIsButtonDisabled={setIsButtonDisabled}
-          pledgeValue={pledgeValue}
-          setPledgeValue={setPledgeValue}
-        />
+        <SetPledge pledgeValue={pledgeValue} setPledgeValue={setPledgeValue} />
       ) : step == 4 ? (
         <AcceptTerms
           termsAccepted={termsAccepted}
@@ -118,7 +103,6 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         />
       ) : step == 5 ? (
         <SetPayment
-          isButtonDisabled={isButtonDisabled}
           setIsButtonDisabled={setIsButtonDisabled}
           paymentSetupComplete={paymentSetupComplete}
           setPaymentSetupComplete={setPaymentSetupComplete}
@@ -130,14 +114,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         <ChallengeOn />
       ) : null}
 
-      <View
-        style={{
-          position: "absolute",
-          bottom: step == 5 || step == 0 ? 71 : 38,
-          zIndex: 100,
-          alignSelf: "center",
-        }}
-      >
+      <View style={styles.buttonContainer}>
         <MainButton
           onPress={() => {
             if (step == 5) {
@@ -157,6 +134,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
                   paymentSetupComplete: true,
                 })
               ).then(() => {
+                //@ts-ignore
                 navigation.navigate("Home");
               });
             } else if (
@@ -169,7 +147,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
             }
           }}
           text={step == 5 ? "Track My Pledge" : "Continue"}
-          style={{ width: 162 }}
+          style={styles.mainButton}
           disabled={
             (step === 4 && !termsAccepted) || // Disable on AcceptTerms step if unchecked
             (step === 5 && !paymentSetupComplete) // Disable on Payment step if setup not complete
@@ -181,21 +159,30 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
               setStep(step - 1);
             }}
           >
-            <Text
-              style={{
-                textDecorationLine: "underline",
-                color: colors.orange,
-                textAlign: "center",
-                marginTop: 16,
-              }}
-            >
-              Go Back
-            </Text>
+            <Text style={styles.backButton}>Go Back</Text>
           </TouchableOpacity>
         ) : null}
       </View>
     </AppWrapper>
   );
 };
+
+const styles = StyleSheet.create({
+  buttonContainer: {
+    position: "absolute",
+    bottom: 71,
+    zIndex: 100,
+    alignSelf: "center",
+  },
+  mainButton: {
+    width: 162,
+  },
+  backButton: {
+    textDecorationLine: "underline",
+    color: colors.orange,
+    textAlign: "center",
+    marginTop: 16,
+  },
+});
 
 export default Instructions;

@@ -1,6 +1,6 @@
 // File: src/screens/onboarding/login.tsx
 import React, { useState } from "react";
-import { Text, Image, TouchableOpacity, TextInput, View, Alert } from "react-native";
+import { Text, Image, TouchableOpacity, TextInput, View, Alert, StyleSheet } from "react-native";
 import OnboardingWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
 import AppWrapper from "../../components/layout/app-wrapper";
@@ -13,7 +13,7 @@ import { auth } from '../../firebaseConfig';
 interface LoginScreenProps {}
 
 const LoginScreen: React.FC<LoginScreenProps> = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -32,23 +32,13 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
   };
 
   return (
-    <AppWrapper>
+    <AppWrapper style={{}}>
       <MainHeader />
 
-      <View
-        style={{
-          borderBottomWidth: 1,
-          borderBottomColor: "#929292",
-          marginHorizontal: 38,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginTop: 90,
-        }}
-      >
+      <View style={styles.inputContainer}>
         <TextInput
           placeholder="Enter Your Email"
-          style={{ marginVertical: 12, width: "80%" }}
+          style={styles.input}
           placeholderTextColor={"#929292"}
           autoCapitalize="none"
           keyboardType="email-address"
@@ -56,21 +46,11 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
           value={email}
           onChangeText={setEmail}
         />
-        </View>
-        <View
-          style={{
-            borderBottomWidth: 1,
-            borderBottomColor: "#929292",
-            marginHorizontal: 38,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginTop: 20,
-          }}
-        >
+      </View>
+      <View style={styles.inputContainer}>
         <TextInput
           placeholder="Enter Your Password"
-          style={{ marginVertical: 12, width: "80%" }}
+          style={styles.input}
           placeholderTextColor={"#929292"}
           value={password}
           onChangeText={setPassword}
@@ -84,17 +64,43 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
       </View>
 
       <TouchableOpacity onPress={handleNavigateRegister}>
-        <Text style={{ color: colors.orange, textAlign: "center", marginTop: 20 }}>
+        <Text style={styles.signUpText}>
           Don't have an account? Sign Up
         </Text>
       </TouchableOpacity>
 
       <Image
         source={require("../../../assets/images/onboarding/Phone_withicons.png")}
-        style={{ position: "absolute", alignSelf: "center", bottom: 0 }}
+        style={styles.bottomImage}
       />
     </AppWrapper>
   );
 };
+
+const styles = StyleSheet.create({
+  inputContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.darkGray3,
+    marginHorizontal: 38,
+    flexDirection: "row",
+    alignItems: "center", 
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+  input: {
+    marginVertical: 12,
+    width: "80%"
+  },
+  signUpText: {
+    color: colors.orange,
+    textAlign: "center",
+    marginTop: 20
+  },
+  bottomImage: {
+    position: "absolute",
+    alignSelf: "center",
+    bottom: 0
+  }
+});
 
 export default LoginScreen;

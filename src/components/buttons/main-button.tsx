@@ -1,11 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, ViewStyle } from "react-native";
 import colors from "../../theme/colors";
 
 interface MainButtonProps {
   onPress: () => void;
   text: string;
-  style?: any;
+  style?: ViewStyle;
   disabled?: boolean;
 }
 

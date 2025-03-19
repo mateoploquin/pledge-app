@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -81,22 +81,8 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
 
   const renderButton = () => {
     return (
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Text
-          style={{
-            textAlign: "center",
-            marginHorizontal: 20,
-            fontSize: 16,
-            color: colors.orange,
-            pointerEvents: "none",
-          }}
-        >
+      <View style={styles.buttonContainer}>
+        <Text style={styles.buttonText}>
           {permissionsGranted
             ? selectionEvent
               ? `You selected ${selectionEvent.applicationCount} apps, ${selectionEvent.categoryCount} categories and ${selectionEvent.webDomainCount} websites`
@@ -106,7 +92,7 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
         <Entypo
           name="chevron-thin-down"
           size={17}
-          style={{ marginRight: 17 }}
+          style={styles.chevronIcon}
           color={colors.orange}
         />
       </View>
@@ -135,19 +121,8 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
               deviceActivitySelection: selectionEvent,
               setDeviceActivitySelection: onSelectionChange,
             });
-          }} // Empty onPress to handle touch feedback
-          style={{
-            backgroundColor: "white",
-            width: "75%",
-            height: 50,
-            borderRadius: 10,
-            justifyContent: "center",
-            alignSelf: "center",
-            marginTop: 38,
-            borderWidth: 2,
-            borderColor: colors.orange,
-            overflow: "hidden",
           }}
+          style={[styles.button, styles.buttonWithOverflow]}
         >
           {renderButton()}
         </TouchableOpacity>
@@ -155,17 +130,7 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={onAskPermissions}
-          style={{
-            backgroundColor: "white",
-            width: "75%",
-            height: 50,
-            borderRadius: 10,
-            justifyContent: "center",
-            alignSelf: "center",
-            marginTop: 38,
-            borderWidth: 2,
-            borderColor: colors.orange,
-          }}
+          style={styles.button}
         >
           {renderButton()}
         </TouchableOpacity>
@@ -193,6 +158,35 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     alignItems: "center",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  buttonText: {
+    textAlign: "center",
+    marginHorizontal: 20,
+    fontSize: 16,
+    color: colors.orange,
+    pointerEvents: "none",
+  },
+  chevronIcon: {
+    marginRight: 17,
+  },
+  button: {
+    backgroundColor: colors.white,
+    width: "75%",
+    height: 50,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignSelf: "center",
+    marginTop: 38,
+    borderWidth: 2,
+    borderColor: colors.orange,
+  },
+  buttonWithOverflow: {
+    overflow: "hidden",
   },
 });
 

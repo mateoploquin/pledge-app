@@ -99,25 +99,12 @@ const SetApps: React.FC<SetAppsProps> = ({
   }, []);
 
   return (
-    <View style={{ flex: 1, marginTop: 69 }}>
-      <Text
-        style={{
-          textAlign: "center",
-          fontSize: 24,
-          fontWeight: "500",
-        }}
-      >
-        The <Text style={{ color: colors.orange }}>Pledge</Text> includes
+    <View style={styles.container}>
+      <Text style={styles.title}>
+        The <Text style={styles.orangeText}>Pledge</Text> includes
       </Text>
 
-      <Text
-        style={{
-          marginTop: 10,
-          marginBottom: 25,
-          alignSelf: "center",
-          fontSize: 13,
-        }}
-      >
+      <Text style={styles.subtitle}>
         Choose among other apps
       </Text>
 
@@ -130,15 +117,7 @@ const SetApps: React.FC<SetAppsProps> = ({
         selectionEvent={selectionEvent}
       />
 
-      {/* <Text
-        style={{
-          marginTop: 69,
-          marginHorizontal: 34,
-          textAlign: "center",
-          fontSize: 16,
-          fontFamily: "InstrumentSerif-Regular",
-        }}
-      >
+      {/* <Text style={styles.description}>
         Pick the apps that steal your time, and reclaim it for what matters.
       </Text> */}
     </View>
@@ -148,9 +127,29 @@ const SetApps: React.FC<SetAppsProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    marginTop: 69
   },
+  title: {
+    textAlign: "center",
+    fontSize: 24,
+    fontWeight: "500"
+  },
+  orangeText: {
+    color: colors.orange
+  },
+  subtitle: {
+    marginTop: 10,
+    marginBottom: 25,
+    alignSelf: "center",
+    fontSize: 13
+  },
+  description: {
+    marginTop: 69,
+    marginHorizontal: 34,
+    textAlign: "center", 
+    fontSize: 16,
+    fontFamily: "InstrumentSerif-Regular"
+  }
 });
 
 export default SetApps;
