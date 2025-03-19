@@ -6,7 +6,7 @@ import {
   DeviceActivitySelectionView,
   setFamilyActivitySelectionId,
 } from "react-native-device-activity";
-import { pledgeActivitySelectionId } from "../home";
+import { pledgeActivitySelectionId } from "../home/home.constants";
 
 export type SelectAppsViewProps = {
   navigation: NavigationProp<any>;

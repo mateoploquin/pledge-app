@@ -1,7 +1,5 @@
-import { FC, useCallback, useEffect, useState, Fragment } from "react";
+import { FC, useEffect, useState, Fragment } from "react";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
-import { getEvents } from 'react-native-device-activity';
-import { DeviceActivityEvent, UIBlurEffectStyle } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
 import {
   View,
   Text,
@@ -18,159 +16,27 @@ import HomeWrapper from "../../components/layout/home-wrapper";
 import DayProgressBar from "../../components/bars/days-progress-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PledgeSettings } from "../../types";
+import { Controller } from "./home.controller";
+import { CHALLENGE_DURATION } from "./home.constants";
+import { Interfaces } from "./home.interfaces";
 
-type HomeScreenProps = {
-  navigation: any;
-};
+const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
+  const { navigation } = props;
+  const [isModalVisible, setModalVisible] = useState(false);
+  const { startMonitoring, stopMonitoring, shieldConfiguration } =
+    Controller.useHandleMonitoring();
+  const { refreshEvents } = Controller.useHandleChangeEvents(setModalVisible);
 
-type Timer = {
-  hours: number;
-  minutes: number;
-  remainingMinutes: number;
-};
-
-// tracking every minute is not recommended and might cause issues
-const initialMinutes = 5;
-const postponeMinutes = 5;
-
-const potentialMaxEvents = Math.floor(
-  (60 * 24 - initialMinutes) / postponeMinutes
-);
-
-const monitoringEventName = "GeneralMonitoring";
-const eventNameTick = "minutes_reached";
-const eventNameFinish = "tresholdReached";
-export const pledgeActivitySelectionId = "pledgeActivitySelection";
-const pledgeShieldId = "pledgeShield";
-
-const startMonitoring = (thresholdMinutes: number) => {
-  const events: DeviceActivityEvent[] = [];
-
-  const activitySelection =
-    ReactNativeDeviceActivity.getFamilyActivitySelectionId(
-      pledgeActivitySelectionId
-    );
-
-  for (let i = 0; i < potentialMaxEvents; i++) {
-    const eventName = `${eventNameTick}_${initialMinutes + i * postponeMinutes}`;
-    const event: DeviceActivityEvent = {
-      eventName,
-      familyActivitySelection: activitySelection,
-      threshold: { minute: initialMinutes + i * postponeMinutes },
-      includesPastActivity: true,
-    };
-    events.push(event);
-  }
-
-  events.push({
-    eventName: eventNameFinish,
-    familyActivitySelection: activitySelection,
-    threshold: { minute: thresholdMinutes },
-  });
-
-  // this is how to make the blocks work in background
-  ReactNativeDeviceActivity.configureActions({
-    activityName: monitoringEventName,
-    callbackName: "eventDidReachThreshold",
-    eventName: eventNameFinish,
-    actions: [
-      {
-        type: "blockSelection",
-        familyActivitySelectionId: pledgeActivitySelectionId,
-        shieldId: pledgeShieldId,
-      },
-    ],
-  });
-
-  // needed to remove the shield at end of day
-  ReactNativeDeviceActivity.configureActions({
-    activityName: monitoringEventName,
-    callbackName: "intervalDidEnd",
-    actions: [
-      {
-        type: "unblockAllApps"
-      },
-    ],
-  });
-
-  ReactNativeDeviceActivity.startMonitoring(
-    monitoringEventName,
-    {
-      intervalStart: { hour: 0, minute: 0, second: 0 },
-      intervalEnd: { hour: 23, minute: 59, second: 59 },
-      repeats: true,
-      warningTime: { minute: 1 },
-    },
-    events
-  );
-};
-
-const stopMonitoring = () => {
-  ReactNativeDeviceActivity.stopMonitoring([monitoringEventName]);
-  ReactNativeDeviceActivity.unblockApps();
-};
-
-const shieldConfiguration = () => {
-  ReactNativeDeviceActivity.updateShieldWithId(
-    {
-      title: "App blocked by Pledge",
-      backgroundBlurStyle: UIBlurEffectStyle.systemMaterialDark,
-      titleColor: {
-        red: 1,
-        green: 0,
-        blue: 0,
-      },
-      subtitle: "Enough scrolling for today...",
-      subtitleColor: {
-        red: Math.random() * 1,
-        green: Math.random() * 1,
-        blue: Math.random() * 1,
-      },
-      primaryButtonBackgroundColor: {
-        red: Math.random() * 1,
-        green: Math.random() * 1,
-        blue: Math.random() * 1,
-      },
-      primaryButtonLabelColor: {
-        red: Math.random() * 1,
-        green: Math.random() * 1,
-        blue: Math.random() * 1,
-      },
-      secondaryButtonLabelColor: {
-        red: Math.random() * 1,
-        green: Math.random() * 1,
-        blue: Math.random() * 1,
-      },
-    },
-    {
-      primary: {
-        behavior: "close",
-        type: "dismiss",
-      },
-    },
-    pledgeShieldId
-  );
-};
-
-const parseMinutes = (total: number): Timer => {
-  const hours = Math.floor(total / 60);
-  const minutes = total % 60;
-  const remainingMinutes = total - (hours * 60 + minutes);
-  return { hours, minutes, remainingMinutes };
-};
-
-const HomeScreen: FC<HomeScreenProps> = (props) => {
+  const { onSurrender } = Controller.useHandleChangeEvents(setModalVisible);
   const [settings, setSettings] = useState<PledgeSettings | undefined>(
     undefined
   );
-  const { navigation } = props;
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [{ hours, minutes, remainingMinutes }, setTotalTime] = useState<Timer>({
-    hours: 0,
-    minutes: 0,
-    remainingMinutes: 0,
-  });
-
+  const [{ hours, minutes, remainingMinutes }, setTotalTime] =
+    useState<Interfaces.Timer>({
+      hours: 0,
+      minutes: 0,
+      remainingMinutes: 0,
+    });
   const [challengeStartDate, setChallengeStartDate] = useState<Date | null>(
     null
   );
@@ -181,43 +47,13 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
     seconds: 0,
   });
   const [currentDay, setCurrentDay] = useState(1);
-  const CHALLENGE_DURATION = 30; // 30 days challenge
 
-  const refreshEvents = useCallback(async () => {
-    const events = getEvents();
-    let totalMinutes = 0;
-
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      if (event.callbackName !== "eventDidReachThreshold") {
-        continue;
-      } else if (event.eventName.includes(eventNameTick)) {
-        totalMinutes++;
-      }
-    }
-
-    setTotalTime(parseMinutes(totalMinutes));
-  }, []);
-
-  //TODO
-  // const handlePaymentSuccess = () => {
-  //   setShowPaymentPopup(false);
-  // };
-
-  //TODO
-  // const toggleChallengeCompleted = () => {
-  //   navigation.navigate("ChallengeCompleted");
-  // };
-
-  const toggleModal = () => setModalVisible((prev) => !prev);
-
-  const onSurrender = () => {
-    stopMonitoring();
-    AsyncStorage.removeItem("pledgeSettings");
-    AsyncStorage.removeItem("challengeStartDate");
-    setModalVisible(false);
-    navigation.navigate("ChallengeCompleted", { result: "failure" });
-  };
+  const countdownTimes = [
+    { value: countdown.days, label: "Days" },
+    { value: countdown.hours, label: "Hours" },
+    { value: countdown.minutes, label: "Minutes" },
+    { value: countdown.seconds, label: "Seconds" },
+  ];
 
   useEffect(() => {
     let listener: (() => void) | undefined;
@@ -235,7 +71,7 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
         listener = ReactNativeDeviceActivity.onDeviceActivityMonitorEvent(
           (event) => {
             console.log("got event, refreshing events!", event);
-            refreshEvents();
+            refreshEvents(setTotalTime);
           }
         ).remove;
       }
@@ -276,11 +112,9 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         stopMonitoring();
 
-        // Clear all challenge-related data
         AsyncStorage.removeItem("pledgeSettings");
         AsyncStorage.removeItem("challengeStartDate");
 
-        // Navigate to challenge completed screen with success result
         navigation.navigate("ChallengeCompleted", { result: "success" });
         return;
       }
@@ -294,7 +128,6 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
 
       setCountdown({ days, hours, minutes, seconds });
 
-      // Calculate current day (1-based)
       const daysPassed = Math.min(
         Math.ceil(
           (now.getTime() - new Date(challengeStartDate).getTime()) /
@@ -306,7 +139,7 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
     };
 
     const timer = setInterval(calculateTimeLeft, 1000);
-    calculateTimeLeft(); // Initial calculation
+    calculateTimeLeft();
 
     return () => clearInterval(timer);
   }, [challengeStartDate]);
@@ -315,14 +148,9 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
     return null;
   }
 
-  const { pledgeValue, selectionEvent, timeValue } = settings;
+  const toggleModal = () => setModalVisible((prev) => !prev);
 
-  const countdownTimes = [
-    { value: countdown.days, label: "Days" },
-    { value: countdown.hours, label: "Hours" },
-    { value: countdown.minutes, label: "Minutes" },
-    { value: countdown.seconds, label: "Seconds" },
-  ];
+  const { timeValue, pledgeValue, selectionEvent } = settings;
 
   return (
     <HomeWrapper>
@@ -349,7 +177,7 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
             </HomeCardWrapper>
 
             <HomeCardWrapper
-              style={styles.marginTop17}
+              style={styles.homeCardWrapper}
               title={"Daily Consumption"}
             >
               <View style={styles.consumptionContainer}>
@@ -359,14 +187,17 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
                 <Text style={styles.remainingText}>
                   <Text style={styles.remainingMinutesText}>
                     {remainingMinutes}m
-                  </Text>{" "}
+                  </Text>
                   left for your daily limit
                 </Text>
                 <ScreenTimeList />
               </View>
             </HomeCardWrapper>
 
-            <HomeCardWrapper style={styles.marginTop17} title={"Progress Bar"}>
+            <HomeCardWrapper
+              style={styles.homeCardWrapper}
+              title={"Progress Bar"}
+            >
               <View style={styles.progressContainer}>
                 <DayProgressBar
                   currentDay={currentDay}
@@ -424,8 +255,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  marginTop17: {
-    marginTop: 17,
+  homeCardWrapper: {
+    marginTop: 18,
   },
   consumptionContainer: {
     paddingTop: 14,
@@ -462,7 +293,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   surrenderText: {
-    color: colors.primaryOrange, 
+    color: colors.primaryOrange,
     fontSize: 14,
     fontWeight: "normal",
     textAlign: "center",
