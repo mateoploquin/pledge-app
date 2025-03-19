@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Button,
 } from "react-native";
 import HomeCardWrapper from "../../components/cards/home-card-wrapper";
 import colors from "../../theme/colors";
@@ -23,11 +24,10 @@ import { Interfaces } from "./home.interfaces";
 const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
   const { navigation } = props;
   const [isModalVisible, setModalVisible] = useState(false);
-  const { startMonitoring, stopMonitoring, shieldConfiguration } =
+  const { startMonitoring, stopMonitoring, shieldConfiguration, block } =
     Controller.useHandleMonitoring();
-  const { refreshEvents } = Controller.useHandleChangeEvents(setModalVisible);
+  const { refreshEvents, onSurrender } = Controller.useHandleChangeEvents(setModalVisible);
 
-  const { onSurrender } = Controller.useHandleChangeEvents(setModalVisible);
   const [settings, setSettings] = useState<PledgeSettings | undefined>(
     undefined
   );
@@ -65,7 +65,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
           return;
         }
         setSettings(settings);
-        startMonitoring(timeValue);
+        // startMonitoring(timeValue);
         shieldConfiguration();
 
         listener = ReactNativeDeviceActivity.onDeviceActivityMonitorEvent(
@@ -205,6 +205,9 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
                   totalDays={CHALLENGE_DURATION}
                 />
               </View>
+              <Button title='stop' onPress={stopMonitoring}/>
+              <Button title='start' onPress={() => startMonitoring(timeValue)}/>
+              <Button title='getEvents' onPress={() => refreshEvents(setTotalTime)}/>
             </HomeCardWrapper>
           </View>
         </View>

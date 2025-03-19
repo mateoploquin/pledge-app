@@ -9,16 +9,15 @@ import {
 } from "react-native";
 import colors from "../../../theme/colors";
 import {
-  AuthorizationStatus,
-  AuthorizationStatusType,
-} from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
-import {
   requestAuthorization,
   revokeAuthorization,
+  AuthorizationStatus,
+  AuthorizationStatusType
 } from "react-native-device-activity";
 import { SelectionInfo } from "../../../types";
 import AppsOnboardingGrid from "../../../lists/apps-onboarding-grid";
 import { getAuthorizationStatus } from "react-native-device-activity";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SetAppsProps {
   authorizationStatus: AuthorizationStatusType;
@@ -85,6 +84,7 @@ const SetApps: React.FC<SetAppsProps> = ({
   const onSelectionChange = useCallback(
     (event: NativeSyntheticEvent<SelectionInfo>) => {
       if (!event.nativeEvent) return;
+      AsyncStorage.setItem("selectionEvent", JSON.stringify(event.nativeEvent));
       setSelectionEvent(event.nativeEvent);
     },
     []
