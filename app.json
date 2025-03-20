@@ -36,39 +36,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "e7e2e883-b2f3-4d92-964c-0e0608a1ff96",
-        "build": {
-          "experimental": {
-            "ios": {
-              "appExtensions": [
-                {
-                  "targetName": "ActivityMonitorExtension",
-                  "bundleIdentifier": "com.pledgecompany.pledge.ActivityMonitorExtension",
-                  "entitlements": {
-                    "com.apple.developer.family-controls": true,
-                    "com.apple.security.application-groups": ["group.ActivityMonitor"]
-                  }
-                },
-                {
-                  "targetName": "ShieldConfiguration",
-                  "bundleIdentifier": "com.pledgecompany.pledge.ShieldConfiguration",
-                  "entitlements": {
-                    "com.apple.developer.family-controls": true,
-                    "com.apple.security.application-groups": ["group.ActivityMonitor"]
-                  }
-                },
-                {
-                  "targetName": "ShieldAction",
-                  "bundleIdentifier": "com.pledgecompany.pledge.ShieldAction",
-                  "entitlements": {
-                    "com.apple.developer.family-controls": true,
-                    "com.apple.security.application-groups": ["group.ActivityMonitor"]
-                  }
-                }
-              ]
-            }
-          }
-        }
+        "projectId": "e7e2e883-b2f3-4d92-964c-0e0608a1ff96"
       }
     },
     "sourceExts": [
