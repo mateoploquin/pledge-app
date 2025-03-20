@@ -1,6 +1,8 @@
 import React, { useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import { getEvents } from 'react-native-device-activity';
+import { POSTPONE_MINUTES } from "../screens/home/home.constants";
+
 
 interface ScreenTimeListProps {
   // define your props here
@@ -17,7 +19,7 @@ const ScreenTimeList: React.FC<ScreenTimeListProps> = (props) => {
       const event = events[i];
       if (event.callbackName === 'eventDidReachThreshold' && 
           event.eventName.includes('minutes_reached')) {
-        totalMinutes++;
+        totalMinutes += POSTPONE_MINUTES;
       }
     }
     

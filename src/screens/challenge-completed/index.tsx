@@ -26,7 +26,7 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
   const handleRestart = async () => {
     // Ensure all monitoring is stopped
     ReactNativeDeviceActivity.stopMonitoring();
-    ReactNativeDeviceActivity.unblockApps();
+    ReactNativeDeviceActivity.resetBlocks();
 
     await AsyncStorage.removeItem('pledgeSettings');
     await AsyncStorage.removeItem('challengeStartDate');
@@ -37,7 +37,7 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
   useEffect(() => {
     if (result === "success") {
       ReactNativeDeviceActivity.stopMonitoring();
-      ReactNativeDeviceActivity.unblockApps();
+      ReactNativeDeviceActivity.resetBlocks();
     }
   }, [result]);
 

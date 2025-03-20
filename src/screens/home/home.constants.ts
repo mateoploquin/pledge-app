@@ -11,3 +11,4 @@ export const eventNameFinish = "tresholdReached";
 export const pledgeActivitySelectionId = "pledgeActivitySelection";
 export const pledgeShieldId = "pledgeShield";
 export const CHALLENGE_DURATION = 30;
+export const POSTPONE_MINUTES = 5

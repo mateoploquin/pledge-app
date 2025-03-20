@@ -206,7 +206,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
                 />
               </View>
               <Button title='stop' onPress={stopMonitoring}/>
-              <Button title='start' onPress={() => startMonitoring(timeValue)}/>
+              <Button title='start' onPress={() => startMonitoring()}/>
               <Button title='getEvents' onPress={() => refreshEvents(setTotalTime)}/>
             </HomeCardWrapper>
           </View>

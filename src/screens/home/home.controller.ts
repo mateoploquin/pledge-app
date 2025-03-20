@@ -12,6 +12,7 @@ import {
   eventNameFinish,
   monitoringEventName,
   pledgeShieldId,
+  POSTPONE_MINUTES,
 } from "./home.constants";
 import { Interfaces } from "./home.interfaces";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -30,21 +31,19 @@ export namespace Controller {
       console.log({qwe})
       const activitySelection = qwe.familyActivitySelection
           console.log({activitySelection})
-
-      const timeLimitMinutes = 1;
     
-      const totalEvents = (1 * 60) / timeLimitMinutes;
+      const totalEvents = (1 * 60) / POSTPONE_MINUTES;
     
       let events: DeviceActivityEvent[] = [];
     
       // loop over each our of the day
       for (let hour = 0; hour < 24; hour++) {
         for (let i = 0; i < totalEvents; i++) {
-          const name = `${(i + 1) * timeLimitMinutes}_minutes_today`;
+          const name = `${(i + 1) * POSTPONE_MINUTES}_minutes_today`;
           events.push({
             eventName: name,
             familyActivitySelection: activitySelection,
-            threshold: { minute: (i + 1) * timeLimitMinutes },
+            threshold: { minute: (i + 1) * POSTPONE_MINUTES },
           });
         }
     
@@ -127,12 +126,12 @@ export namespace Controller {
 
     const stopMonitoring = () => {
       ReactNativeDeviceActivity.stopMonitoring([monitoringEventName]);
-      ReactNativeDeviceActivity.unblockApps();
+      ReactNativeDeviceActivity.resetBlocks();
     };
 
     const block = () => {
       // ReactNativeDeviceActivity.stopMonitoring([monitoringEventName]);
-      ReactNativeDeviceActivity.blockApps();
+      ReactNativeDeviceActivity.blockSelection({ activitySelectionId: pledgeActivitySelectionId });
     };
 
     const shieldConfiguration = () => {
