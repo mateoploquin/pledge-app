@@ -1,7 +1,3 @@
-import {
-  DeviceActivityEvent,
-  UIBlurEffectStyle,
-} from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
 import {
   pledgeActivitySelectionId,
@@ -20,18 +16,14 @@ import { useNavigation } from "@react-navigation/native";
 import { SetStateAction, useCallback } from "react";
 import { Dispatch } from "react";
 import { SelectionInfo } from '../../types';
+import { DeviceActivityEvent, UIBlurEffectStyle } from 'react-native-device-activity';
 
 export namespace Controller {
   export const useHandleMonitoring = () => {
-    // console.log(ReactNativeDeviceActivity.getActivities());
-
     const startMonitoring = async () => {
-      const q = await AsyncStorage.getItem("selectionEvent");
-      const qwe = (JSON.parse(q) as SelectionInfo)
-      console.log({qwe})
-      const activitySelection = qwe.familyActivitySelection
-          console.log({activitySelection})
-    
+      const savedData = await AsyncStorage.getItem("selectionEvent");
+      const activitySelection = (JSON.parse(savedData) as SelectionInfo).familyActivitySelection
+
       const totalEvents = (1 * 60) / POSTPONE_MINUTES;
     
       let events: DeviceActivityEvent[] = [];
