@@ -1,11 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, ViewStyle } from "react-native";
 import colors from "../../theme/colors";
 
 interface SecondaryButtonProps {
   onPress: () => void;
   text: string;
-  style?: any;
+  style?: ViewStyle;
 }
 
 const SecondaryButton: React.FC<SecondaryButtonProps> = ({
@@ -24,7 +24,6 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    // alignSelf: "flex-start",
     backgroundColor: colors.white,
     paddingHorizontal: 17,
     paddingVertical: 12,

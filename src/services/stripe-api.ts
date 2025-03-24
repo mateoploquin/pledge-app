@@ -1,7 +1,6 @@
-// src/services/stripe-api.ts
 import axios from 'axios';
 
-const API_URL = 'https://pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io/stripe'; // Replace with your server's URL
+const API_URL = 'https://pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io/stripe';
 
 
 export const fetchPublishableKey = async (): Promise<string> => {
@@ -47,7 +46,7 @@ export const fetchPaymentSheetParams = async (idToken: string) => {
 
 export async function sendPayment(signal: 'charge', idToken: string) {
   try {
-    console.log('Sending pledge data:', signal); // Log the request payload
+    console.log('Sending pledge data:', signal);
     const response = await axios.post(`${API_URL}/charge`, {signal}, {
       headers: {
         Authorization: `Bearer ${idToken}`,
@@ -57,7 +56,7 @@ export async function sendPayment(signal: 'charge', idToken: string) {
   } catch (error) {
     console.error('Error sending pledge data:', error);
     if (error.response) {
-      console.error('Server response:', error.response.data); // Log the server response
+      console.error('Server response:', error.response.data);
     }
     throw error;
   }

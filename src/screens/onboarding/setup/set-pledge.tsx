@@ -1,17 +1,14 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
+import colors from "../../../theme/colors";
 
 interface SetPledgeProps {
-  isButtonDisabled: boolean;
-  setIsButtonDisabled: (value: boolean) => void;
   pledgeValue: number;
   setPledgeValue: (value: number) => void;
 }
 
 const SetPledge: React.FC<SetPledgeProps> = ({
-  isButtonDisabled,
-  setIsButtonDisabled,
   pledgeValue,
   setPledgeValue,
 }) => {
@@ -30,15 +27,7 @@ const SetPledge: React.FC<SetPledgeProps> = ({
         onValueChange={(value) => setPledgeValue(value)}
       />
 
-      <Text
-        style={{
-          marginTop: 69,
-          marginHorizontal: 34,
-          textAlign: "center",
-          fontSize: 16,
-          fontFamily: "InstrumentSerif-Regular",
-        }}
-      >
+      <Text style={styles.description}>
         The higher your pledge, the greater your commitment—and the bigger the
         impact.
       </Text>
@@ -66,19 +55,26 @@ const styles = StyleSheet.create({
   },
   xxText: {
     fontSize: 100,
-    color: "#ccc",
+    color: colors.darkGray2,
     fontWeight: "500",
   },
   dollarSign: {
     fontSize: 100,
-    color: "#333",
+    color: colors.gray300,
     fontWeight: "500",
     borderBottomWidth: 3,
-    borderBottomColor: "#1E90FF",
+    borderBottomColor: colors.darkBlue,
   },
   slider: {
     width: "90%",
     height: 40,
+  },
+  description: {
+    marginTop: 69,
+    marginHorizontal: 34,
+    textAlign: "center",
+    fontSize: 16,
+    fontFamily: "InstrumentSerif-Regular",
   },
 });
 

@@ -4,12 +4,11 @@ import axios from 'axios';
 interface PledgeData {
   pledgeValue: number;
   timeValue: number;
-  // selectedApps: string[];
 }
 
 export async function sendPledgeData(data: PledgeData, idToken: string) {
   try {
-    console.log('Sending pledge data:', data); // Log the request payload
+    console.log('Sending pledge data:', data);
     const response = await axios.post('https://pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io/pledge', data, {
       headers: {
         Authorization: `Bearer ${idToken}`,

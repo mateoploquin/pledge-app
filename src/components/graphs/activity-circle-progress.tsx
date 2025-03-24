@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     alignItems: "center",
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
@@ -120,10 +120,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   positive: {
-    color: "#21A300", // Green
+    color: colors.green,
   },
   negative: {
-    color: colors.orange, // Orange
+    color: colors.orange,
   },
 });
 

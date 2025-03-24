@@ -1,13 +1,13 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Text, Dimensions, PanResponder } from "react-native";
+import React from "react";
+import { StyleSheet, Text, PanResponder } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-
-const { width } = Dimensions.get("window");
+import colors from "../../theme/colors";
+import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
 
 type SplashSliderProps = {
   isPledged: boolean;
@@ -24,12 +24,15 @@ const SplashSlider: React.FC<SplashSliderProps> = ({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderMove: (event, gestureState) => {
-      const position = Math.max(0, Math.min(gestureState.dx, width * 0.6));
+      const position = Math.max(
+        0,
+        Math.min(gestureState.dx, SCREEN_WIDTH * 0.6)
+      );
       sliderValue.value = withSpring(position);
     },
     onPanResponderRelease: (event, gestureState) => {
-      if (gestureState.dx > width * 0.3) {
-        sliderValue.value = withSpring(width * 0.65);
+      if (gestureState.dx > SCREEN_WIDTH * 0.3) {
+        sliderValue.value = withSpring(SCREEN_WIDTH * 0.65);
         setIsPledged(true);
       } else {
         sliderValue.value = withSpring(0);
@@ -46,15 +49,23 @@ const SplashSlider: React.FC<SplashSliderProps> = ({
 
   const animatedBackgroundStyle = useAnimatedStyle(() => {
     return {
-      backgroundColor: withTiming(isPledged ? "#E76F33" : "#f0f0f0", {
-        duration: 500,
-      }),
+      backgroundColor: withTiming(
+        isPledged ? colors.midOrange : colors.darkWhite,
+        {
+          duration: 500,
+        }
+      ),
     };
   });
 
   return (
     <Animated.View style={[styles.sliderBackground, animatedBackgroundStyle]}>
-      <Text style={[styles.text, { color: isPledged ? "#fff" : "#aaa" }]}>
+      <Text
+        style={[
+          styles.text,
+          { color: isPledged ? colors.white : colors.gray1 },
+        ]}
+      >
         {isPledged ? "Let’s Pledge" : "Slide to Unlock"}
       </Text>
       <Animated.View
@@ -69,7 +80,7 @@ const SplashSlider: React.FC<SplashSliderProps> = ({
 
 const styles = StyleSheet.create({
   sliderBackground: {
-    width: width * 0.8,
+    width: SCREEN_WIDTH * 0.8,
     height: 60,
     borderRadius: 30,
     justifyContent: "center",
@@ -87,7 +98,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     justifyContent: "center",
     alignItems: "center",
     position: "absolute",
@@ -95,7 +106,7 @@ const styles = StyleSheet.create({
   },
   arrow: {
     fontSize: 24,
-    color: "#E76F33",
+    color: colors.midOrange,
   },
 });
 

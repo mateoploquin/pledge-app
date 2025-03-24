@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { signUp } from "../../services/auth";
 import MainHeader from "../../components/headers/main-header";
@@ -8,7 +16,7 @@ import { Feather } from "@expo/vector-icons";
 import colors from "../../theme/colors";
 
 const RegisterScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,64 +35,37 @@ const RegisterScreen: React.FC = () => {
   return (
     <AppWrapper>
       <MainHeader />
-
-      <View
-        style={{
-          borderBottomWidth: 1,
-          borderBottomColor: "#929292",
-          marginHorizontal: 38,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginTop: 40, // Moved up from 90
-        }}
-      >
+      <View style={styles.inputContainer}>
         <TextInput
           placeholder="Enter Your Name"
-          style={{ marginVertical: 12, width: "80%" }}
+          style={styles.input}
           placeholderTextColor={"#929292"}
           value={name}
+          autoCapitalize="words"
           onChangeText={setName}
         />
       </View>
 
-      <View
-        style={{
-          borderBottomWidth: 1,
-          borderBottomColor: "#929292",
-          marginHorizontal: 38,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginTop: 20,
-        }}
-      >
+      <View style={styles.inputContainer}>
         <TextInput
           placeholder="Enter Your Email"
-          style={{ marginVertical: 12, width: "80%" }}
+          style={styles.input}
           placeholderTextColor={"#929292"}
           value={email}
+          autoCapitalize="none"
+          textContentType="newPassword"
           onChangeText={setEmail}
         />
       </View>
 
-      <View
-        style={{
-          borderBottomWidth: 1,
-          borderBottomColor: "#929292",
-          marginHorizontal: 38,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginTop: 20,
-        }}
-      >
+      <View style={styles.inputContainer}>
         <TextInput
           placeholder="Enter Your Password"
-          style={{ marginVertical: 12, width: "80%" }}
+          style={styles.input}
           placeholderTextColor={"#929292"}
           value={password}
           onChangeText={setPassword}
+          onSubmitEditing={handleSignUp}
           secureTextEntry
         />
         <TouchableOpacity onPress={handleSignUp}>
@@ -93,17 +74,43 @@ const RegisterScreen: React.FC = () => {
       </View>
 
       <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-        <Text style={{ color: colors.orange, textAlign: "center", marginTop: 20, marginBottom: 30 }}>
-          Already have an account? Login
-        </Text>
+        <Text style={styles.loginText}>Already have an account? Login</Text>
       </TouchableOpacity>
 
       <Image
         source={require("../../../assets/images/onboarding/Phone_withicons.png")}
-        style={{ position: "absolute", alignSelf: "center", bottom: 0, zIndex: -1 }}
+        style={styles.backgroundImage}
       />
     </AppWrapper>
   );
 };
+
+const styles = StyleSheet.create({
+  inputContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.darkGray3,
+    marginHorizontal: 38,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+  input: {
+    marginVertical: 12,
+    width: "80%",
+  },
+  loginText: {
+    color: colors.orange,
+    textAlign: "center",
+    marginTop: 20,
+    marginBottom: 30,
+  },
+  backgroundImage: {
+    position: "absolute",
+    alignSelf: "center",
+    bottom: 0,
+    zIndex: -1,
+  },
+});
 
 export default RegisterScreen;

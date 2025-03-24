@@ -1,23 +1,15 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  Image,
-  ImageBackground,
-} from "react-native";
-import colors from "../../theme/colors";
+import { StyleSheet, SafeAreaView, ImageBackground, ViewStyle } from "react-native";
 
 interface HomeWrapperProps {
   children: React.ReactNode;
-  style: object;
+  style?: ViewStyle;
 }
 
 const HomeWrapper: React.FC<HomeWrapperProps> = ({ children, style }) => {
   return (
     <ImageBackground
-      style={{ position: "absolute", top: 0, height: "100%" }}
+      style={styles.imageContainer}
       source={require("../../../assets/images/home/background.png")}
     >
       <SafeAreaView style={[styles.container, style]}>{children}</SafeAreaView>
@@ -28,7 +20,11 @@ const HomeWrapper: React.FC<HomeWrapperProps> = ({ children, style }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: colors.onboardingBackground,
+  },
+  imageContainer: {
+    position: "absolute",
+    top: 0,
+    height: "100%",
   },
 });
 

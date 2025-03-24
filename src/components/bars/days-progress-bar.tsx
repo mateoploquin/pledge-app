@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   },
   totalBar: {
     height: 8,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: colors.lightGray,
     borderRadius: 4,
     width: "100%",
     overflow: "hidden",
