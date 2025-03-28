@@ -24,6 +24,7 @@ import { Interfaces } from "./home.interfaces";
 const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
   const { navigation } = props;
   const [isModalVisible, setModalVisible] = useState(false);
+  const [familyActivitySelection, setFamilyActivitySelection] = useState<string | null>(null);
   const { startMonitoring, stopMonitoring, shieldConfiguration, block } =
     Controller.useHandleMonitoring();
   const { refreshEvents, onSurrender } = Controller.useHandleChangeEvents(setModalVisible);
@@ -144,6 +145,11 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
     return () => clearInterval(timer);
   }, [challengeStartDate]);
 
+  useEffect(() => {
+    // Request authorization when component mounts
+    ReactNativeDeviceActivity.requestAuthorization();
+  }, []);
+
   if (!settings) {
     return null;
   }
@@ -162,6 +168,13 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
         <Text style={styles.challengeTitle}>My Challenge</Text>
         <View style={styles.cardContainer}>
           <View style={styles.cardBackground}>
+            <ReactNativeDeviceActivity.DeviceActivitySelectionView
+              onSelectionChange={(event) => {
+                setFamilyActivitySelection(event.nativeEvent.familyActivitySelection);
+              }}
+              familyActivitySelection={familyActivitySelection}
+            />
+
             <HomeCardWrapper title={"Countdown"}>
               <View style={styles.countdownContainer}>
                 {countdownTimes.map((item, index) => (

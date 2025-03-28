@@ -20,101 +20,44 @@ import { DeviceActivityEvent, UIBlurEffectStyle } from 'react-native-device-acti
 
 export namespace Controller {
   export const useHandleMonitoring = () => {
-    const startMonitoring = async () => {
-      const savedData = await AsyncStorage.getItem("selectionEvent");
-      const activitySelection = (JSON.parse(savedData) as SelectionInfo).familyActivitySelection
+    const startMonitoring = async (activitySelection: string) => {
+      // Configure monitoring for the entire day
+      ReactNativeDeviceActivity.startMonitoring(
+        monitoringEventName,
+        {
+          intervalStart: { hour: 0, minute: 0, second: 0 },
+          intervalEnd: { hour: 23, minute: 59, second: 59 },
+          repeats: true,
+        },
+        [{
+          eventName: eventNameTick,
+          familyActivitySelection: activitySelection,
+          threshold: { minute: 10 }, // Example threshold of 10 minutes
+          includesPastActivity: false
+        }]
+      );
 
-      const totalEvents = (1 * 60) / POSTPONE_MINUTES;
-    
-      let events: DeviceActivityEvent[] = [];
-    
-      // loop over each our of the day
-      for (let hour = 0; hour < 24; hour++) {
-        for (let i = 0; i < totalEvents; i++) {
-          const name = `${(i + 1) * POSTPONE_MINUTES}_minutes_today`;
-          events.push({
-            eventName: name,
-            familyActivitySelection: activitySelection,
-            threshold: { minute: (i + 1) * POSTPONE_MINUTES },
-          });
-        }
-    
-        ReactNativeDeviceActivity.startMonitoring(
-          "DeviceActivity.AppLoggedTimeDaily." + hour,
+      // Configure blocking actions when threshold is reached
+      ReactNativeDeviceActivity.configureActions({
+        activityName: monitoringEventName,
+        callbackName: "eventDidReachThreshold",
+        eventName: eventNameTick,
+        actions: [
           {
-            intervalStart: { hour, minute: 0, second: 0 },
-            intervalEnd: { hour, minute: 59, second: 59 },
-            repeats: true,
+            type: "blockSelection",
+            familyActivitySelectionId: pledgeActivitySelectionId,
+            shieldId: pledgeShieldId,
           },
-          events,
-        ).catch((e) => console.log({e}));
-        events = [];
-      }
+        ],
+      });
+
+      // Configure unblocking at end of day
+      ReactNativeDeviceActivity.configureActions({
+        activityName: monitoringEventName,
+        callbackName: "intervalDidEnd",
+        actions: [],
+      });
     };
-
-    // const startMonitoring = (thresholdMinutes: number) => {
-    //   const events: DeviceActivityEvent[] = [];
-    //     console.log({activitySelection})
-
-    //   // Generate minute-based events in a single loop
-    //   for (let i = 0; i < potentialMaxEvents; i++) {
-    //     // events.push({
-    //     //   eventName: `events_${eventNameTick}_${initialMinutes + i * postponeMinutes}`,
-    //     //   familyActivitySelection: activitySelection,
-    //     //   threshold: { minute: initialMinutes + i * postponeMinutes },
-    //     //   includesPastActivity: true,
-    //     // });
-    //   }
-
-    //   // Add the final threshold event
-    //   // console.log({thresholdMinutes})
-    //   // events.push({
-    //   //   eventName: eventNameFinish,
-    //   //   familyActivitySelection: activitySelection,
-    //   //   threshold: { minute: thresholdMinutes },
-    //   // });
-
-    //   // Configure blocking actions when threshold is reached
-    //   // ReactNativeDeviceActivity.configureActions({
-    //   //   activityName: monitoringEventName,
-    //   //   callbackName: "eventDidReachThreshold",
-    //   //   eventName: eventNameFinish,
-    //   //   actions: [
-    //   //     {
-    //   //       type: "blockAllApps",
-    //   //       familyActivitySelectionId: pledgeActivitySelectionId,
-    //   //       shieldId: pledgeShieldId,
-    //   //     },
-    //   //   ],
-    //   // });
-
-    //   // Configure unblocking at end of day
-    //   // ReactNativeDeviceActivity.configureActions({
-    //   //   activityName: monitoringEventName,
-    //   //   callbackName: "intervalDidEnd",
-    //   //   actions: [],
-    //   // });
-    //   // Start monitoring with daily interval
-
-    //   ReactNativeDeviceActivity.startMonitoring(
-    //     monitoringEventName,
-    //     {
-    //       intervalStart: { hour: 0, minute: 0, second: 0 },
-    //       intervalEnd: { hour: 23, minute: 59, second: 59 },
-    //       repeats: false,
-    //       // warningTime: { minute: 1 },
-    //     },
-    //     [{
-    //       eventName: 'qwe',
-    //       familyActivitySelection: activitySelection,
-    //       threshold: {
-    //         minute: 10,
-
-    //       },
-    //       includesPastActivity: false
-    //     }]
-    //   );
-    // };
 
     const stopMonitoring = () => {
       ReactNativeDeviceActivity.stopMonitoring([monitoringEventName]);
@@ -122,7 +65,6 @@ export namespace Controller {
     };
 
     const block = () => {
-      // ReactNativeDeviceActivity.stopMonitoring([monitoringEventName]);
       ReactNativeDeviceActivity.blockSelection({ activitySelectionId: pledgeActivitySelectionId });
     };
 
@@ -166,25 +108,8 @@ export namespace Controller {
       shieldConfiguration,
       parseMinutes,
       block
-      //   handlePaymentSuccess,
-      //   toggleChallengeCompleted,
     };
   };
-
-  //   export const useHandleChallengeCompleted = () => {
-  //     TODO
-  //     const handlePaymentSuccess = () => {
-  //       setShowPaymentPopup(false);
-  //     };
-  //     TODO
-  //     const toggleChallengeCompleted = () => {
-  //       navigation.navigate("ChallengeCompleted");
-  //     };
-  //       return {
-  //         handlePaymentSuccess,
-  //         toggleChallengeCompleted,
-  //       }
-  //   };
 
   export const useHandleChangeEvents = (
     setModalVisible: Dispatch<SetStateAction<boolean>>
@@ -192,7 +117,6 @@ export namespace Controller {
     const { stopMonitoring, parseMinutes } = useHandleMonitoring();
     const navigation = useNavigation<any>();
     const onSurrender = () => {
-      console.log('123123')
       stopMonitoring();
       setModalVisible(false);
       AsyncStorage.removeItem("pledgeSettings");
@@ -203,7 +127,6 @@ export namespace Controller {
     const refreshEvents = useCallback(
       async (setTotalTime: Dispatch<SetStateAction<Interfaces.Timer>>) => {
         const events = ReactNativeDeviceActivity.getEvents();
-        console.log(JSON.stringify(events, null, 2))
         let totalMinutes = 0;
 
         for (let i = 0; i < events.length; i++) {
