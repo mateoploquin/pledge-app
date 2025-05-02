@@ -10,8 +10,9 @@ nvm use 18
 
 To run the app in the simulator, use:
 ```sh
-npx expo run:[ios or android]
+npx expo run:[ios or android] or npm run [ios or android]
 ```
+The App extensions are currently built only for IOS so the app will no work well on Android.
 
 ## Export to Transporter for TestFlight
 
