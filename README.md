@@ -23,8 +23,7 @@ npm run ios
 ## 🛠️ Tech Stack  
 - React Native (Expo)  
 - TypeScript  
-- Firebase  
-- Node.js (for backend magic)  
+- Firebase    
 
 ## 🤝 Contributing  
 Pledge is open to contributions from anyone passionate about mental health and digital wellbeing. If you have ideas, fixes, or just want to lend a hand, feel free to open a PR.  
