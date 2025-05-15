@@ -8,6 +8,10 @@ Pledge is a bold, fun, and effective way to beat social media addiction. If you�
 - **Behavioral Nudges** – Get timely reminders to stay on track, inspired by the latest research in behavioral science and digital wellness.  
 - **Progress Tracking** – Visualize your progress and see how much time you’ve taken back.  
 - **Seamless Integration** – Works with the apps you use most, without compromising your privacy.  
+## 🎥 Demo
+Check out the demo below to see Pledge in action:
+
+[![Pledge Demo](https://img.youtube.com/vi/8_fCuFwVfUE/0.jpg)](https://www.youtube.com/shorts/8_fCuFwVfUE)
 
 ## 📚 Why Pledge?  
 Pledge isn’t just another screen time tracker. It’s a commitment to yourself, backed by science and designed to genuinely help you change your digital habits. Whether you’re a serial scroller or just looking for a gentle nudge, Pledge helps you reclaim your time without the guilt.  
