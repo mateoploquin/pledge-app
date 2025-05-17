@@ -1,216 +1,251 @@
 import { FC, useCallback, useEffect, useState } from "react";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
-import { getEvents } from 'react-native-device-activity';
+// import { getEvents } from 'react-native-device-activity'; // No longer needed for focus time
 import { DeviceActivityEvent, EventParsed, UIBlurEffectStyle } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
 import {
   View,
   Text,
-  Button,
+  // Button, // Might not be needed directly
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
 } from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
-import MainHeader from "../../components/headers/main-header";
-import HomeSwitch from "../../components/switches/home-switch";
+// import MainHeader from "../../components/headers/main-header"; // Removed if not used
+// import HomeSwitch from "../../components/switches/home-switch"; // Removed if not used
 import HomeCardWrapper from "../../components/cards/home-card-wrapper";
 import colors from "../../theme/colors";
-import ScreenTimeList from "../../lists/screen-time-list";
+// import ScreenTimeList from "../../lists/screen-time-list"; // Removed
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import SurrenderModal from "../../components/modals/surrender-modal";
 import HomeHeader from "../../components/headers/home-header";
 import HomeWrapper from "../../components/layout/home-wrapper";
-import { BlurView } from "expo-blur";
+// import { BlurView } from "expo-blur"; // Removed if not used
 import DayProgressBar from "../../components/bars/days-progress-bar";
 import CountdownDisplay from "../../components/countdown/countdown-display";
-import { PledgeSettings } from '../../types';
+import { PledgeSettings, FocusTimeSlot, DayOfWeek } from '../../types'; // Added FocusTimeSlot, DayOfWeek
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type HomeScreenProps = {
   navigation: NavigationProp<ReactNavigation.RootParamList>
 }
 
-const initialMinutes = 1;
-const postponeMinutes = 1;
+const monitoringScheduleName = 'FocusTimeMonitoringSchedule';
 
-const potentialMaxEvents = Math.floor(
-  (60 * 24 - initialMinutes) / postponeMinutes,
-);
+// Helper function to map DayOfWeek to JavaScript's Date.getDay() (Sunday=0, Monday=1, ...)
+const mapDayToJsDateDay = (day: DayOfWeek): number => {
+  switch (day) {
+    case "Sunday": return 0;
+    case "Monday": return 1;
+    case "Tuesday": return 2;
+    case "Wednesday": return 3;
+    case "Thursday": return 4;
+    case "Friday": return 5;
+    case "Saturday": return 6;
+    default: return -1; // Should not happen
+  }
+};
 
-const monitoringEventName = 'GeneralMonitoring';
-const eventNameTick = 'minutes_reached';
-const eventNameFinish = 'tresholdReached';
-
-const startMonitoring = (activitySelection: string, thresholdMinutes: number) => {
-  const events: DeviceActivityEvent[] = [];
-
-  for (let i = 0; i < potentialMaxEvents; i++) {
-    const eventName = `${eventNameTick}_${initialMinutes + i * postponeMinutes}`;
-    const event: DeviceActivityEvent = {
-      eventName,
-      familyActivitySelection: activitySelection,
-      threshold: { minute: initialMinutes + i * postponeMinutes },
-    };
-    events.push(event);
+const startMonitoringFocusTime = (settings: PledgeSettings) => {
+  console.log("[HomeScreen.tsx] startMonitoringFocusTime - Received settings.focusTimes:", JSON.stringify(settings.focusTimes, null, 2));
+  if (!settings.focusTimes || settings.focusTimes.length === 0) {
+    console.log("No focus times set. Monitoring not started.");
+    return;
+  }
+  if (!settings.selectionEvent?.familyActivitySelection) {
+    console.log("No family activity selection. Monitoring not started.");
+    return;
   }
 
-  events.push({
-    eventName: eventNameFinish,
-    familyActivitySelection: activitySelection,
-    threshold: {minute: thresholdMinutes},
+  const events: DeviceActivityEvent[] = [];
+  settings.focusTimes.forEach(slot => {
+    // Events are scheduled for specific times. Day checking will happen in the listener.
+    events.push({
+      eventName: `FOCUS_START_${slot.id}`,
+      familyActivitySelection: settings.selectionEvent.familyActivitySelection,
+      threshold: { hour: slot.startTime.hour, minute: slot.startTime.minute, second: 0 },
+    });
+    events.push({
+      eventName: `FOCUS_END_${slot.id}`,
+      familyActivitySelection: settings.selectionEvent.familyActivitySelection,
+      threshold: { hour: slot.endTime.hour, minute: slot.endTime.minute, second: 0 },
+    });
   });
 
+  if (events.length === 0) {
+    console.log("No valid events to schedule. Monitoring not started");
+    return;
+  }
+  
   ReactNativeDeviceActivity.startMonitoring(
-    monitoringEventName,
+    monitoringScheduleName,
     {
-      warningTime: { minute: 1 },
       intervalStart: { hour: 0, minute: 0, second: 0 },
       intervalEnd: { hour: 23, minute: 59, second: 59 },
       repeats: true,
+      warningTime: null, // No warning time needed for focus blocks
     },
     events,
   );
+  console.log("Focus time monitoring started with events:", events);
 };
 
 const stopMonitoring = () => {
-  ReactNativeDeviceActivity.stopMonitoring([monitoringEventName])
+  console.log("Stopping focus time monitoring");
+  ReactNativeDeviceActivity.stopMonitoring([monitoringScheduleName]);
   ReactNativeDeviceActivity.unblockApps();
 }
 
 const blockApps = async (activitySelection: string) => {
+  console.log("Blocking apps for selection:", activitySelection);
   await ReactNativeDeviceActivity.blockApps(activitySelection);
+}
+
+const unblockCurrentApps = () => {
+  console.log("Unblocking apps");
+  ReactNativeDeviceActivity.unblockApps();
 }
 
 const shieldConfiguration = () => {
   ReactNativeDeviceActivity.updateShieldConfiguration({
-    title: 'App blocked by Pledge',
+    title: 'Focus Mode Active',
     backgroundBlurStyle: UIBlurEffectStyle.systemMaterialDark,
-    titleColor: {
-      red: 1,
-      green: 0,
-      blue: 0,
-    },
-    subtitle: "Enough scrolling for today...",
-    subtitleColor: {
-      red: Math.random() * 1,
-      green: Math.random() * 1,
-      blue: Math.random() * 1,
-    },
-    primaryButtonBackgroundColor: {
-      red: Math.random() * 1,
-      green: Math.random() * 1,
-      blue: Math.random() * 1,
-    },
-    primaryButtonLabelColor: {
-      red: Math.random() * 1,
-      green: Math.random() * 1,
-      blue: Math.random() * 1,
-    },
-    secondaryButtonLabelColor: {
-      red: Math.random() * 1,
-      green: Math.random() * 1,
-      blue: Math.random() * 1,
-    },
+    titleColor: { red: 1, green: 1, blue: 1 }, // White title
+    subtitle: "This app is blocked by Pledge during your focus time.",
+    subtitleColor: { red: 0.8, green: 0.8, blue: 0.8 }, // Light gray subtitle
+    primaryButtonBackgroundColor: {red: 0.2, green: 0.2, blue: 0.2 },
+    primaryButtonLabelColor: { red: 1, green: 1, blue: 1},
+    secondaryButtonLabelColor: { red: 0.8, green: 0.8, blue: 0.8 },
   });
 }
 
-const parseMinutes = (total: number): Timer => {
-  const hours = Math.floor(total / 60);
-  const minutes = total % 60;
-  const remainingMinutes = total - (hours * 60 + minutes);
-  return { hours, minutes, remainingMinutes };
-}
-
-type Timer = {
-  hours: number;
-  minutes: number;
-  remainingMinutes: number
-}
+// Removed parseMinutes and Timer type as they are no longer used for screen time limit
 
 const HomeScreen: FC<HomeScreenProps> = (props) => {
   const [settings, setSettings] = useState<PledgeSettings | undefined>(undefined);
   const {navigation} = props;
   const [isModalVisible, setModalVisible] = useState(false);
-  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
-  const [{hours, minutes, remainingMinutes}, setTotalTime] = useState<Timer>({
-    hours: 0,
-    minutes: 0,
-    remainingMinutes: 0
-  });
+  // const [showPaymentPopup, setShowPaymentPopup] = useState(false); // Seems unused
+  // Removed screen time related state: hours, minutes, remainingMinutes, setTotalTime
 
   const [challengeStartDate, setChallengeStartDate] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [currentDay, setCurrentDay] = useState(1);
   const CHALLENGE_DURATION = 30; // 30 days challenge
 
-  const refreshEvents = useCallback(async () => {
-    const events = getEvents();
-    let totalMinutes = 0;
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      if (event.callbackName !== 'eventDidReachThreshold') {
-        continue;
-      } else if (event.eventName.includes(eventNameTick)) {
-        totalMinutes++;
-      } else if (event.eventName.includes(eventNameFinish)) {
-        await blockApps(settings.selectionEvent.familyActivitySelection);
-      }
+  // Removed old refreshEvents useCallback
+
+  const handleFocusEvent = useCallback((event: any, currentSettings: PledgeSettings | undefined) => {
+    if (!event || typeof event.eventName !== 'string') {
+      console.warn("Received event with unexpected structure:", event);
+      return;
     }
 
-    setTotalTime(parseMinutes(totalMinutes))
+    // Prioritize familyActivitySelection from the event, fallback to currentSettings
+    const activitySelectionToUse = event?.familyActivitySelection || currentSettings?.selectionEvent?.familyActivitySelection;
+
+    if (!currentSettings || !currentSettings.focusTimes || !activitySelectionToUse) {
+      console.log(
+        "Settings, focusTimes, or activitySelectionToUse not available for event handling. Event:", event.eventName,
+        "activitySelectionToUse was:", activitySelectionToUse,
+        "currentSettings exists:", !!currentSettings,
+        "currentSettings.focusTimes exists:", !!currentSettings?.focusTimes,
+        "currentSettings.selectionEvent exists:", !!currentSettings?.selectionEvent
+      );
+      return;
+    }
+    console.log("Received event:", event.eventName, "at", new Date(), "Full event:", JSON.stringify(event), "Using selection:", activitySelectionToUse);
+
+    const jsCurrentDay = new Date().getDay(); // Sunday = 0, Monday = 1, ...
+
+    console.log("[HomeScreen.tsx] handleFocusEvent - currentSettings.focusTimes being iterated:", JSON.stringify(currentSettings.focusTimes, null, 2));
+    currentSettings.focusTimes.forEach(slot => {
+      console.log("[HomeScreen.tsx] handleFocusEvent - Processing slot:", JSON.stringify(slot, null, 2));
+      const eventIsForThisSlot = event.eventName.includes(slot.id);
+      if (!eventIsForThisSlot) return;
+
+      const slotActiveOnCurrentDay = slot.days.some(d => mapDayToJsDateDay(d) === jsCurrentDay);
+      
+      if (!slotActiveOnCurrentDay) {
+        console.log(`Slot ${slot.id} is not active today (Day: ${jsCurrentDay}). Event ${event.eventName} ignored for day check.`);
+        if (event.eventName.startsWith("FOCUS_END")) {
+            console.log("Ensuring apps are unblocked as it's an end event outside active day scope.");
+            unblockCurrentApps();
+        }
+        return;
+      }
+
+      if (event.eventName.startsWith("FOCUS_START")) {
+        console.log(`Focus Start for slot ${slot.id} on active day ${jsCurrentDay}. Blocking apps with selection:`, activitySelectionToUse);
+        blockApps(activitySelectionToUse); // Use the determined activitySelectionToUse
+      } else if (event.eventName.startsWith("FOCUS_END")) {
+        console.log(`Focus End for slot ${slot.id} on active day ${jsCurrentDay}. Unblocking apps.`);
+        unblockCurrentApps();
+      }
+    });
   }, []);
 
-  const handlePaymentSuccess = () => {
-    setShowPaymentPopup(false);
-    // Add any additional logic after successful payment
-  };
+  // const handlePaymentSuccess = () => { // Seems unused
+  //   setShowPaymentPopup(false);
+  // };
 
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
   };
 
-  const toggleChallengeCompleted = () => {
-    navigation.navigate("ChallengeCompleted");
-  };
-
   const onSurrender = () => {
-    // Payment is handled in the SurrenderModal component
-    // We just need to handle the navigation and cleanup here
     stopMonitoring();
     AsyncStorage.removeItem('pledgeSettings');
     AsyncStorage.removeItem('challengeStartDate');
     setModalVisible(false);
-    navigation.navigate("ChallengeCompleted", { result: "failure" });
+    (navigation as any).navigate("ChallengeCompleted", { result: "failure" });
   }
 
   useEffect(() => {
     let listener: (() => void) | undefined;
     AsyncStorage.getItem('pledgeSettings').then((s) => {
       if (s) {
-        const settings = JSON.parse(s);
-        if (!settings.paymentSetupComplete) {
-          // Redirect to Instructions screen if payment is not complete
-          navigation.replace("Instructions");
+        const loadedSettings = JSON.parse(s) as PledgeSettings;
+        console.log("[HomeScreen.tsx] Loaded pledgeSettings from AsyncStorage:", JSON.stringify(loadedSettings, null, 2));
+        console.log("[HomeScreen.tsx] Loaded selectionEvent:", JSON.stringify(loadedSettings.selectionEvent, null, 2));
+        console.log("[HomeScreen.tsx] Loaded focusTimes:", JSON.stringify(loadedSettings.focusTimes, null, 2));
+        if (!loadedSettings.paymentSetupComplete) {
+          (navigation as any).replace("Instructions");
           return;
         }
-        setSettings(settings)
-        startMonitoring(settings.selectionEvent.familyActivitySelection, timeValue);
-        shieldConfiguration();
+        if (!loadedSettings.focusTimes || loadedSettings.focusTimes.length === 0) {
+            console.log("Pledge settings loaded, but no focus times are set.");
+            // Optionally, redirect to onboarding to set focus times if none exist
+            // (navigation as any).replace("Instructions"); 
+            // return;
+        }
+        setSettings(loadedSettings);
+        shieldConfiguration(); // Configure shield appearance once
+        startMonitoringFocusTime(loadedSettings); // Use new startMonitoring function
 
         listener = ReactNativeDeviceActivity.addEventReceivedListener(
-          (event) => {
-            console.log("got event, refreshing events!", event);
-            refreshEvents();
-          },
+          (event: any) => {
+            setSettings(currentSettingsInState => {
+              handleFocusEvent(event, currentSettingsInState);
+              return currentSettingsInState;
+            });
+          }
         ).remove;
+      } else {
+        // No settings found, redirect to onboarding
+        (navigation as any).replace("Instructions");
       }
     })
 
     return () => {
-      listener?.();
+      if (listener) {
+        listener();
+      }
+      // Optionally stop monitoring when the component unmounts, though typically it runs in background
+      // stopMonitoring(); 
     }
-  }, []);
+  }, [navigation, handleFocusEvent]); // Added handleFocusEvent to dependencies
 
   useEffect(() => {
     const loadChallengeStartDate = async () => {
@@ -224,12 +259,11 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
         console.error('Error loading challenge start date:', error);
       }
     };
-    
     loadChallengeStartDate();
   }, []);
 
   useEffect(() => {
-    if (!challengeStartDate) return;
+    if (!challengeStartDate || !settings) return; // Ensure settings is loaded too
 
     const calculateTimeLeft = () => {
       const now = new Date();
@@ -240,14 +274,12 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
       
       if (difference <= 0) {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        stopMonitoring();
+        stopMonitoring(); // Stop focus monitoring too
         
-        // Clear all challenge-related data
         AsyncStorage.removeItem('pledgeSettings');
         AsyncStorage.removeItem('challengeStartDate');
         
-        // Navigate to challenge completed screen with success result
-        navigation.navigate("ChallengeCompleted", { result: "success" });
+        (navigation as any).navigate("ChallengeCompleted", { result: "success" });
         return;
       }
 
@@ -258,22 +290,27 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
 
       setCountdown({ days, hours, minutes, seconds });
       
-      // Calculate current day (1-based)
       const daysPassed = Math.min(Math.ceil((now.getTime() - new Date(challengeStartDate).getTime()) / (1000 * 60 * 60 * 24)), CHALLENGE_DURATION);
       setCurrentDay(Math.max(1, daysPassed));
     };
 
     const timer = setInterval(calculateTimeLeft, 1000);
-    calculateTimeLeft(); // Initial calculation
+    calculateTimeLeft(); 
 
     return () => clearInterval(timer);
-  }, [challengeStartDate]);
+  }, [challengeStartDate, settings, navigation]); // Added settings and navigation to dependencies
 
   if (!settings) {
-    return null
+    // Display a loading indicator or a relevant message while settings are being loaded
+    return (
+      <HomeWrapper style={{justifyContent: 'center', alignItems: 'center'}}>
+        <Text style={{color: colors.white, fontSize: 18}}>Loading settings...</Text>
+      </HomeWrapper>
+    );
   }
 
-  const {pledgeValue,selectionEvent,timeValue} = settings;
+  // const {pledgeValue, selectionEvent, timeValue} = settings; // timeValue removed
+  // const { pledgeValue, selectionEvent, focusTimes } = settings; // focusTimes is used internally
 
   return (
     <HomeWrapper style={{}}>
@@ -308,6 +345,7 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
             }}
           >
             <HomeCardWrapper title={"Countdown"}>
+              {/* CountdownDisplay component can be used here if preferred */}
               <View
                 style={{
                   flexDirection: "row",
@@ -319,69 +357,28 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
               >
                 <View style={{ justifyContent: "center", alignItems: "center" }}>
                   <Text style={{ fontSize: 36, color: colors.orange }}>{countdown.days}</Text>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: "rgba(0, 0, 0, 0.70)",
-                      textTransform: "uppercase",
-                      textAlign: "center",
-                    }}
-                  >
-                    Days
-                  </Text>
+                  <Text style={styles.countdownLabel}>Days</Text>
                 </View>
-
-                <Text>:</Text>
-
+                <Text style={styles.countdownSeparator}>:</Text>
                 <View style={{ justifyContent: "center", alignItems: "center" }}>
                   <Text style={{ fontSize: 36, color: colors.orange }}>{countdown.hours}</Text>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: "rgba(0, 0, 0, 0.70)",
-                      textTransform: "uppercase",
-                      textAlign: "center",
-                    }}
-                  >
-                    Hours
-                  </Text>
+                  <Text style={styles.countdownLabel}>Hours</Text>
                 </View>
-
-                <Text>:</Text>
-
+                <Text style={styles.countdownSeparator}>:</Text>
                 <View style={{ justifyContent: "center", alignItems: "center" }}>
                   <Text style={{ fontSize: 36, color: colors.orange }}>{countdown.minutes}</Text>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: "rgba(0, 0, 0, 0.70)",
-                      textTransform: "uppercase",
-                      textAlign: "center",
-                    }}
-                  >
-                    Minutes
-                  </Text>
+                  <Text style={styles.countdownLabel}>Minutes</Text>
                 </View>
-
-                <Text>:</Text>
-
+                <Text style={styles.countdownSeparator}>:</Text>
                 <View style={{ justifyContent: "center", alignItems: "center" }}>
                   <Text style={{ fontSize: 36, color: colors.orange }}>{countdown.seconds}</Text>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: "rgba(0, 0, 0, 0.70)",
-                      textTransform: "uppercase",
-                      textAlign: "center",
-                    }}
-                  >
-                    Seconds
-                  </Text>
+                  <Text style={styles.countdownLabel}>Seconds</Text>
                 </View>
               </View>
             </HomeCardWrapper>
 
-            <HomeCardWrapper
+            {/* Removed Daily Consumption Card */}
+            {/* <HomeCardWrapper
               style={{ marginTop: 17 }}
               title={"Daily Consumption"}
             >
@@ -396,14 +393,13 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
                 <Text style={{ fontSize: 15 }}>
                   <Text style={{ fontWeight: "500" }}>{remainingMinutes}m</Text> left for your daily limit
                 </Text>
-
                 <ScreenTimeList />
               </View>
-            </HomeCardWrapper>
+            </HomeCardWrapper> */}
 
             <HomeCardWrapper
               style={{ marginTop: 17 }}
-              title={"Progress Bar"}
+              title={"Progress"} // Renamed from Progress Bar
             >
               <View
                 style={{
@@ -414,7 +410,7 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
               >
                 <DayProgressBar
                   currentDay={currentDay}
-                  daysRemaining={countdown.days}
+                  daysRemaining={countdown.days} // daysRemaining might be countdown.days
                   totalDays={CHALLENGE_DURATION}
                 />
               </View>
@@ -430,7 +426,6 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
         <Text style={styles.surrenderText}>I surrender</Text>
       </TouchableOpacity>
 
-
       <SurrenderModal
         isVisible={isModalVisible}
         onClose={toggleModal}
@@ -442,26 +437,36 @@ const HomeScreen: FC<HomeScreenProps> = (props) => {
 
 const styles = StyleSheet.create({
   surrenderButton: {
-    backgroundColor: "white", // White background
-    paddingVertical: 12, // Button height
-    paddingHorizontal: 24, // Button width
-    borderRadius: 30, // Makes it oval
-    alignSelf: "center", // Centers the button
-    position: "absolute", // Keeps it at the bottom
-    bottom: 40, // Positions it above the bottom edge
-    shadowColor: "#000", // Adds a subtle shadow
+    backgroundColor: "white",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 30,
+    alignSelf: "center",
+    position: "absolute",
+    bottom: 40,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 3, // Shadow for Android
+    elevation: 3,
   },
   surrenderText: {
-    color: "#FF3D00", // Orange text color
+    color: "#FF3D00",
     fontSize: 14,
     fontWeight: "normal",
     textAlign: "center",
   },
+  countdownLabel: { // Added style for countdown labels
+    fontSize: 10,
+    color: "rgba(0, 0, 0, 0.70)",
+    textTransform: "uppercase",
+    textAlign: "center",
+  },
+  countdownSeparator: { // Added style for countdown separators
+    fontSize: 36,
+    color: colors.orange,
+    marginHorizontal: 5, // Adjust as needed
+  },
 });
-
 
 export default HomeScreen;

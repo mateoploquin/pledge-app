@@ -11,7 +11,7 @@ interface SetAppsProps {
   authorizationStatus: AuthorizationStatus
   setAuthorizationStatus: (status: AuthorizationStatus) => void
   selectionEvent: SelectionInfo;
-  setSelectionEvent: (event: SelectionInfo) => void
+  setSelectionEvent: (event: SelectionInfo | undefined) => void
 }
 
 const SetApps: React.FC<SetAppsProps> = ({
@@ -23,7 +23,7 @@ const SetApps: React.FC<SetAppsProps> = ({
   const [isRequesting, setIsRequesting] = useState(false);
 
   const onRequestPress = useCallback(async () => {
-    if (isRequesting) return; // Prevent multiple rapid clicks
+    if (isRequesting) return;
     
     try {
       setIsRequesting(true);
@@ -48,7 +48,8 @@ const SetApps: React.FC<SetAppsProps> = ({
         );
         return;
       } else if (authorizationStatus === AuthorizationStatus.approved) {
-        status = await revokeAuthorization();
+        console.log("Permissions already approved.");
+        status = authorizationStatus;
       } else {
         console.warn('Unexpected authorization status:', authorizationStatus);
         return;
@@ -64,20 +65,21 @@ const SetApps: React.FC<SetAppsProps> = ({
     } finally {
       setIsRequesting(false);
     }
-  }, [authorizationStatus, isRequesting]);
+  }, [authorizationStatus, isRequesting, setAuthorizationStatus]);
 
   const onSelectionChange = useCallback((event: NativeSyntheticEvent<SelectionInfo>) => {
     if (!event.nativeEvent) return;
+    console.log("[SetApps.tsx] onSelectionChange - event.nativeEvent:", JSON.stringify(event.nativeEvent, null, 2));
     setSelectionEvent(event.nativeEvent)
-  }, []);
+  }, [setSelectionEvent]);
 
-  // Cleanup effect
   useEffect(() => {
-    return () => {
-      // Reset selection when component unmounts
-      setSelectionEvent(undefined);
-    };
-  }, []);
+    // return () => {
+    //   // Reset selection when component unmounts - THIS WAS THE BUG
+    //   // console.log("[SetApps.tsx] Unmounting - Resetting selectionEvent via props");
+    //   // setSelectionEvent(undefined);
+    // };
+  }, []); // Empty dependency array or [setSelectionEvent] if needed, but the problematic call is removed.
 
   return (
     <View style={{ flex: 1, marginTop: 69 }}>

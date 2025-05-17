@@ -14,7 +14,6 @@ interface SetPaymentProps {
   paymentSetupComplete: boolean;
   setPaymentSetupComplete: (complete: boolean) => void;
   pledgeValue: number;
-  timeValue: number;
   setPublishableKey: (publishableKey: string) => void;
 }
 
@@ -24,7 +23,6 @@ const SetPayment: React.FC<SetPaymentProps> = ({
   paymentSetupComplete,
   setPaymentSetupComplete,
   pledgeValue,
-  timeValue,
   setPublishableKey,
 }) => {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
@@ -100,7 +98,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
       if (user) {
         try {
           const idToken = await user.getIdToken();
-          await sendPledgeData({ pledgeValue, timeValue }, idToken);
+          await sendPledgeData({ pledgeValue }, idToken);
           
           // Set the challenge start date
           const startDate = new Date().toISOString();

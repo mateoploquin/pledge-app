@@ -7,14 +7,14 @@ import colors from "../../theme/colors";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import SetPledge from "./setup/set-pledge";
 import ChallengeOn from "./setup/challenge-on";
-import SetTimeLimit from "./setup/set-time-limit";
+import SetFocusTime from "./setup/set-focus-time";
 import SetApps from "./setup/set-apps";
 import InstructionCarousel from "../../components/carousels/instructions-carousel";
 import AcceptTerms from "./setup/accept-terms";
 import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
 import { getAuthorizationStatus } from 'react-native-device-activity';
-import SetPayment from "./setup/set-up-payment"; // Import the new component
-import { SelectionInfo } from '../../types';
+import SetPayment from "./setup/set-up-payment";
+import { SelectionInfo, FocusTimeSlot, PledgeSettings } from '../../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
@@ -29,14 +29,14 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
 
   const isReturningFromShare = useRef(false);
   const [pledgeValue, setPledgeValue] = useState(10);
-  const [timeValue, setTimeValue] = useState(10);
+  const [focusTimes, setFocusTimes] = useState<FocusTimeSlot[]>([]);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatus>();
   const [selectionEvent, setSelectionEvent] = useState<SelectionInfo>();
 
   const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
-  const [publishableKey, setPublishableKey] = useState<string>(""); // add publishableKey state
+  const [publishableKey, setPublishableKey] = useState<string>("");
 
   useFocusEffect(
     useCallback(() => {
@@ -84,11 +84,9 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           setSelectionEvent={setSelectionEvent}
         />
       ) : step == 2 ? (
-        <SetTimeLimit
-          isButtonDisabled={isButtonDisabled}
-          setIsButtonDisabled={setIsButtonDisabled}
-          timeValue={timeValue}
-          setTimeValue={setTimeValue}
+        <SetFocusTime 
+          focusTimes={focusTimes}
+          setFocusTimes={setFocusTimes}
         />
       ) : step == 3 ? (
         <SetPledge
@@ -109,7 +107,6 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           paymentSetupComplete={paymentSetupComplete}
           setPaymentSetupComplete={setPaymentSetupComplete}
           pledgeValue={pledgeValue}
-          timeValue={timeValue}
           setPublishableKey={setPublishableKey}
         />
       ) : step == 6 ? (
@@ -126,6 +123,11 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
       >
         <MainButton
           onPress={() => {
+            if (step === 1) {
+              console.log("[Instructions.tsx] step === 1, current selectionEvent before setStep:", JSON.stringify(selectionEvent, null, 2));
+            } else if (step === 2) {
+              console.log("[Instructions.tsx] step === 2, current focusTimes before setStep:", JSON.stringify(focusTimes, null, 2));
+            }
             if (step == 5) {
               if (!paymentSetupComplete) {
                 Alert.alert(
@@ -134,16 +136,23 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
                 );
                 return;
               }
+              const settingsToSave: PledgeSettings = {
+                selectionEvent,
+                pledgeValue,
+                focusTimes,
+                paymentSetupComplete: true,
+                termsAccepted: termsAccepted
+              };
+              console.log("[Instructions.tsx] step === 5, settingsToSave.selectionEvent before saving:", JSON.stringify(settingsToSave.selectionEvent, null, 2));
+              console.log("[Instructions.tsx] step === 5, settingsToSave.focusTimes before saving:", JSON.stringify(settingsToSave.focusTimes, null, 2));
+              const now = new Date();
               AsyncStorage.setItem(
                 'pledgeSettings',
-                JSON.stringify({
-                  selectionEvent,
-                  pledgeValue,
-                  timeValue,
-                  paymentSetupComplete: true
-                })
+                JSON.stringify(settingsToSave)
               ).then(() => {
-                navigation.navigate("Home");
+                AsyncStorage.setItem('challengeStartDate', now.toISOString()).then(() => {
+                  (navigation as any).navigate("Home");
+                });
               });
             } else if (step === 1 && authorizationStatus !== AuthorizationStatus.approved) {
               return;
@@ -154,8 +163,9 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           text={step == 5 ? "Track My Pledge" : "Continue"}
           style={{ width: 162 }}
           disabled={
-            (step === 4 && !termsAccepted) || // Disable on AcceptTerms step if unchecked
-            (step === 5 && !paymentSetupComplete) // Disable on Payment step if setup not complete
+            (step === 1 && !selectionEvent?.familyActivitySelection) ||
+            (step === 4 && !termsAccepted) ||
+            (step === 5 && !paymentSetupComplete)
           }
         />
         {step !== 5 && step > 0 ? (

@@ -1,12 +1,13 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, StyleProp, ViewStyle } from "react-native";
 import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
 import colors from "../../theme/colors";
 
 interface HomeCardWrapperProps {
   children: React.ReactNode;
-  style: object;
+  style?: StyleProp<ViewStyle>;
   onPress?: () => void;
+  title?: string;
 }
 
 const HomeCardWrapper: React.FC<HomeCardWrapperProps> = ({

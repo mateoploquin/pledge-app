@@ -3,7 +3,7 @@ import axios from 'axios';
 
 interface PledgeData {
   pledgeValue: number;
-  timeValue: number;
+  timeValue?: number;
   // selectedApps: string[];
 }
 

@@ -135,33 +135,8 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, onValueChange }) => {
   const [startX, setStartX] = useState(0);
 
   const generateTickValues = (min: number, max: number): number[] => {
-    const range = max - min;
-    const step = range / 5; // We want 6 points (including min and max)
-    
-    // Function to round to a nice number
-    const roundToNiceNumber = (num: number): number => {
-      const magnitude = Math.pow(10, Math.floor(Math.log10(num)));
-      const normalized = num / magnitude;
-      
-      if (normalized <= 2) return Math.round(normalized) * magnitude;
-      if (normalized <= 5) return Math.round(normalized) * magnitude;
-      return Math.round(normalized / 5) * 5 * magnitude;
-    };
-
-    // Generate initial values
-    const ticks: number[] = [];
-    for (let i = 0; i <= 5; i++) {
-      const rawValue = min + (step * i);
-      if (i === 0) {
-        ticks.push(min);
-      } else if (i === 5) {
-        ticks.push(max);
-      } else {
-        ticks.push(roundToNiceNumber(rawValue));
-      }
-    }
-
-    return ticks;
+    // Use specific values for the $10-$100 range
+    return [10, 30, 50, 70, 90, 100];
   };
 
   const panResponder = PanResponder.create({

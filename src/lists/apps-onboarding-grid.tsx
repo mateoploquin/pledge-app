@@ -81,94 +81,59 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
     );
   };
 
-  const renderButton = () => {
-    return (
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Text style={{ textAlign: 'center', marginHorizontal: 20, fontSize: 16, color: colors.orange }}>
-          {
-            permissionsGranted
-              ? selectionEvent
-                ? `You selected ${selectionEvent.applicationCount} apps, ${selectionEvent.categoryCount} categories and ${selectionEvent.webDomainCount} websites`
-                : 'Choose apps'
-              : 'Grant permissions'
-          }
-        </Text>
-        <Entypo
-          name="chevron-thin-down"
-          size={17}
-          style={{ marginRight: 17 }}
-          color={colors.orange}
-        />
-      </View>
-    )
-  }
+  // Text part of the button, can be used as a label
+  const getButtonText = () => {
+    if (!permissionsGranted) return 'Grant permissions';
+    if (selectionEvent && (selectionEvent.applicationCount > 0 || selectionEvent.categoryCount > 0 || selectionEvent.webDomainCount > 0)) {
+        let parts = [];
+        if (selectionEvent.applicationCount > 0) parts.push(`${selectionEvent.applicationCount} app(s)`);
+        if (selectionEvent.categoryCount > 0) parts.push(`${selectionEvent.categoryCount} categor(y/ies)`);
+        if (selectionEvent.webDomainCount > 0) parts.push(`${selectionEvent.webDomainCount} website(s)`);
+        return `Selected: ${parts.join(', ')}`;
+    }
+    return 'Choose apps, categories or websites';
+  };
 
   return (
-    <View>
+    <View style={styles.mainContainer}>
       <FlatList
-        data={appData}
+        data={appData} // This list seems decorative if the main picker is system UI
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderApp}
         numColumns={4}
         columnWrapperStyle={styles.column}
         contentContainerStyle={styles.grid}
+        style={styles.appList}
       />
 
       {permissionsGranted ? (
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => {}}  // Empty onPress to handle touch feedback
-          style={{
-            backgroundColor: "white",
-            width: "75%",
-            height: 50,
-            borderRadius: 10,
-            justifyContent: "center",
-            alignSelf: "center",
-            marginTop: 38,
-            borderWidth: 2,
-            borderColor: colors.orange,
-            overflow: 'hidden',
-          }}
-        >
-          <DeviceActivitySelectionView
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'transparent'
-            }}
-            onSelectionChange={onSelectionChange}
-            familyActivitySelection={selectionEvent?.familyActivitySelection}
-            pointerEvents="auto"
-          />
-          {renderButton()}
-        </TouchableOpacity>
+        <View style={styles.pickerContainer}>
+          <Text style={styles.infoText}>{getButtonText()}</Text>
+          <View style={styles.deviceActivityContainer}>
+            <DeviceActivitySelectionView
+              style={styles.deviceActivitySelectionView}
+              onSelectionChange={onSelectionChange}
+              familyActivitySelection={selectionEvent?.familyActivitySelection}
+            />
+            <View style={styles.buttonTextContainer} pointerEvents="none">
+              <Text style={styles.buttonText}>Choose Apps</Text>
+              <Entypo name="chevron-thin-down" size={17} color={colors.orange} />
+            </View>
+          </View>
+        </View>
       ) : (
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={onAskPermissions}
-          style={{
-            backgroundColor: "white",
-            width: "75%",
-            height: 50,
-            borderRadius: 10,
-            justifyContent: "center",
-            alignSelf: "center",
-            marginTop: 38,
-            borderWidth: 2,
-            borderColor: colors.orange,
-          }}
+          style={styles.permissionButton}
         >
-          {renderButton()}
+          <Text style={styles.permissionButtonText}>{getButtonText()}</Text>
+          <Entypo
+            name="chevron-thin-down"
+            size={17}
+            style={{ marginRight: 17 }}
+            color={colors.orange}
+          />
         </TouchableOpacity>
       )}
     </View>
@@ -176,9 +141,16 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
 };
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    alignItems: 'center', // Center content like the button/picker area
+  },
+  appList: {
+    maxHeight: 200, // Example: constrain height if it's decorative
+    marginBottom: 20,
+  },
   grid: {
     alignItems: "center",
-    marginHorizontal: 49,
+    marginHorizontal: 49, // This might make the list wider than the button area
   },
   column: {
     justifyContent: "space-between",
@@ -190,11 +162,72 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: 4,
+    marginHorizontal: 4, // Minimal margin for app icons if shown
   },
   iconContainer: {
     alignItems: "center",
   },
+  pickerContainer: {
+    width: "85%", // Match styling of permission button or define as needed
+    alignSelf: 'center',
+    marginTop: 20, // Adjusted from 38
+    alignItems: 'center', // Center the text and picker view
+  },
+  infoText: {
+    fontSize: 14,
+    color: colors.black, // Or a less prominent color
+    marginBottom: 10,
+    textAlign: 'center',
+    paddingHorizontal: 10,
+  },
+  deviceActivityContainer: {
+    width: "100%",
+    position: "relative", // Creates positioning context for absolute elements
+  },
+  deviceActivitySelectionView: {
+    width: "100%", 
+    height: 50,
+    borderWidth: 1,
+    borderColor: colors.orange,
+    borderRadius: 10,
+    backgroundColor: colors.white,
+  },
+  buttonTextContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 15,
+  },
+  buttonText: {
+    color: colors.orange,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  permissionButton: {
+    flexDirection: 'row',
+    backgroundColor: "white",
+    width: "85%", // Increased width
+    height: 50,
+    borderRadius: 10,
+    justifyContent: "space-between", // Align text left, chevron right
+    alignItems: "center",
+    alignSelf: "center",
+    marginTop: 38,
+    paddingHorizontal: 15, // Add some padding
+    borderWidth: 2,
+    borderColor: colors.orange,
+  },
+  permissionButtonText: {
+    flex: 1, // Allow text to take available space
+    textAlign: 'left',
+    fontSize: 14, // Adjusted size
+    color: colors.orange,
+  }
 });
 
 export default AppsOnboardingGrid;
