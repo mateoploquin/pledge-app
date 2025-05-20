@@ -4,7 +4,7 @@ import colors from "../../../theme/colors";
 import MainButton from "../../../components/buttons/main-button";
 import { useStripe, isPlatformPaySupported } from "@stripe/stripe-react-native";
 import { fetchPaymentSheetParams } from "../../../services/stripe-api";
-import { auth } from '../../../../firebaseConfig';
+import { auth } from '../../../firebaseConfig';
 import { sendPledgeData } from "../../../services/sendPledgeData";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

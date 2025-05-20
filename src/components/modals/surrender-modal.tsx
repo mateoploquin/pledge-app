@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { BlurView } from "expo-blur";
 import colors from "../../theme/colors";
 import { sendPayment } from "../../services/stripe-api"; // Importing sendPayment Fucntion
-import { auth } from "../../../firebaseConfig";
+import { auth } from "../../firebaseConfig";
 
 interface SurrenderModalProps {
   isVisible: boolean;
@@ -42,7 +42,7 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
     style={styles.blurContainer}>
       <View style={styles.modalContainer}>
         <Text style={styles.modalText}>
-          Quitting now means you’ll lose your Pledge. You’ve come this far—just
+          Quitting now means you'll lose your Pledge. You've come this far—just
           a little more to go!
         </Text>
         <Image
@@ -56,7 +56,7 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
           <Text style={styles.modalButtonText}>No, go back</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleSurrender}>
-          <Text style={styles.surrenderText}>Yes, I’m an addict</Text>
+          <Text style={styles.surrenderText}>Yes, I'm an addict</Text>
         </TouchableOpacity>
       </View>
     </View>
