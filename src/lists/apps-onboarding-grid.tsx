@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -9,10 +9,8 @@ import {
 } from "react-native";
 import { Entypo, FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import colors from "../theme/colors";
-import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
-import { SelectionInfo } from '../types';
-import { DeviceActivitySelectionView } from 'react-native-device-activity';
-
+import { SelectionInfo } from "../types";
+import { useNavigation } from "@react-navigation/native";
 const appData = [
   {
     id: 1,
@@ -61,17 +59,17 @@ const appData = [
 ];
 
 interface AppsOnboardingListProps {
-  onSelectionChange: (event: NativeSyntheticEvent<SelectionInfo>) => void
+  onSelectionChange: (event: NativeSyntheticEvent<SelectionInfo>) => void;
   onAskPermissions: () => Promise<void>;
   permissionsGranted: boolean;
-  selectionEvent: SelectionInfo | undefined
+  selectionEvent: SelectionInfo | undefined;
 }
 
 const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
   onSelectionChange,
   onAskPermissions,
   permissionsGranted,
-  selectionEvent
+  selectionEvent,
 }) => {
   const renderApp = ({ item }) => {
     return (
@@ -83,31 +81,25 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
 
   const renderButton = () => {
     return (
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Text style={{ textAlign: 'center', marginHorizontal: 20, fontSize: 16, color: colors.orange }}>
-          {
-            permissionsGranted
-              ? selectionEvent
-                ? `You selected ${selectionEvent.applicationCount} apps, ${selectionEvent.categoryCount} categories and ${selectionEvent.webDomainCount} websites`
-                : 'Choose apps'
-              : 'Grant permissions'
-          }
+      <View style={styles.buttonContainer}>
+        <Text style={styles.buttonText}>
+          {permissionsGranted
+            ? selectionEvent
+              ? `You selected ${selectionEvent.applicationCount} apps, ${selectionEvent.categoryCount} categories and ${selectionEvent.webDomainCount} websites`
+              : "Choose apps"
+            : "Grant permissions"}
         </Text>
         <Entypo
           name="chevron-thin-down"
           size={17}
-          style={{ marginRight: 17 }}
+          style={styles.chevronIcon}
           color={colors.orange}
         />
       </View>
-    )
-  }
+    );
+  };
+
+  const navigation = useNavigation();
 
   return (
     <View>
@@ -123,50 +115,22 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
       {permissionsGranted ? (
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => {}}  // Empty onPress to handle touch feedback
-          style={{
-            backgroundColor: "white",
-            width: "75%",
-            height: 50,
-            borderRadius: 10,
-            justifyContent: "center",
-            alignSelf: "center",
-            marginTop: 38,
-            borderWidth: 2,
-            borderColor: colors.orange,
-            overflow: 'hidden',
+          onPress={() => {
+            // @ts-ignore
+            navigation.navigate("SelectApps", {
+              deviceActivitySelection: selectionEvent,
+              setDeviceActivitySelection: onSelectionChange,
+            });
           }}
+          style={[styles.button, styles.buttonWithOverflow]}
         >
-          <DeviceActivitySelectionView
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'transparent'
-            }}
-            onSelectionChange={onSelectionChange}
-            familyActivitySelection={selectionEvent?.familyActivitySelection}
-            pointerEvents="auto"
-          />
           {renderButton()}
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={onAskPermissions}
-          style={{
-            backgroundColor: "white",
-            width: "75%",
-            height: 50,
-            borderRadius: 10,
-            justifyContent: "center",
-            alignSelf: "center",
-            marginTop: 38,
-            borderWidth: 2,
-            borderColor: colors.orange,
-          }}
+          style={styles.button}
         >
           {renderButton()}
         </TouchableOpacity>
@@ -194,6 +158,35 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     alignItems: "center",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  buttonText: {
+    textAlign: "center",
+    marginHorizontal: 20,
+    fontSize: 16,
+    color: colors.orange,
+    pointerEvents: "none",
+  },
+  chevronIcon: {
+    marginRight: 17,
+  },
+  button: {
+    backgroundColor: colors.white,
+    width: "75%",
+    height: 50,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignSelf: "center",
+    marginTop: 38,
+    borderWidth: 2,
+    borderColor: colors.orange,
+  },
+  buttonWithOverflow: {
+    overflow: "hidden",
   },
 });
 

@@ -1,11 +1,12 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, ViewStyle } from "react-native";
 import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
 import colors from "../../theme/colors";
 
 interface HomeCardWrapperProps {
   children: React.ReactNode;
-  style: object;
+  style?: ViewStyle;
+  title?: string;
   onPress?: () => void;
 }
 
@@ -17,20 +18,8 @@ const HomeCardWrapper: React.FC<HomeCardWrapperProps> = ({
 }) => {
   return (
     <Pressable onPress={onPress} style={[styles.container, style]}>
-      <Text
-        style={{
-          marginTop: 6,
-          marginHorizontal: 10,
-          color: "white",
-          fontWeight: "500",
-          marginBottom: 7,
-        }}
-      >
-        {title}
-      </Text>
-      <View style={{ backgroundColor: colors.white, borderRadius: 17 }}>
-        {children}
-      </View>
+      <Text style={styles.text}>{title}</Text>
+      <View style={styles.children}>{children}</View>
     </Pressable>
   );
 };
@@ -43,8 +32,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.orange,
     borderRadius: 20,
-    // paddingVertical: 9,
     padding: 2,
+  },
+  text: {
+    marginTop: 6,
+    marginHorizontal: 10,
+    color: colors.white,
+    fontWeight: "500",
+    marginBottom: 7,
+  },
+  children: {
+    backgroundColor: colors.white,
+    borderRadius: 17,
   },
 });
 

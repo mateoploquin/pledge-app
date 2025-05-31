@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
 import colors from "../../../theme/colors";
 
 interface AcceptTermsProps {
@@ -36,7 +36,7 @@ const AcceptTerms: React.FC<AcceptTermsProps> = ({
   setTermsAccepted,
 }) => {
   return (
-    <View>
+    <ScrollView>
       <Text style={styles.title}>Challenge Rules 🏆</Text>
 
       <View style={styles.rulesContainer}>
@@ -68,7 +68,8 @@ const AcceptTerms: React.FC<AcceptTermsProps> = ({
           <Text style={styles.linkText}>Terms and Conditions</Text>
         </Text>
       </View>
-    </View>
+      <View style={{ height: 100 }} />
+    </ScrollView>
   );
 };
 
@@ -102,7 +103,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   highlightText: {
-    color: "#236AB3",
+    color: colors.blue,
   },
   footerText: {
     marginTop: 15,

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
 import MainButton from "../../components/buttons/main-button";
@@ -11,18 +11,20 @@ import SetTimeLimit from "./setup/set-time-limit";
 import SetApps from "./setup/set-apps";
 import InstructionCarousel from "../../components/carousels/instructions-carousel";
 import AcceptTerms from "./setup/accept-terms";
-import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
-import { getAuthorizationStatus } from 'react-native-device-activity';
-import SetPayment from "./setup/set-up-payment"; // Import the new component
-import { SelectionInfo } from '../../types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import {
+  AuthorizationStatus,
+  AuthorizationStatusType,
+} from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
+import { getAuthorizationStatus } from "react-native-device-activity";
+import SetPayment from "./setup/set-up-payment";
+import { SelectionInfo } from "../../types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface InstructionsProps {
   // define your props here
 }
 
-const Instructions: React.FC<InstructionsProps> = (props) => {
+const Instructions: React.FC<InstructionsProps> = () => {
   const navigation = useNavigation();
   const [step, setStep] = useState(0);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
@@ -32,7 +34,8 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
   const [timeValue, setTimeValue] = useState(10);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatus>();
+  const [authorizationStatus, setAuthorizationStatus] =
+    useState<AuthorizationStatusType>();
   const [selectionEvent, setSelectionEvent] = useState<SelectionInfo>();
 
   const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
@@ -40,21 +43,27 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
 
   useFocusEffect(
     useCallback(() => {
-      // Reset payment status and step when screen is focused
       setPaymentSetupComplete(false);
-      // Only reset step if we're not returning from SharePledge
       if (!isReturningFromShare.current) {
         setStep(0);
       }
-      // Reset the flag
       isReturningFromShare.current = false;
     }, [])
   );
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('blur', () => {
-      // Set the flag when navigating to SharePledge
-      if ((navigation as any).getState().routes.slice(-1)[0]?.name === 'SharePledge') {
+    const unsubscribe = navigation.addListener("blur", () => {
+      if (
+        (navigation as any).getState().routes.slice(-1)[0]?.name ===
+        "SharePledge"
+      ) {
+        isReturningFromShare.current = true;
+      }
+
+      if (
+        (navigation as any).getState().routes.slice(-1)[0]?.name ===
+        "SelectApps"
+      ) {
         isReturningFromShare.current = true;
       }
     });
@@ -64,7 +73,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const status = await getAuthorizationStatus();
+      const status = getAuthorizationStatus();
       setAuthorizationStatus(status);
     };
     initializeAuth();
@@ -84,19 +93,9 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
           setSelectionEvent={setSelectionEvent}
         />
       ) : step == 2 ? (
-        <SetTimeLimit
-          isButtonDisabled={isButtonDisabled}
-          setIsButtonDisabled={setIsButtonDisabled}
-          timeValue={timeValue}
-          setTimeValue={setTimeValue}
-        />
+        <SetTimeLimit timeValue={timeValue} setTimeValue={setTimeValue} />
       ) : step == 3 ? (
-        <SetPledge
-          isButtonDisabled={isButtonDisabled}
-          setIsButtonDisabled={setIsButtonDisabled}
-          pledgeValue={pledgeValue}
-          setPledgeValue={setPledgeValue}
-        />
+        <SetPledge pledgeValue={pledgeValue} setPledgeValue={setPledgeValue} />
       ) : step == 4 ? (
         <AcceptTerms
           termsAccepted={termsAccepted}
@@ -104,7 +103,6 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         />
       ) : step == 5 ? (
         <SetPayment
-          isButtonDisabled={isButtonDisabled}
           setIsButtonDisabled={setIsButtonDisabled}
           paymentSetupComplete={paymentSetupComplete}
           setPaymentSetupComplete={setPaymentSetupComplete}
@@ -116,14 +114,7 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         <ChallengeOn />
       ) : null}
 
-      <View
-        style={{
-          position: "absolute",
-          bottom: step == 5 || step == 0 ? 71 : 38,
-          zIndex: 100,
-          alignSelf: "center",
-        }}
-      >
+      <View style={styles.buttonContainer}>
         <MainButton
           onPress={() => {
             if (step == 5) {
@@ -135,24 +126,28 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
                 return;
               }
               AsyncStorage.setItem(
-                'pledgeSettings',
+                "pledgeSettings",
                 JSON.stringify({
                   selectionEvent,
                   pledgeValue,
                   timeValue,
-                  paymentSetupComplete: true
+                  paymentSetupComplete: true,
                 })
               ).then(() => {
+                //@ts-ignore
                 navigation.navigate("Home");
               });
-            } else if (step === 1 && authorizationStatus !== AuthorizationStatus.approved) {
+            } else if (
+              step === 1 &&
+              authorizationStatus !== AuthorizationStatus.approved
+            ) {
               return;
             } else {
               setStep(step + 1);
             }
           }}
           text={step == 5 ? "Track My Pledge" : "Continue"}
-          style={{ width: 162 }}
+          style={styles.mainButton}
           disabled={
             (step === 4 && !termsAccepted) || // Disable on AcceptTerms step if unchecked
             (step === 5 && !paymentSetupComplete) // Disable on Payment step if setup not complete
@@ -164,21 +159,30 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
               setStep(step - 1);
             }}
           >
-            <Text
-              style={{
-                textDecorationLine: "underline",
-                color: colors.orange,
-                textAlign: "center",
-                marginTop: 16,
-              }}
-            >
-              Go Back
-            </Text>
+            <Text style={styles.backButton}>Go Back</Text>
           </TouchableOpacity>
         ) : null}
       </View>
     </AppWrapper>
   );
 };
+
+const styles = StyleSheet.create({
+  buttonContainer: {
+    position: "absolute",
+    bottom: 71,
+    zIndex: 100,
+    alignSelf: "center",
+  },
+  mainButton: {
+    width: 162,
+  },
+  backButton: {
+    textDecorationLine: "underline",
+    color: colors.orange,
+    textAlign: "center",
+    marginTop: 16,
+  },
+});
 
 export default Instructions;

@@ -1,10 +1,8 @@
-// src/components/modals/surrender-modal.tsx
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { BlurView } from "expo-blur";
 import colors from "../../theme/colors";
 import { sendPayment } from "../../services/stripe-api"; // Importing sendPayment Fucntion
-import { auth } from "../../../firebaseConfig";
+import { auth } from "../../firebaseConfig";
 
 interface SurrenderModalProps {
   isVisible: boolean;
@@ -15,7 +13,7 @@ interface SurrenderModalProps {
 const SurrenderModal: React.FC<SurrenderModalProps> = ({
   isVisible,
   onClose,
-  onSurrender
+  onSurrender,
 }) => {
   if (!isVisible) return null;
 
@@ -24,7 +22,7 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
       const user = auth.currentUser;
       if (user) {
         const idToken = await user.getIdToken();
-        const response = await sendPayment("charge", idToken); // Use sendPayment function
+        const response = await sendPayment("charge", idToken);
         console.log("Payment response:", response);
       } else {
         console.error("User not authenticated. Cannot send payment.");
@@ -32,14 +30,13 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
     } catch (error) {
       console.error("Error processing payment:", error);
     }
-    onSurrender(); // Call the original onSurrender to navigate to the next step.
+    onSurrender();
   };
 
   return (
     <View
-    // intensity={50}
-    // tint="dark"
-    style={styles.blurContainer}>
+      style={styles.blurContainer}
+    >
       <View style={styles.modalContainer}>
         <Text style={styles.modalText}>
           Quitting now means you’ll lose your Pledge. You’ve come this far—just
@@ -120,7 +117,7 @@ const styles = StyleSheet.create({
     color: colors.orange,
     textDecorationLine: "underline",
     fontSize: 14,
-    marginBottom: 20
+    marginBottom: 20,
   },
 });
 

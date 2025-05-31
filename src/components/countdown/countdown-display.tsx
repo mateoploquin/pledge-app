@@ -7,6 +7,7 @@ interface CountdownDisplayProps {
   hours: number;
   minutes: number;
   seconds: number;
+  title?: string;
 }
 
 const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
@@ -14,30 +15,32 @@ const CountdownDisplay: React.FC<CountdownDisplayProps> = ({
   hours,
   minutes,
   seconds,
+  title = "Countdown",
 }) => {
+  const timeUnits = [
+    { value: days, label: "DAYS" },
+    { value: hours, label: "HOURS" },
+    { value: minutes, label: "MINUTES" },
+    { value: seconds, label: "SECONDS" },
+  ];
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Countdown</Text>
+      <Text style={styles.title}>{title}</Text>
       <View style={styles.countdownContainer}>
-        <View style={styles.timeUnit}>
-          <Text style={styles.number}>{String(days).padStart(2, '0')}</Text>
-          <Text style={styles.label}>DAYS</Text>
-        </View>
-        <Text style={styles.separator}>:</Text>
-        <View style={styles.timeUnit}>
-          <Text style={styles.number}>{String(hours).padStart(2, '0')}</Text>
-          <Text style={styles.label}>HOURS</Text>
-        </View>
-        <Text style={styles.separator}>:</Text>
-        <View style={styles.timeUnit}>
-          <Text style={styles.number}>{String(minutes).padStart(2, '0')}</Text>
-          <Text style={styles.label}>MINUTES</Text>
-        </View>
-        <Text style={styles.separator}>:</Text>
-        <View style={styles.timeUnit}>
-          <Text style={styles.number}>{String(seconds).padStart(2, '0')}</Text>
-          <Text style={styles.label}>SECONDS</Text>
-        </View>
+        {timeUnits.map((unit, index) => (
+          <React.Fragment key={unit.label}>
+            <View style={styles.timeUnit}>
+              <Text style={styles.number}>
+                {String(unit.value).padStart(2, '0')}
+              </Text>
+              <Text style={styles.label}>{unit.label}</Text>
+            </View>
+            {index < timeUnits.length - 1 && (
+              <Text style={styles.separator}>:</Text>
+            )}
+          </React.Fragment>
+        ))}
       </View>
     </View>
   );
@@ -49,16 +52,22 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 15,
     marginBottom: 15,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
     fontSize: 24,
     fontWeight: '600',
     color: colors.orange,
     marginBottom: 15,
+    textAlign: 'center',
   },
   countdownContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-evenly',
     alignItems: 'center',
     backgroundColor: colors.white,
     borderRadius: 15,
@@ -75,6 +84,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
+    fontWeight: '500',
     color: colors.black,
     marginTop: 5,
   },
