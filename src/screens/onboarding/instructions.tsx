@@ -38,7 +38,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
   const isReturningFromShare = useRef(false);
-  const [pledgeValue, setPledgeValue] = useState(10);
+  const [pledgeValue, setPledgeValue] = useState(5);
   const [timeValue, setTimeValue] = useState(10);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
