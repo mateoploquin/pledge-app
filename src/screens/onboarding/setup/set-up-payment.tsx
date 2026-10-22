@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Alert, StyleSheet } from "react-native";
+import { View, Text, Alert, StyleSheet, ActivityIndicator } from "react-native";
 import colors from "../../../theme/colors";
 import MainButton from "../../../components/buttons/main-button";
 import { useStripe } from "@stripe/stripe-react-native";
@@ -78,6 +78,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
   const openPaymentSheet = async () => {
     const { error } = await presentPaymentSheet();
     if (error) {
+      setDismissed(true);
       if (error.code !== "Canceled") {
         Alert.alert(`Error code: ${error.code}`, error.message);
       }
@@ -108,6 +109,8 @@ const SetPayment: React.FC<SetPaymentProps> = ({
       const initialized = await initializePaymentSheet();
       if (initialized) {
         await openPaymentSheet();
+      } else {
+        setDismissed(true);
       }
     } finally {
       setLoading(false);
@@ -118,58 +121,57 @@ const SetPayment: React.FC<SetPaymentProps> = ({
     setIsButtonDisabled(!paymentSetupComplete);
   }, [paymentSetupComplete, setIsButtonDisabled]);
 
+  // Open the card sheet immediately; this step has no content of its own.
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    if (!paymentSetupComplete) handleSetUpPayment();
+  }, []);
+
   return (
-    <View>
-      <Text style={styles.title}>Put your card down</Text>
-      <Text style={styles.subtitle}>
-        Nothing is charged now. You only pay your {CURRENCY_SYMBOL}
-        {pledgeValue} pledge if you unlock your apps before the 30 days are up.
-      </Text>
-      <View style={styles.buttonRow}>
-        <MainButton
-          onPress={handleSetUpPayment}
-          text={paymentSetupComplete ? "Update Payment Method" : "Set Up Payment"}
-          style={{ opacity: loading ? 0.5 : 1 }}
-          disabled={loading}
-        />
-        {paymentSetupComplete && (
-          <Text style={styles.success}>
-            We've received your payment method. You're all set!
+    <View style={styles.container}>
+      {loading || paymentSetupComplete ? (
+        <>
+          <ActivityIndicator color={colors.orange} size="large" />
+          <Text style={styles.subtitle}>
+            {paymentSetupComplete ? "Starting your challenge…" : "Opening secure card setup…"}
           </Text>
-        )}
-      </View>
+        </>
+      ) : dismissed ? (
+        <>
+          <Text style={styles.title}>Put your card down</Text>
+          <Text style={styles.subtitle}>
+            Nothing is charged now. You only pay your {CURRENCY_SYMBOL}
+            {pledgeValue} pledge if you unlock your apps before the 30 days are up.
+          </Text>
+          <MainButton onPress={handleSetUpPayment} text="Add a card" style={styles.button} />
+        </>
+      ) : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 40,
+    paddingBottom: 120,
+  },
   title: {
-    marginHorizontal: 21,
     color: colors.orange,
-    marginTop: 50,
     fontSize: 24,
     textAlign: "center",
     fontWeight: "600",
   },
   subtitle: {
-    marginHorizontal: 40,
-    marginTop: 12,
+    marginTop: 14,
     fontSize: 15,
     textAlign: "center",
     color: colors.black,
   },
-  buttonRow: {
-    marginVertical: 20,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  success: {
-    color: colors.orange,
-    textAlign: "center",
-    marginTop: 50,
-    fontSize: 20,
-    fontWeight: "600",
-    paddingHorizontal: 60,
+  button: {
+    marginTop: 28,
   },
 });
 

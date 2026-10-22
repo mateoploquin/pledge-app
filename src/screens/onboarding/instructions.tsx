@@ -167,7 +167,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
       ) : null}
       </Animated.View>
 
-      <View style={styles.buttonContainer}>
+      <View style={[styles.buttonContainer, step === 5 && { display: "none" }]}>
         <MainButton
           onPress={async () => {
             if (step == 5) {
