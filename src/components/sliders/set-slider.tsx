@@ -18,29 +18,18 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, onValueChange }) => {
 
   const generateTickValues = (min: number, max: number): number[] => {
     const range = max - min;
-    const step = range / 5;
+    // Pick a round step (1, 2, 2.5, 5 x 10^n) that yields roughly four intervals.
+    const rough = range / 4;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(rough)));
+    const candidates = [1, 2, 2.5, 5, 10].map((n) => n * magnitude);
+    const step = candidates.find((c) => c >= rough) ?? candidates[candidates.length - 1];
 
-    const roundToNiceNumber = (num: number): number => {
-      const magnitude = Math.pow(10, Math.floor(Math.log10(num)));
-      const normalized = num / magnitude;
-
-      if (normalized <= 2) return Math.round(normalized) * magnitude;
-      if (normalized <= 5) return Math.round(normalized) * magnitude;
-      return Math.round(normalized / 5) * 5 * magnitude;
-    };
-
-    const ticks: number[] = [];
-    for (let i = 0; i <= 5; i++) {
-      const rawValue = min + step * i;
-      if (i === 0) {
-        ticks.push(min);
-      } else if (i === 5) {
-        ticks.push(max);
-      } else {
-        ticks.push(roundToNiceNumber(rawValue));
-      }
+    const ticks = [min];
+    for (let v = Math.ceil(min / step) * step; v < max; v += step) {
+      // Skip labels that would collide with the end labels.
+      if (v - min > step * 0.4 && max - v > step * 0.4) ticks.push(Math.round(v));
     }
-
+    ticks.push(max);
     return ticks;
   };
 
@@ -71,12 +60,15 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, onValueChange }) => {
 
   const renderTickMarks = () => {
     const ticks = generateTickValues(min, max);
-    return ticks.map((tick, index) => (
-      <View key={index} style={styles.tickContainer}>
-        <View style={styles.tick} />
-        <Text style={styles.tickLabel}>{tick}</Text>
-      </View>
-    ));
+    return ticks.map((tick) => {
+      const left = ((tick - min) / (max - min)) * SLIDER_WIDTH;
+      return (
+        <View key={tick} style={[styles.tickContainer, { left }]}>
+          <View style={styles.tick} />
+          <Text style={styles.tickLabel}>{tick}</Text>
+        </View>
+      );
+    });
   };
 
   return (
@@ -126,13 +118,15 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   ticksContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     width: SLIDER_WIDTH,
+    height: 34,
     marginTop: 10,
   },
   tickContainer: {
+    position: "absolute",
+    top: 0,
+    width: 40,
+    marginLeft: -20,
     alignItems: "center",
   },
   tick: {
