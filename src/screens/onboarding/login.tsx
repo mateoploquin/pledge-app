@@ -6,6 +6,7 @@ import AppWrapper from "../../components/layout/app-wrapper";
 import { Feather } from "@expo/vector-icons";
 import colors from "../../theme/colors";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebaseConfig';
 import SocialSignInButtons from "../../components/buttons/social-sign-in-buttons";
@@ -14,6 +15,7 @@ interface LoginScreenProps {}
 
 const LoginScreen: React.FC<LoginScreenProps> = () => {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -71,11 +73,11 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
         </Text>
       </TouchableOpacity>
 
-      <View style={styles.imageContainer}>
+      <View style={[styles.imageContainer, { marginBottom: -insets.bottom }]}>
         <Image
           source={require("../../../assets/images/onboarding/Phone_withicons.png")}
           style={styles.bottomImage}
-          resizeMode="contain"
+          resizeMode="cover"
         />
       </View>
     </AppWrapper>
@@ -106,12 +108,12 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     alignItems: "center",
     marginTop: 16,
-    marginBottom: -1,
     overflow: "hidden",
   },
   bottomImage: {
     width: "100%",
-    height: "100%",
+    maxHeight: "100%",
+    aspectRatio: 367 / 446,
   },
 });
 
