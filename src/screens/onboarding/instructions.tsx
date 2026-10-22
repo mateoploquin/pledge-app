@@ -9,7 +9,6 @@ import SetPledge from "./setup/set-pledge";
 import ChallengeOn from "./setup/challenge-on";
 import SetTimeLimit from "./setup/set-time-limit";
 import SetApps from "./setup/set-apps";
-import InstructionCarousel from "../../components/carousels/instructions-carousel";
 import AcceptTerms from "./setup/accept-terms";
 import {
   AuthorizationStatus,
@@ -29,7 +28,8 @@ interface InstructionsProps {
 
 const Instructions: React.FC<InstructionsProps> = () => {
   const navigation = useNavigation();
-  const [step, setStepState] = useState(0);
+  const FIRST_STEP = 1; // app selection; the old explainer carousel (step 0) was removed
+  const [step, setStepState] = useState(FIRST_STEP);
   const direction = useRef<"forward" | "back">("forward");
   const setStep = (next: number) => {
     direction.current = next >= step ? "forward" : "back";
@@ -53,7 +53,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
     useCallback(() => {
       setPaymentSetupComplete(false);
       if (!isReturningFromShare.current) {
-        setStep(0);
+        setStep(FIRST_STEP);
       }
       isReturningFromShare.current = false;
     }, [])
@@ -97,9 +97,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
         entering={(direction.current === "forward" ? FadeInRight : FadeInLeft).duration(380)}
         exiting={(direction.current === "forward" ? FadeOutLeft : FadeOutRight).duration(220)}
       >
-      {step === 0 ? (
-        <InstructionCarousel />
-      ) : step == 1 ? (
+      {step == 1 ? (
         <SetApps
           authorizationStatus={authorizationStatus}
           setAuthorizationStatus={setAuthorizationStatus}
@@ -186,7 +184,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
             (step === 5 && !paymentSetupComplete) // Disable on Payment step if setup not complete
           }
         />
-        {step !== 5 && step > 0 ? (
+        {step !== 5 && step > FIRST_STEP ? (
           <TouchableOpacity
             onPress={() => {
               setStep(step - 1);
