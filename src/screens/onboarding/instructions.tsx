@@ -17,8 +17,9 @@ import {
 } from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
 import { getAuthorizationStatus } from "react-native-device-activity";
 import SetPayment from "./setup/set-up-payment";
-import { SelectionInfo } from "../../types";
+import { PledgeSettings, SelectionInfo } from "../../types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { startChallengeMonitoring } from "../home/home.controller";
 
 interface InstructionsProps {
   // define your props here
@@ -116,7 +117,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
 
       <View style={styles.buttonContainer}>
         <MainButton
-          onPress={() => {
+          onPress={async () => {
             if (step == 5) {
               if (!paymentSetupComplete) {
                 Alert.alert(
@@ -125,18 +126,37 @@ const Instructions: React.FC<InstructionsProps> = () => {
                 );
                 return;
               }
-              AsyncStorage.setItem(
-                "pledgeSettings",
-                JSON.stringify({
-                  selectionEvent,
-                  pledgeValue,
-                  timeValue,
-                  paymentSetupComplete: true,
-                })
-              ).then(() => {
+              if (!selectionEvent?.familyActivitySelection) {
+                Alert.alert(
+                  "No apps selected",
+                  "Go back and choose the apps you want to limit."
+                );
+                return;
+              }
+              const settings: PledgeSettings = {
+                selectionEvent,
+                pledgeValue,
+                timeValue,
+                paymentSetupComplete: true,
+              };
+              try {
+                setIsButtonDisabled(true);
+                await startChallengeMonitoring(settings, { fresh: true });
+                await AsyncStorage.multiSet([
+                  ["pledgeSettings", JSON.stringify(settings)],
+                  ["challengeStartDate", new Date().toISOString()],
+                ]);
                 //@ts-ignore
-                navigation.navigate("Home");
-              });
+                navigation.replace("Home");
+              } catch (error: any) {
+                console.error("Could not start the challenge:", error);
+                Alert.alert(
+                  "Could not start monitoring",
+                  error?.message ?? "Please check Screen Time permissions and try again."
+                );
+              } finally {
+                setIsButtonDisabled(false);
+              }
             } else if (
               step === 1 &&
               authorizationStatus !== AuthorizationStatus.approved
@@ -149,6 +169,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
           text={step == 5 ? "Track My Pledge" : "Continue"}
           style={styles.mainButton}
           disabled={
+            isButtonDisabled ||
             (step === 4 && !termsAccepted) || // Disable on AcceptTerms step if unchecked
             (step === 5 && !paymentSetupComplete) // Disable on Payment step if setup not complete
           }

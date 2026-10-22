@@ -6,7 +6,7 @@ import AppWrapper from "../../components/layout/app-wrapper";
 import PledgeFormIcon from "../../../assets/images/icons/pledge-form";
 import { SCREEN_HEIGHT } from "../../utils/constants/dimensions";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as ReactNativeDeviceActivity from "react-native-device-activity";
+import { stopChallengeMonitoring } from "../home/home.controller";
 
 interface ChallengeCompletedProps {
   navigation: any;
@@ -24,22 +24,15 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
   const result = route.params?.result || "success";
 
   const handleRestart = async () => {
-    // Ensure all monitoring is stopped
-    ReactNativeDeviceActivity.stopMonitoring();
-    ReactNativeDeviceActivity.resetBlocks();
-
-    await AsyncStorage.removeItem('pledgeSettings');
-    await AsyncStorage.removeItem('challengeStartDate');
-    
-    navigation.navigate("Instructions");
+    stopChallengeMonitoring();
+    await AsyncStorage.multiRemove(["pledgeSettings", "challengeStartDate"]);
+    navigation.replace("Instructions");
   };
 
   useEffect(() => {
-    if (result === "success") {
-      ReactNativeDeviceActivity.stopMonitoring();
-      ReactNativeDeviceActivity.resetBlocks();
-    }
-  }, [result]);
+    // Whatever the outcome, the challenge is over: lift blocks and stop tracking.
+    stopChallengeMonitoring();
+  }, []);
 
   return (
     <AppWrapper style={styles.wrapper}>

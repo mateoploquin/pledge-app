@@ -5,41 +5,25 @@ import {
 } from "firebase/auth";
 import axios from "axios";
 import { auth } from "../firebaseConfig";
+import { API_URL } from "../config";
 
-export async function signUp(email, password, displayName) {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    const user = userCredential.user;
+export async function signUp(email: string, password: string, displayName: string) {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const user = userCredential.user;
 
-    await updateProfile(user, { displayName });
+  await updateProfile(user, { displayName });
+  await user.reload();
+  const idToken = await getIdToken(user, true);
 
-    await user.reload();
-    const idToken = await getIdToken(user, true);
-
-    await sendTokenToBackend(idToken);
-  } catch (error) {
-    console.error("Error during sign-up:", error);
-    throw error;
-  }
-}
-
-async function sendTokenToBackend(idToken) {
+  // Registers the user with the backend. Not fatal: the backend upserts the
+  // user again on the first authenticated call.
   try {
     await axios.post(
-      "https://pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io/auth/firebase/signup",
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
-      }
+      `${API_URL}/auth/firebase/signup`,
+      { displayName },
+      { headers: { Authorization: `Bearer ${idToken}` } }
     );
   } catch (error) {
-    console.error("Error sending token to backend:", error);
-    throw error;
+    console.warn("Backend signup failed, will retry on next request:", error);
   }
 }

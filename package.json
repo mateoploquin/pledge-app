@@ -27,6 +27,7 @@
     "expo-sharing": "~12.0.1",
     "expo-splash-screen": "~0.27.6",
     "expo-status-bar": "~1.12.1",
+    "firebase": "^10.13.2",
     "react": "18.2.0",
     "react-native": "0.74.5",
     "react-native-device-activity": "https://pkg.pr.new/kingstinct/react-native-device-activity@114e1a0",

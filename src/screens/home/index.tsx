@@ -1,4 +1,4 @@
-import { FC, useEffect, useState, Fragment } from "react";
+import { FC, useCallback, useEffect, useRef, useState, Fragment } from "react";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
 import {
   View,
@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Button,
+  AppState,
+  Linking,
 } from "react-native";
 import HomeCardWrapper from "../../components/cards/home-card-wrapper";
 import colors from "../../theme/colors";
@@ -17,140 +18,159 @@ import HomeWrapper from "../../components/layout/home-wrapper";
 import DayProgressBar from "../../components/bars/days-progress-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PledgeSettings } from "../../types";
-import { Controller } from "./home.controller";
+import {
+  DailyUsage,
+  getTodayUsage,
+  isChallengeMonitoring,
+  splitMinutes,
+  startChallengeMonitoring,
+  stopChallengeMonitoring,
+} from "./home.controller";
 import { CHALLENGE_DURATION } from "./home.constants";
 import { Interfaces } from "./home.interfaces";
+import { CURRENCY_SYMBOL } from "../../config";
+
+const isUnlockUrl = (url: string | null | undefined) =>
+  !!url && /unlock/i.test(url);
+
+export const clearChallengeStorage = () =>
+  Promise.all([
+    AsyncStorage.removeItem("pledgeSettings"),
+    AsyncStorage.removeItem("challengeStartDate"),
+  ]);
 
 const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
   const { navigation } = props;
   const [isModalVisible, setModalVisible] = useState(false);
-  const { startMonitoring, stopMonitoring, shieldConfiguration, block } =
-    Controller.useHandleMonitoring();
-  const { refreshEvents, onSurrender } = Controller.useHandleChangeEvents(setModalVisible);
-
-  const [settings, setSettings] = useState<PledgeSettings | undefined>(
-    undefined
-  );
-  const [{ hours, minutes, remainingMinutes }, setTotalTime] =
-    useState<Interfaces.Timer>({
-      hours: 0,
-      minutes: 0,
-      remainingMinutes: 0,
-    });
-  const [challengeStartDate, setChallengeStartDate] = useState<Date | null>(
-    null
-  );
-  const [countdown, setCountdown] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
+  const [settings, setSettings] = useState<PledgeSettings | undefined>();
+  const [usage, setUsage] = useState<DailyUsage>({
+    usedMinutes: 0,
+    remainingMinutes: 0,
+    limitReached: false,
   });
+  const [challengeStartDate, setChallengeStartDate] = useState<Date | null>(null);
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [currentDay, setCurrentDay] = useState(1);
+  const limitRef = useRef(0);
 
-  const countdownTimes = [
-    { value: countdown.days, label: "Days" },
-    { value: countdown.hours, label: "Hours" },
-    { value: countdown.minutes, label: "Minutes" },
-    { value: countdown.seconds, label: "Seconds" },
-  ];
+  const refreshUsage = useCallback(() => {
+    if (!limitRef.current) return;
+    setUsage(getTodayUsage(limitRef.current));
+  }, []);
 
+  const endChallenge = useCallback(
+    async (result: "success" | "failure") => {
+      stopChallengeMonitoring();
+      await clearChallengeStorage();
+      navigation.replace("ChallengeCompleted", { result });
+    },
+    [navigation]
+  );
+
+  // Load settings, make sure the daily schedule is registered, listen for events.
   useEffect(() => {
-    let listener: (() => void) | undefined;
-    AsyncStorage.getItem("pledgeSettings").then((s) => {
-      if (s) {
-        const settings = JSON.parse(s);
-        if (!settings.paymentSetupComplete) {
-          navigation.replace("Instructions");
-          return;
-        }
-        setSettings(settings);
-        // startMonitoring(timeValue);
-        shieldConfiguration();
+    let subscription: { remove: () => void } | undefined;
+    let cancelled = false;
 
-        listener = ReactNativeDeviceActivity.onDeviceActivityMonitorEvent(
-          (event) => {
-            console.log("got event, refreshing events!", event);
-            refreshEvents(setTotalTime);
-          }
-        ).remove;
+    (async () => {
+      const raw = await AsyncStorage.getItem("pledgeSettings");
+      const parsed: PledgeSettings | null = raw ? JSON.parse(raw) : null;
+      if (!parsed?.paymentSetupComplete) {
+        navigation.replace("Instructions");
+        return;
       }
+      if (cancelled) return;
+
+      limitRef.current = parsed.timeValue;
+      setSettings(parsed);
+
+      try {
+        if (!isChallengeMonitoring()) {
+          await startChallengeMonitoring(parsed);
+        }
+      } catch (e) {
+        console.error("Could not (re)start monitoring:", e);
+      }
+      refreshUsage();
+
+      subscription = ReactNativeDeviceActivity.onDeviceActivityMonitorEvent(() => {
+        refreshUsage();
+      });
+    })();
+
+    const appState = AppState.addEventListener("change", (state) => {
+      if (state === "active") refreshUsage();
     });
 
     return () => {
-      listener?.();
+      cancelled = true;
+      subscription?.remove();
+      appState.remove();
     };
   }, []);
 
+  // Deep link from the shield ("pledge://unlock") opens the surrender dialog.
   useEffect(() => {
-    const loadChallengeStartDate = async () => {
-      try {
-        const startDateStr = await AsyncStorage.getItem("challengeStartDate");
-        if (startDateStr) {
-          const startDate = new Date(startDateStr);
-          setChallengeStartDate(startDate);
-        }
-      } catch (error) {
-        console.error("Error loading challenge start date:", error);
-      }
-    };
+    Linking.getInitialURL().then((url) => {
+      if (isUnlockUrl(url)) setModalVisible(true);
+    });
+    const sub = Linking.addEventListener("url", ({ url }) => {
+      if (isUnlockUrl(url)) setModalVisible(true);
+    });
+    return () => sub.remove();
+  }, []);
 
-    loadChallengeStartDate();
+  useEffect(() => {
+    AsyncStorage.getItem("challengeStartDate")
+      .then((s) => s && setChallengeStartDate(new Date(s)))
+      .catch((e) => console.error("Error loading challenge start date:", e));
   }, []);
 
   useEffect(() => {
     if (!challengeStartDate) return;
 
-    const calculateTimeLeft = () => {
+    const tick = () => {
       const now = new Date();
       const endDate = new Date(challengeStartDate);
       endDate.setDate(endDate.getDate() + CHALLENGE_DURATION);
-
       const difference = endDate.getTime() - now.getTime();
 
       if (difference <= 0) {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        stopMonitoring();
-
-        AsyncStorage.removeItem("pledgeSettings");
-        AsyncStorage.removeItem("challengeStartDate");
-
-        navigation.navigate("ChallengeCompleted", { result: "success" });
+        clearInterval(timer);
+        endChallenge("success");
         return;
       }
 
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-      );
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-      setCountdown({ days, hours, minutes, seconds });
-
-      const daysPassed = Math.min(
-        Math.ceil(
-          (now.getTime() - new Date(challengeStartDate).getTime()) /
-            (1000 * 60 * 60 * 24)
-        ),
-        CHALLENGE_DURATION
-      );
-      setCurrentDay(Math.max(1, daysPassed));
+      const day = 1000 * 60 * 60 * 24;
+      setCountdown({
+        days: Math.floor(difference / day),
+        hours: Math.floor((difference % day) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+      });
+      const daysPassed = Math.ceil((now.getTime() - challengeStartDate.getTime()) / day);
+      setCurrentDay(Math.min(Math.max(1, daysPassed), CHALLENGE_DURATION));
     };
 
-    const timer = setInterval(calculateTimeLeft, 1000);
-    calculateTimeLeft();
-
+    const timer = setInterval(tick, 1000);
+    tick();
     return () => clearInterval(timer);
-  }, [challengeStartDate]);
+  }, [challengeStartDate, endChallenge]);
 
   if (!settings) {
     return null;
   }
 
   const toggleModal = () => setModalVisible((prev) => !prev);
-
-  const { timeValue, pledgeValue, selectionEvent } = settings;
+  const { timeValue, pledgeValue } = settings;
+  const used = splitMinutes(usage.usedMinutes);
+  const countdownTimes = [
+    { value: countdown.days, label: "Days" },
+    { value: countdown.hours, label: "Hours" },
+    { value: countdown.minutes, label: "Minutes" },
+    { value: countdown.seconds, label: "Seconds" },
+  ];
 
   return (
     <HomeWrapper>
@@ -176,51 +196,61 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
               </View>
             </HomeCardWrapper>
 
-            <HomeCardWrapper
-              style={styles.homeCardWrapper}
-              title={"Daily Consumption"}
-            >
+            <HomeCardWrapper style={styles.homeCardWrapper} title={"Daily Consumption"}>
               <View style={styles.consumptionContainer}>
                 <Text style={styles.hoursMinutesText}>
-                  {hours}h {minutes}m
+                  {used.hours}h {used.minutes}m
                 </Text>
-                <Text style={styles.remainingText}>
-                  <Text style={styles.remainingMinutesText}>
-                    {remainingMinutes}m
+                {usage.limitReached ? (
+                  <Text style={styles.blockedText}>
+                    Limit reached. Your apps are blocked until midnight.
                   </Text>
-                  left for your daily limit
-                </Text>
-                <ScreenTimeList />
+                ) : (
+                  <Text style={styles.remainingText}>
+                    <Text style={styles.remainingMinutesText}>
+                      {usage.remainingMinutes}m
+                    </Text>
+                    {` left of your ${timeValue}m daily limit`}
+                  </Text>
+                )}
+                <ScreenTimeList
+                  usedMinutes={usage.usedMinutes}
+                  limitMinutes={timeValue}
+                />
               </View>
             </HomeCardWrapper>
 
-            <HomeCardWrapper
-              style={styles.homeCardWrapper}
-              title={"Progress Bar"}
-            >
+            <HomeCardWrapper style={styles.homeCardWrapper} title={"Progress Bar"}>
               <View style={styles.progressContainer}>
                 <DayProgressBar
                   currentDay={currentDay}
                   daysRemaining={countdown.days}
                   totalDays={CHALLENGE_DURATION}
                 />
+                <Text style={styles.pledgeText}>
+                  Pledge at stake: {CURRENCY_SYMBOL}
+                  {pledgeValue}
+                </Text>
               </View>
-              <Button title='stop' onPress={stopMonitoring}/>
-              <Button title='start' onPress={() => startMonitoring()}/>
-              <Button title='getEvents' onPress={() => refreshEvents(setTotalTime)}/>
             </HomeCardWrapper>
           </View>
         </View>
       </ScrollView>
 
       <TouchableOpacity onPress={toggleModal} style={styles.surrenderButton}>
-        <Text style={styles.surrenderText}>I surrender</Text>
+        <Text style={styles.surrenderText}>
+          {usage.limitReached ? "Unlock my apps" : "I surrender"}
+        </Text>
       </TouchableOpacity>
 
       <SurrenderModal
         isVisible={isModalVisible}
         onClose={toggleModal}
-        onSurrender={onSurrender}
+        pledgeValue={pledgeValue}
+        onSurrender={() => {
+          setModalVisible(false);
+          endChallenge("failure");
+        }}
       />
     </HomeWrapper>
   );
@@ -276,10 +306,20 @@ const styles = StyleSheet.create({
   remainingMinutesText: {
     fontWeight: "500",
   },
+  blockedText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.orange,
+  },
   progressContainer: {
     paddingTop: 14,
     paddingBottom: 19,
     paddingHorizontal: 16,
+  },
+  pledgeText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "rgba(0, 0, 0, 0.70)",
   },
   surrenderButton: {
     backgroundColor: colors.white,

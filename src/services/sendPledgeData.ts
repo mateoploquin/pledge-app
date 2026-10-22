@@ -1,5 +1,5 @@
-// services/sendPledgeData.ts
-import axios from 'axios';
+import axios from "axios";
+import { API_URL } from "../config";
 
 interface PledgeData {
   pledgeValue: number;
@@ -7,19 +7,8 @@ interface PledgeData {
 }
 
 export async function sendPledgeData(data: PledgeData, idToken: string) {
-  try {
-    console.log('Sending pledge data:', data);
-    const response = await axios.post('https://pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io/pledge', data, {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error sending pledge data:', error);
-    if (error.response) {
-      console.error('Server response:', error.response.data); // Log the server response
-    }
-    throw error;
-  }
+  const response = await axios.post(`${API_URL}/pledge`, data, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  return response.data;
 }

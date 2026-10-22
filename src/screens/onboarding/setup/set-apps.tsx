@@ -39,7 +39,6 @@ const SetApps: React.FC<SetAppsProps> = ({
 
     try {
       setIsRequesting(true);
-      let status: AuthorizationStatusType;
 
       if (authorizationStatus === AuthorizationStatus.notDetermined) {
         await requestAuthorization();
@@ -69,7 +68,6 @@ const SetApps: React.FC<SetAppsProps> = ({
         return;
       }
 
-      setAuthorizationStatus(status);
     } catch (error) {
       console.error("Error handling authorization:", error);
       Alert.alert(
@@ -90,13 +88,6 @@ const SetApps: React.FC<SetAppsProps> = ({
     []
   );
 
-  // Cleanup effect
-  useEffect(() => {
-    return () => {
-      // Reset selection when component unmounts
-      setSelectionEvent(undefined);
-    };
-  }, []);
 
   return (
     <View style={styles.container}>
