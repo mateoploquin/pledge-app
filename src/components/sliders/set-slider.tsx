@@ -19,7 +19,7 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, onValueChange }) => {
   const generateTickValues = (min: number, max: number): number[] => {
     const range = max - min;
     // Pick a round step (1, 2, 2.5, 5 x 10^n) that yields roughly four intervals.
-    const rough = range / 4;
+    const rough = range / 5;
     const magnitude = Math.pow(10, Math.floor(Math.log10(rough)));
     const candidates = [1, 2, 2.5, 5, 10].map((n) => n * magnitude);
     const step = candidates.find((c) => c >= rough) ?? candidates[candidates.length - 1];
