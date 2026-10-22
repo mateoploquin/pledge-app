@@ -1,6 +1,7 @@
 import React from "react";
 import { Easing } from "react-native";
 import {
+  CardStyleInterpolators,
   createStackNavigator,
   StackCardStyleInterpolator,
   TransitionSpecs,
@@ -53,9 +54,11 @@ const softFade = {
   cardOverlayEnabled: false,
 };
 
+// Native-feeling iOS sheet: slides up, sits below the status bar, dims the screen beneath.
 const modalOptions = {
   presentation: "modal" as const,
   headerShown: false,
+  cardStyleInterpolator: CardStyleInterpolators.forModalPresentationIOS,
   cardOverlayEnabled: true,
   cardShadowEnabled: true,
   gestureEnabled: true,
