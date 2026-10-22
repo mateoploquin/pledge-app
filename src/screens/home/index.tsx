@@ -131,9 +131,10 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
 
     const tick = () => {
       const now = new Date();
-      const endDate = new Date(challengeStartDate);
-      endDate.setDate(endDate.getDate() + CHALLENGE_DURATION);
-      const difference = endDate.getTime() - now.getTime();
+      const day = 1000 * 60 * 60 * 24;
+      // Fixed 30 x 24h, so a DST change inside the window doesn't add or drop an hour.
+      const endTime = challengeStartDate.getTime() + CHALLENGE_DURATION * day;
+      const difference = endTime - now.getTime();
 
       if (difference <= 0) {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -142,7 +143,6 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
         return;
       }
 
-      const day = 1000 * 60 * 60 * 24;
       setCountdown({
         days: Math.floor(difference / day),
         hours: Math.floor((difference % day) / (1000 * 60 * 60)),
