@@ -2,6 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
 import colors from "../../../theme/colors";
+import PresetChips from "../../../components/buttons/preset-chips";
+import { haptics } from "../../../utils/haptics";
 
 interface SetPledgeProps {
   pledgeValue: number;
@@ -24,7 +26,18 @@ const SetPledge: React.FC<SetPledgeProps> = ({
       <SetSlider
         min={5}
         max={100}
+        value={pledgeValue}
         onValueChange={(value) => setPledgeValue(value)}
+      />
+
+      <PresetChips
+        values={[5, 10, 20, 50, 100]}
+        selected={pledgeValue}
+        onSelect={(v) => {
+          haptics.select();
+          setPledgeValue(v);
+        }}
+        format={(v) => `$${v}`}
       />
 
       <Text style={styles.description}>
@@ -70,7 +83,7 @@ const styles = StyleSheet.create({
     height: 40,
   },
   description: {
-    marginTop: 69,
+    marginTop: 40,
     marginHorizontal: 34,
     textAlign: "center",
     fontSize: 16,

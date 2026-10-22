@@ -2,6 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
 import colors from "../../../theme/colors";
+import PresetChips from "../../../components/buttons/preset-chips";
+import { haptics } from "../../../utils/haptics";
 
 interface SetTimeLimitProps {
   timeValue: number;
@@ -27,7 +29,18 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
       <SetSlider
         min={10}
         max={120}
+        value={timeValue}
         onValueChange={(value) => setTimeValue(value)}
+      />
+
+      <PresetChips
+        values={[15, 30, 45, 60, 90, 120]}
+        selected={timeValue}
+        onSelect={(v) => {
+          haptics.select();
+          setTimeValue(v);
+        }}
+        format={(v) => (v >= 60 ? `${v / 60}h${v % 60 ? ` ${v % 60}m` : ""}` : `${v}m`)}
       />
 
       <Text style={styles.description}>
@@ -76,7 +89,7 @@ const styles = StyleSheet.create({
     height: 40,
   },
   description: {
-    marginTop: 69,
+    marginTop: 40,
     marginHorizontal: 34,
     textAlign: "center",
     fontSize: 16,

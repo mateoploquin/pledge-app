@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { haptics } from "../../utils/haptics";
 import { View, Text, StyleSheet, PanResponder } from "react-native";
 import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
@@ -8,12 +8,21 @@ const SLIDER_WIDTH = SCREEN_WIDTH * 0.8;
 interface SetSliderProps {
   min: number;
   max: number;
+  /** Controlled value; when it changes externally (e.g. a preset tap) the thumb follows. */
+  value?: number;
   onValueChange: (value: number) => void;
 }
 
-const SetSlider: React.FC<SetSliderProps> = ({ min, max, onValueChange }) => {
-  const [value, setValue] = useState(min);
-  const valueRef = useRef(min);
+const SetSlider: React.FC<SetSliderProps> = ({ min, max, value: controlled, onValueChange }) => {
+  const [value, setValue] = useState(controlled ?? min);
+  const valueRef = useRef(controlled ?? min);
+
+  useEffect(() => {
+    if (controlled !== undefined && controlled !== valueRef.current) {
+      valueRef.current = controlled;
+      setValue(controlled);
+    }
+  }, [controlled]);
   const [startX, setStartX] = useState(0);
 
   const generateTickValues = (min: number, max: number): number[] => {
