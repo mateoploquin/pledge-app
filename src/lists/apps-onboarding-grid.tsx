@@ -5,12 +5,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  NativeSyntheticEvent,
 } from "react-native";
 import { Entypo, FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import colors from "../theme/colors";
 import { SelectionInfo } from "../types";
-import { useNavigation } from "@react-navigation/native";
+import {
+  AuthorizationStatus,
+  AuthorizationStatusType,
+} from "react-native-device-activity";
 const appData = [
   {
     id: 1,
@@ -59,17 +61,15 @@ const appData = [
 ];
 
 interface AppsOnboardingListProps {
-  onSelectionChange: (event: NativeSyntheticEvent<SelectionInfo>) => void;
-  onAskPermissions: () => Promise<void>;
-  permissionsGranted: boolean;
+  authorizationStatus: AuthorizationStatusType;
   selectionEvent: SelectionInfo | undefined;
+  onPress: () => void;
 }
 
 const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
-  onSelectionChange,
-  onAskPermissions,
-  permissionsGranted,
+  authorizationStatus,
   selectionEvent,
+  onPress,
 }) => {
   const renderApp = ({ item }) => {
     return (
@@ -79,16 +79,24 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
     );
   };
 
+  const selectedCount = selectionEvent
+    ? selectionEvent.applicationCount +
+      selectionEvent.categoryCount +
+      selectionEvent.webDomainCount
+    : 0;
+  const label =
+    authorizationStatus === AuthorizationStatus.denied
+      ? "Enable Screen Time access"
+      : authorizationStatus !== AuthorizationStatus.approved
+        ? "Allow Screen Time access"
+        : selectedCount > 0
+          ? `${selectedCount} selected · change`
+          : "Choose apps";
+
   const renderButton = () => {
     return (
       <View style={styles.buttonContainer}>
-        <Text style={styles.buttonText}>
-          {permissionsGranted
-            ? selectionEvent
-              ? `You selected ${selectionEvent.applicationCount} apps, ${selectionEvent.categoryCount} categories and ${selectionEvent.webDomainCount} websites`
-              : "Choose apps"
-            : "Grant permissions"}
-        </Text>
+        <Text style={styles.buttonText}>{label}</Text>
         <Entypo
           name="chevron-thin-down"
           size={17}
@@ -98,8 +106,6 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
       </View>
     );
   };
-
-  const navigation = useNavigation();
 
   return (
     <View>
@@ -112,29 +118,13 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
         contentContainerStyle={styles.grid}
       />
 
-      {permissionsGranted ? (
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => {
-            // @ts-ignore
-            navigation.navigate("SelectApps", {
-              deviceActivitySelection: selectionEvent,
-              setDeviceActivitySelection: onSelectionChange,
-            });
-          }}
-          style={[styles.button, styles.buttonWithOverflow]}
-        >
-          {renderButton()}
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={onAskPermissions}
-          style={styles.button}
-        >
-          {renderButton()}
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onPress}
+        style={[styles.button, styles.buttonWithOverflow]}
+      >
+        {renderButton()}
+      </TouchableOpacity>
     </View>
   );
 };

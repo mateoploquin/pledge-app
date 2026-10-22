@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, NativeSyntheticEvent, Text, View, StyleSheet } from "react-native";
+import { NativeSyntheticEvent, Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import { NavigationProp, RouteProp } from "@react-navigation/native";
 import {
   DeviceActivitySelectionEvent,
@@ -7,6 +7,7 @@ import {
   setFamilyActivitySelectionId,
 } from "react-native-device-activity";
 import { pledgeActivitySelectionId } from "../home/home.constants";
+import colors from "../../theme/colors";
 
 export type SelectAppsViewProps = {
   navigation: NavigationProp<any>;
@@ -16,102 +17,137 @@ export type SelectAppsViewProps = {
       setDeviceActivitySelection: (
         event: NativeSyntheticEvent<DeviceActivitySelectionEvent>
       ) => void;
+      /** Called when the user taps Done with at least one app selected. */
+      onDone?: () => void;
     };
   }>;
 };
 
+const countOf = (s?: DeviceActivitySelectionEvent | null) =>
+  s ? (s.applicationCount ?? 0) + (s.categoryCount ?? 0) + (s.webDomainCount ?? 0) : 0;
+
 const SelectAppsView = ({ navigation, route }: SelectAppsViewProps) => {
-  const [isVisible, setIsVisible] = useState(true);
-  const [selectedAppsCount, setSelectedAppsCount] = useState(0);
+  const [pickerKey, setPickerKey] = useState(0);
+  const [selection, setSelection] = useState<DeviceActivitySelectionEvent | undefined>(
+    route.params?.deviceActivitySelection
+  );
+  const selectedCount = countOf(selection);
 
-  const [deviceActivitySelection, setDeviceActivitySelection] = useState<
-    DeviceActivitySelectionEvent | undefined
-  >(route.params?.deviceActivitySelection);
-
-  const updateDeviceActivitySelection = (
-    event: NativeSyntheticEvent<DeviceActivitySelectionEvent>
-  ) => {
+  const onSelectionChange = (event: NativeSyntheticEvent<DeviceActivitySelectionEvent>) => {
     if (!event?.nativeEvent) return;
-    setDeviceActivitySelection(event.nativeEvent);
+    setSelection(event.nativeEvent);
     if (event.nativeEvent.familyActivitySelection) {
       route.params?.setDeviceActivitySelection?.(event);
       setFamilyActivitySelectionId({
         id: pledgeActivitySelectionId,
         familyActivitySelection: event.nativeEvent.familyActivitySelection,
       });
-      
-      const { applicationCount = 0, categoryCount = 0, webDomainCount = 0 } =
-        event.nativeEvent;
-      setSelectedAppsCount(applicationCount + categoryCount + webDomainCount);
     }
+  };
+
+  const onDone = () => {
+    navigation.goBack();
+    if (selectedCount > 0) route.params?.onDone?.();
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.crashFallback}>
-        <Text>Apple's Activity Selection View Crashed</Text>
-        <Button
-          title="Reload"
-          onPress={() => {
-            setIsVisible(false);
-            setTimeout(() => {
-              setIsVisible(true);
-            }, 500);
-          }}
-        />
-      </View>
-      
       <View style={styles.header}>
-        <Button title="Back" onPress={() => navigation.goBack()} />
-        {selectedAppsCount > 0 && (
-          <Text style={styles.selectionText}>{selectedAppsCount} Selected</Text>
-        )}
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+          <Text style={styles.headerAction}>Cancel</Text>
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Choose apps</Text>
+          <Text style={styles.headerSubtitle}>
+            {selectedCount > 0 ? `${selectedCount} selected` : "Nothing selected yet"}
+          </Text>
+        </View>
+        <TouchableOpacity onPress={onDone} disabled={selectedCount === 0} hitSlop={12}>
+          <Text style={[styles.headerAction, styles.done, selectedCount === 0 && styles.disabled]}>
+            Done
+          </Text>
+        </TouchableOpacity>
       </View>
-      
-      {isVisible ? (
-        <DeviceActivitySelectionView
-          familyActivitySelection={
-            deviceActivitySelection?.familyActivitySelection
-          }
-          onSelectionChange={updateDeviceActivitySelection}
-          style={styles.selectionView}
-        />
-      ) : null}
+
+      {/* Sits *behind* the native picker: only visible if Apple's view fails to render. */}
+      <View style={styles.fallback} pointerEvents="box-none">
+        <Text style={styles.fallbackText}>The app picker didn't load.</Text>
+        <TouchableOpacity onPress={() => setPickerKey((k) => k + 1)}>
+          <Text style={styles.fallbackAction}>Try again</Text>
+        </TouchableOpacity>
+      </View>
+
+      <DeviceActivitySelectionView
+        key={pickerKey}
+        familyActivitySelection={selection?.familyActivitySelection}
+        onSelectionChange={onSelectionChange}
+        style={styles.picker}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, 
-    backgroundColor: "rgb(240, 240, 245)", 
-    marginTop: 10
-  },
-  crashFallback: {
     flex: 1,
-    position: "absolute",
-    alignSelf: "center",
-    justifyContent: "center",
-    paddingTop: 150,
-    zIndex: 10,
+    backgroundColor: "rgb(240, 240, 245)",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    zIndex: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 10,
+    backgroundColor: colors.white,
+    zIndex: 2,
   },
-  selectionText: {
+  headerCenter: {
+    alignItems: "center",
+  },
+  headerTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#007AFF',
+    fontWeight: "600",
   },
-  selectionView: {
+  headerSubtitle: {
+    fontSize: 12,
+    color: colors.darkGray3,
+    marginTop: 2,
+  },
+  headerAction: {
+    fontSize: 16,
+    color: colors.orange,
+    minWidth: 52,
+  },
+  done: {
+    fontWeight: "600",
+    textAlign: "right",
+  },
+  disabled: {
+    opacity: 0.35,
+  },
+  fallback: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 0,
+  },
+  fallbackText: {
+    color: colors.darkGray3,
+    marginBottom: 8,
+  },
+  fallbackAction: {
+    color: colors.orange,
+    fontWeight: "600",
+  },
+  picker: {
     flex: 1,
-  }
+    zIndex: 1,
+  },
 });
 
 export default SelectAppsView;

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,77 +7,46 @@ import {
   Alert,
   Linking,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import colors from "../../../theme/colors";
 import {
   requestAuthorization,
-  revokeAuthorization,
+  getAuthorizationStatus,
   AuthorizationStatus,
-  AuthorizationStatusType
+  AuthorizationStatusType,
 } from "react-native-device-activity";
 import { SelectionInfo } from "../../../types";
 import AppsOnboardingGrid from "../../../lists/apps-onboarding-grid";
-import { getAuthorizationStatus } from "react-native-device-activity";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface SetAppsProps {
   authorizationStatus: AuthorizationStatusType;
   setAuthorizationStatus: (status: AuthorizationStatusType) => void;
-  selectionEvent: SelectionInfo;
+  selectionEvent: SelectionInfo | undefined;
   setSelectionEvent: (event: SelectionInfo) => void;
+  /** Called when the user confirms a non-empty selection in the picker. */
+  onSelectionComplete: () => void;
 }
 
+const hasSelection = (s?: SelectionInfo) =>
+  !!s?.familyActivitySelection &&
+  s.applicationCount + s.categoryCount + s.webDomainCount > 0;
+
+/**
+ * Step 1 of onboarding. Asks for Screen Time access as soon as the step opens,
+ * then opens Apple's app picker right away, so a first-time user only taps
+ * "Allow" and then picks their apps.
+ */
 const SetApps: React.FC<SetAppsProps> = ({
   authorizationStatus,
   setAuthorizationStatus,
   selectionEvent,
   setSelectionEvent,
+  onSelectionComplete,
 }) => {
+  const navigation = useNavigation<any>();
   const [isRequesting, setIsRequesting] = useState(false);
-
-  const onRequestPress = useCallback(async () => {
-    if (isRequesting) return; // Prevent multiple rapid clicks
-
-    try {
-      setIsRequesting(true);
-
-      if (authorizationStatus === AuthorizationStatus.notDetermined) {
-        await requestAuthorization();
-        setAuthorizationStatus(getAuthorizationStatus());
-      } else if (authorizationStatus === AuthorizationStatus.denied) {
-        Alert.alert(
-          "Screen Time Access Required",
-          "Please enable Screen Time access in Settings to continue",
-          [
-            {
-              text: "Open Settings",
-              onPress: Linking.openSettings,
-            },
-            {
-              text: "Cancel",
-              style: "cancel",
-            },
-          ]
-        );
-        return;
-      } else if (authorizationStatus === AuthorizationStatus.approved) {
-        await revokeAuthorization();
-        setAuthorizationStatus(getAuthorizationStatus());
-      } else {
-        console.warn("Unexpected authorization status:", authorizationStatus);
-        setAuthorizationStatus(getAuthorizationStatus());
-        return;
-      }
-
-    } catch (error) {
-      console.error("Error handling authorization:", error);
-      Alert.alert(
-        "Error",
-        "There was an error setting up app monitoring. Please try again."
-      );
-    } finally {
-      setIsRequesting(false);
-    }
-  }, [authorizationStatus, isRequesting]);
+  const autoOpened = useRef(false);
 
   const onSelectionChange = useCallback(
     (event: NativeSyntheticEvent<SelectionInfo>) => {
@@ -85,32 +54,85 @@ const SetApps: React.FC<SetAppsProps> = ({
       AsyncStorage.setItem("selectionEvent", JSON.stringify(event.nativeEvent));
       setSelectionEvent(event.nativeEvent);
     },
-    []
+    [setSelectionEvent]
   );
 
+  const openPicker = useCallback(() => {
+    navigation.navigate("SelectApps", {
+      deviceActivitySelection: selectionEvent,
+      setDeviceActivitySelection: onSelectionChange,
+      onDone: onSelectionComplete,
+    });
+  }, [navigation, selectionEvent, onSelectionChange, onSelectionComplete]);
+
+  const requestAccess = useCallback(async (): Promise<AuthorizationStatusType> => {
+    if (isRequesting) return authorizationStatus;
+    setIsRequesting(true);
+    try {
+      await requestAuthorization();
+    } catch (error) {
+      console.error("Error requesting Screen Time authorization:", error);
+    } finally {
+      setIsRequesting(false);
+    }
+    const status = getAuthorizationStatus();
+    setAuthorizationStatus(status);
+    return status;
+  }, [isRequesting, authorizationStatus, setAuthorizationStatus]);
+
+  const showDeniedHelp = () =>
+    Alert.alert(
+      "Screen Time access needed",
+      "Pledge can only limit apps if it has Screen Time access. Enable it in Settings and come back.",
+      [
+        { text: "Open Settings", onPress: Linking.openSettings },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
+
+  // First visit: ask for access, then go straight into the picker.
+  useEffect(() => {
+    if (autoOpened.current || hasSelection(selectionEvent)) return;
+    autoOpened.current = true;
+    (async () => {
+      let status = authorizationStatus;
+      if (status === AuthorizationStatus.notDetermined) {
+        status = await requestAccess();
+      }
+      if (status === AuthorizationStatus.approved) {
+        openPicker();
+      }
+    })();
+  }, []);
+
+  const onButtonPress = async () => {
+    if (authorizationStatus === AuthorizationStatus.approved) {
+      openPicker();
+      return;
+    }
+    if (authorizationStatus === AuthorizationStatus.denied) {
+      showDeniedHelp();
+      return;
+    }
+    const status = await requestAccess();
+    if (status === AuthorizationStatus.approved) openPicker();
+    else if (status === AuthorizationStatus.denied) showDeniedHelp();
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        The <Text style={styles.orangeText}>Pledge</Text> includes
+        Which apps steal your <Text style={styles.orangeText}>time</Text>?
       </Text>
-
       <Text style={styles.subtitle}>
-        Choose among other apps
+        Pick the apps and categories you want to limit.
       </Text>
 
       <AppsOnboardingGrid
-        onAskPermissions={onRequestPress}
-        onSelectionChange={onSelectionChange}
-        permissionsGranted={
-          authorizationStatus === AuthorizationStatus.approved
-        }
+        authorizationStatus={authorizationStatus}
         selectionEvent={selectionEvent}
+        onPress={onButtonPress}
       />
-
-      {/* <Text style={styles.description}>
-        Pick the apps that steal your time, and reclaim it for what matters.
-      </Text> */}
     </View>
   );
 };
@@ -118,29 +140,22 @@ const SetApps: React.FC<SetAppsProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 69
+    marginTop: 69,
   },
   title: {
     textAlign: "center",
     fontSize: 24,
-    fontWeight: "500"
+    fontWeight: "500",
   },
   orangeText: {
-    color: colors.orange
+    color: colors.orange,
   },
   subtitle: {
     marginTop: 10,
     marginBottom: 25,
     alignSelf: "center",
-    fontSize: 13
+    fontSize: 13,
   },
-  description: {
-    marginTop: 69,
-    marginHorizontal: 34,
-    textAlign: "center", 
-    fontSize: 16,
-    fontFamily: "InstrumentSerif-Regular"
-  }
 });
 
 export default SetApps;

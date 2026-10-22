@@ -92,6 +92,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
           setAuthorizationStatus={setAuthorizationStatus}
           selectionEvent={selectionEvent}
           setSelectionEvent={setSelectionEvent}
+          onSelectionComplete={() => setStep(2)}
         />
       ) : step == 2 ? (
         <SetTimeLimit timeValue={timeValue} setTimeValue={setTimeValue} />
@@ -157,11 +158,6 @@ const Instructions: React.FC<InstructionsProps> = () => {
               } finally {
                 setIsButtonDisabled(false);
               }
-            } else if (
-              step === 1 &&
-              authorizationStatus !== AuthorizationStatus.approved
-            ) {
-              return;
             } else {
               setStep(step + 1);
             }
@@ -170,6 +166,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
           style={styles.mainButton}
           disabled={
             isButtonDisabled ||
+            (step === 1 && !selectionEvent?.familyActivitySelection) ||
             (step === 4 && !termsAccepted) || // Disable on AcceptTerms step if unchecked
             (step === 5 && !paymentSetupComplete) // Disable on Payment step if setup not complete
           }
