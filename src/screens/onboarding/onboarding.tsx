@@ -15,7 +15,7 @@ const Onboarding: React.FC = () => {
   return (
     <View style={styles.container}>
       <Animated.View entering={FadeIn.duration(600)} style={styles.illustration}>
-        <OnboardingMenIconHarmsOpen width={SCREEN_WIDTH} height={SCREEN_HEIGHT * 0.4} />
+        <OnboardingMenIconHarmsOpen width={SCREEN_WIDTH} height={SCREEN_HEIGHT * 0.4} style={{}} />
       </Animated.View>
 
       <Animated.View entering={FadeInDown.duration(500).delay(120)} style={styles.content}>
