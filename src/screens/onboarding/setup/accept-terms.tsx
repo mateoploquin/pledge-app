@@ -27,7 +27,7 @@ const rules = [
     id: 4,
     title: "Your Pledge Does Good 💙",
     description:
-      "If you don’t succeed, your pledge goes to Make-A-Wish France, minus a small fee that supports the app.",
+      "If you don’t succeed, your pledge goes to Make-A-Wish, minus a small fee that supports the app.",
   },
 ];
 
