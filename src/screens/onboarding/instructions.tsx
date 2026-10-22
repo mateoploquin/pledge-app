@@ -87,6 +87,44 @@ const Instructions: React.FC<InstructionsProps> = () => {
     initializeAuth();
   }, []);
 
+  const [starting, setStarting] = useState(false);
+
+  /** Saves settings, registers the Screen Time schedule and opens Home. */
+  const startChallenge = async () => {
+    if (starting) return;
+    if (!selectionEvent?.familyActivitySelection) {
+      Alert.alert("No apps selected", "Go back and choose the apps you want to limit.");
+      return;
+    }
+    const settings: PledgeSettings = {
+      selectionEvent,
+      pledgeValue,
+      timeValue,
+      paymentSetupComplete: true,
+    };
+    try {
+      setStarting(true);
+      setIsButtonDisabled(true);
+      await startChallengeMonitoring(settings, { fresh: true });
+      await AsyncStorage.multiSet([
+        ["pledgeSettings", JSON.stringify(settings)],
+        ["challengeStartDate", new Date().toISOString()],
+      ]);
+      haptics.success();
+      //@ts-ignore
+      navigation.replace("Home");
+    } catch (error: any) {
+      console.error("Could not start the challenge:", error);
+      Alert.alert(
+        "Could not start monitoring",
+        error?.message ?? "Please check Screen Time permissions and try again."
+      );
+    } finally {
+      setStarting(false);
+      setIsButtonDisabled(false);
+    }
+  };
+
   return (
     <AppWrapper style={{}}>
       {step !== 4 && <MainHeader />}
@@ -122,6 +160,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
           pledgeValue={pledgeValue}
           timeValue={timeValue}
           setPublishableKey={setPublishableKey}
+          onComplete={startChallenge}
         />
       ) : step == 6 ? (
         <ChallengeOn />
@@ -132,50 +171,12 @@ const Instructions: React.FC<InstructionsProps> = () => {
         <MainButton
           onPress={async () => {
             if (step == 5) {
-              if (!paymentSetupComplete) {
-                Alert.alert(
-                  "Payment Required",
-                  "Please complete the payment setup before proceeding."
-                );
-                return;
-              }
-              if (!selectionEvent?.familyActivitySelection) {
-                Alert.alert(
-                  "No apps selected",
-                  "Go back and choose the apps you want to limit."
-                );
-                return;
-              }
-              const settings: PledgeSettings = {
-                selectionEvent,
-                pledgeValue,
-                timeValue,
-                paymentSetupComplete: true,
-              };
-              try {
-                setIsButtonDisabled(true);
-                await startChallengeMonitoring(settings, { fresh: true });
-                await AsyncStorage.multiSet([
-                  ["pledgeSettings", JSON.stringify(settings)],
-                  ["challengeStartDate", new Date().toISOString()],
-                ]);
-                haptics.success();
-                //@ts-ignore
-                navigation.replace("Home");
-              } catch (error: any) {
-                console.error("Could not start the challenge:", error);
-                Alert.alert(
-                  "Could not start monitoring",
-                  error?.message ?? "Please check Screen Time permissions and try again."
-                );
-              } finally {
-                setIsButtonDisabled(false);
-              }
+              await startChallenge();
             } else {
               setStep(step + 1);
             }
           }}
-          text={step == 5 ? "Track My Pledge" : "Continue"}
+          text={step == 5 ? (starting ? "Starting…" : "Track My Pledge") : "Continue"}
           style={styles.mainButton}
           disabled={
             isButtonDisabled ||

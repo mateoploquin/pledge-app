@@ -15,6 +15,8 @@ interface SetPaymentProps {
   pledgeValue: number;
   timeValue: number;
   setPublishableKey: (publishableKey: string) => void;
+  /** Called once the card is saved and the pledge recorded. */
+  onComplete?: () => void | Promise<void>;
 }
 
 const describeError = (err: any) =>
@@ -27,6 +29,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
   pledgeValue,
   timeValue,
   setPublishableKey,
+  onComplete,
 }) => {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
@@ -53,6 +56,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
         customerEphemeralKeySecret: ephemeralKey,
         setupIntentClientSecret: setupIntent,
         allowsDelayedPaymentMethods: false,
+        returnURL: "pledge://stripe-redirect",
         applePay: {
           merchantCountryCode: STRIPE_MERCHANT_COUNTRY,
         },
@@ -87,6 +91,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
       const idToken = await user.getIdToken();
       await sendPledgeData({ pledgeValue, timeValue }, idToken);
       setPaymentSetupComplete(true);
+      await onComplete?.();
     } catch (err) {
       console.error("Error sending pledge data:", err);
       Alert.alert(
