@@ -23,7 +23,7 @@ const SetPledge: React.FC<SetPledgeProps> = ({
 
       <SetSlider
         min={5}
-        max={1000}
+        max={100}
         onValueChange={(value) => setPledgeValue(value)}
       />
 

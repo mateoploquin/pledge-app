@@ -65,7 +65,7 @@ app.post("/stripe/payment-sheet", async (c) => {
 });
 
 const PLEDGE_MIN = 1;
-const PLEDGE_MAX = 1000;
+const PLEDGE_MAX = 100;
 const TIME_MIN = 5;
 const TIME_MAX = 24 * 60;
 
