@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable, ViewStyle } from "react-native";
+import { View, Text, StyleSheet, ViewStyle } from "react-native";
 import colors from "../../theme/colors";
+import PressableScale from "./pressable-scale";
 
 interface SecondaryButtonProps {
   onPress: () => void;
@@ -15,9 +16,9 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
 }) => {
   return (
     <View style={[{ alignSelf: "center" }, style]}>
-      <Pressable onPress={onPress} style={styles.container}>
+      <PressableScale onPress={onPress} style={styles.container}>
         <Text style={styles.text}>{text}</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 };

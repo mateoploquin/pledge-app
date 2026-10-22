@@ -20,6 +20,8 @@ import SetPayment from "./setup/set-up-payment";
 import { PledgeSettings, SelectionInfo } from "../../types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { startChallengeMonitoring } from "../home/home.controller";
+import Animated, { FadeInRight, FadeInLeft, FadeOutLeft, FadeOutRight } from "react-native-reanimated";
+import { haptics } from "../../utils/haptics";
 
 interface InstructionsProps {
   // define your props here
@@ -27,7 +29,12 @@ interface InstructionsProps {
 
 const Instructions: React.FC<InstructionsProps> = () => {
   const navigation = useNavigation();
-  const [step, setStep] = useState(0);
+  const [step, setStepState] = useState(0);
+  const direction = useRef<"forward" | "back">("forward");
+  const setStep = (next: number) => {
+    direction.current = next >= step ? "forward" : "back";
+    setStepState(next);
+  };
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
   const isReturningFromShare = useRef(false);
@@ -84,6 +91,12 @@ const Instructions: React.FC<InstructionsProps> = () => {
     <AppWrapper style={{}}>
       {step !== 4 && <MainHeader />}
 
+      <Animated.View
+        key={step}
+        style={styles.stepContainer}
+        entering={(direction.current === "forward" ? FadeInRight : FadeInLeft).duration(380)}
+        exiting={(direction.current === "forward" ? FadeOutLeft : FadeOutRight).duration(220)}
+      >
       {step === 0 ? (
         <InstructionCarousel />
       ) : step == 1 ? (
@@ -115,6 +128,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
       ) : step == 6 ? (
         <ChallengeOn />
       ) : null}
+      </Animated.View>
 
       <View style={styles.buttonContainer}>
         <MainButton
@@ -147,6 +161,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
                   ["pledgeSettings", JSON.stringify(settings)],
                   ["challengeStartDate", new Date().toISOString()],
                 ]);
+                haptics.success();
                 //@ts-ignore
                 navigation.replace("Home");
               } catch (error: any) {
@@ -186,6 +201,9 @@ const Instructions: React.FC<InstructionsProps> = () => {
 };
 
 const styles = StyleSheet.create({
+  stepContainer: {
+    flex: 1,
+  },
   buttonContainer: {
     position: "absolute",
     bottom: 71,

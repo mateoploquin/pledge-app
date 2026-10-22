@@ -1,5 +1,10 @@
 import React from "react";
-import { createStackNavigator } from "@react-navigation/stack";
+import { Easing } from "react-native";
+import {
+  createStackNavigator,
+  StackCardStyleInterpolator,
+  TransitionSpecs,
+} from "@react-navigation/stack";
 import HomeScreen from "../screens/home";
 import SplashScreen from "../screens/onboarding";
 import DetailsScreen from "../screens/details";
@@ -12,9 +17,42 @@ import SelectAppsView from "../screens/select-apps";
 
 const Stack = createStackNavigator();
 
-const hideHeaderOptions = { headerShown: false };
-const hideHeaderNoGesture = { headerShown: false, gestureEnabled: false };
-const hideHeaderNoAnimation = { headerShown: false, animationEnabled: false };
+/**
+ * Soft crossfade with a touch of lift: the incoming screen fades in while
+ * rising a few points, the outgoing one fades out underneath. Calm, no
+ * hard cuts, no sideways shove.
+ */
+const forSoftFade: StackCardStyleInterpolator = ({ current, next }) => {
+  const translateY = current.progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [12, 0],
+  });
+  const opacity = current.progress.interpolate({
+    inputRange: [0, 0.6, 1],
+    outputRange: [0, 0.85, 1],
+  });
+  // Dim the screen beneath when something new comes over it.
+  const underOpacity = next
+    ? next.progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0.6] })
+    : 1;
+  return {
+    cardStyle: { opacity, transform: [{ translateY }] },
+    containerStyle: { opacity: underOpacity },
+  };
+};
+
+const softTiming = {
+  animation: "timing" as const,
+  config: { duration: 420, easing: Easing.out(Easing.cubic) },
+};
+
+const softFade = {
+  headerShown: false,
+  cardStyleInterpolator: forSoftFade,
+  transitionSpec: { open: softTiming, close: softTiming },
+  cardOverlayEnabled: false,
+};
+
 const modalOptions = {
   presentation: "modal" as const,
   headerShown: false,
@@ -23,57 +61,33 @@ const modalOptions = {
   gestureEnabled: true,
   gestureResponseDistance: 400,
   gestureDirection: "vertical" as const,
-};
-const modalGroupOptions = {
-  presentation: "modal" as const,
-  headerShown: false,
+  transitionSpec: {
+    open: TransitionSpecs.TransitionIOSSpec,
+    close: TransitionSpecs.TransitionIOSSpec,
+  },
 };
 
 const AppNavigator = ({ initialRouteName }) => {
   return (
-    <Stack.Navigator initialRouteName={initialRouteName}>
+    <Stack.Navigator initialRouteName={initialRouteName} screenOptions={softFade}>
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={hideHeaderNoGesture}
+        options={{ ...softFade, gestureEnabled: false }}
       />
-      <Stack.Screen
-        name="Splash"
-        component={SplashScreen}
-        options={hideHeaderOptions}
-      />
-      <Stack.Screen
-        name="Instructions"
-        component={Instructions}
-        options={hideHeaderNoAnimation}
-      />
-      <Stack.Screen
-        name="Details"
-        component={DetailsScreen}
-        options={hideHeaderOptions}
-      />
-      <Stack.Screen
-        name="Login"
-        component={LoginScreen}
-        options={hideHeaderNoAnimation}
-      />
-      <Stack.Screen
-        name="Register"
-        component={RegisterScreen}
-        options={hideHeaderNoAnimation}
-      />
+      <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen name="Instructions" component={Instructions} />
+      <Stack.Screen name="Details" component={DetailsScreen} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen
         name="ChallengeCompleted"
         component={ChallengeCompleted}
-        options={hideHeaderOptions}
+        options={{ ...softFade, gestureEnabled: false }}
       />
-      <Stack.Screen
-        name="SelectApps"
-        component={SelectAppsView}
-        options={modalOptions}
-      />
+      <Stack.Screen name="SelectApps" component={SelectAppsView} options={modalOptions} />
 
-      <Stack.Group screenOptions={modalGroupOptions}>
+      <Stack.Group screenOptions={modalOptions}>
         <Stack.Screen name="SharePledge" component={SharePledge} />
       </Stack.Group>
     </Stack.Navigator>

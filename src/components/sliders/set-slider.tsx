@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
+import { haptics } from "../../utils/haptics";
 import { View, Text, StyleSheet, PanResponder } from "react-native";
 import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
 import colors from "../../theme/colors";
@@ -12,6 +13,7 @@ interface SetSliderProps {
 
 const SetSlider: React.FC<SetSliderProps> = ({ min, max, onValueChange }) => {
   const [value, setValue] = useState(min);
+  const valueRef = useRef(min);
   const [startX, setStartX] = useState(0);
 
   const generateTickValues = (min: number, max: number): number[] => {
@@ -54,6 +56,10 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, onValueChange }) => {
       let newValue = Math.round(relativePosition * (max - min) + min);
       if (newValue < min) newValue = min;
       if (newValue > max) newValue = max;
+      if (newValue !== valueRef.current) {
+        valueRef.current = newValue;
+        haptics.select();
+      }
       setValue(newValue);
       onValueChange(newValue);
     },

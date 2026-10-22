@@ -12,6 +12,9 @@ import colors from "../../theme/colors";
 import { chargePledge } from "../../services/stripe-api";
 import { auth } from "../../firebaseConfig";
 import { CURRENCY_SYMBOL } from "../../config";
+import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
+import PressableScale from "../buttons/pressable-scale";
+import { haptics } from "../../utils/haptics";
 
 interface SurrenderModalProps {
   isVisible: boolean;
@@ -33,6 +36,7 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
 
   const handleSurrender = async () => {
     if (loading) return;
+    haptics.warning();
     setLoading(true);
     try {
       const user = auth.currentUser;
@@ -58,8 +62,8 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
   };
 
   return (
-    <View style={styles.blurContainer}>
-      <View style={styles.modalContainer}>
+    <Animated.View style={styles.blurContainer} entering={FadeIn.duration(220)}>
+      <Animated.View style={styles.modalContainer} entering={ZoomIn.springify().damping(16)}>
         <Text style={styles.modalText}>
           Unlocking your apps means giving up your challenge and paying your{" "}
           {CURRENCY_SYMBOL}
@@ -72,9 +76,9 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
         <Text style={styles.modalTitle}>
           Wait... Are you sure you want to surrender?
         </Text>
-        <TouchableOpacity onPress={onClose} style={styles.modalButton} disabled={loading}>
+        <PressableScale onPress={onClose} style={styles.modalButton} disabled={loading} haptic="press">
           <Text style={styles.modalButtonText}>No, go back</Text>
-        </TouchableOpacity>
+        </PressableScale>
         <TouchableOpacity onPress={handleSurrender} disabled={loading}>
           {loading ? (
             <ActivityIndicator color={colors.orange} style={styles.spinner} />
@@ -85,8 +89,8 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
             </Text>
           )}
         </TouchableOpacity>
-      </View>
-    </View>
+      </Animated.View>
+    </Animated.View>
   );
 };
 
