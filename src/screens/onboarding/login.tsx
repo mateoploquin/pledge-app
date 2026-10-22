@@ -71,10 +71,13 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
         </Text>
       </TouchableOpacity>
 
-      <Image
-        source={require("../../../assets/images/onboarding/Phone_withicons.png")}
-        style={styles.bottomImage}
-      />
+      <View style={styles.imageContainer}>
+        <Image
+          source={require("../../../assets/images/onboarding/Phone_withicons.png")}
+          style={styles.bottomImage}
+          resizeMode="contain"
+        />
+      </View>
     </AppWrapper>
   );
 };
@@ -98,11 +101,18 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20
   },
+  imageContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "center",
+    marginTop: 16,
+    marginBottom: -1,
+    overflow: "hidden",
+  },
   bottomImage: {
-    position: "absolute",
-    alignSelf: "center",
-    bottom: 0
-  }
+    width: "100%",
+    height: "100%",
+  },
 });
 
 export default LoginScreen;

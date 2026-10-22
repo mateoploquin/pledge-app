@@ -80,10 +80,13 @@ const RegisterScreen: React.FC = () => {
         <Text style={styles.loginText}>Already have an account? Login</Text>
       </TouchableOpacity>
 
-      <Image
-        source={require("../../../assets/images/onboarding/Phone_withicons.png")}
-        style={styles.backgroundImage}
-      />
+      <View style={styles.imageContainer}>
+        <Image
+          source={require("../../../assets/images/onboarding/Phone_withicons.png")}
+          style={styles.bottomImage}
+          resizeMode="contain"
+        />
+      </View>
     </AppWrapper>
   );
 };
@@ -108,11 +111,17 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 30,
   },
-  backgroundImage: {
-    position: "absolute",
-    alignSelf: "center",
-    bottom: 0,
-    zIndex: -1,
+  imageContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "center",
+    marginTop: 16,
+    marginBottom: -1,
+    overflow: "hidden",
+  },
+  bottomImage: {
+    width: "100%",
+    height: "100%",
   },
 });
 
