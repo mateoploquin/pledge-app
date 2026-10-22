@@ -14,6 +14,7 @@ import MainHeader from "../../components/headers/main-header";
 import AppWrapper from "../../components/layout/app-wrapper";
 import { Feather } from "@expo/vector-icons";
 import colors from "../../theme/colors";
+import SocialSignInButtons from "../../components/buttons/social-sign-in-buttons";
 
 const RegisterScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -72,6 +73,8 @@ const RegisterScreen: React.FC = () => {
           <Feather name="chevron-right" size={20} color={colors.orange} />
         </TouchableOpacity>
       </View>
+
+      <SocialSignInButtons onSignedIn={() => navigation.navigate("Instructions")} />
 
       <TouchableOpacity onPress={() => navigation.navigate("Login")}>
         <Text style={styles.loginText}>Already have an account? Login</Text>

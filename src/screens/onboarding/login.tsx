@@ -1,7 +1,6 @@
 // File: src/screens/onboarding/login.tsx
 import React, { useState } from "react";
 import { Text, Image, TouchableOpacity, TextInput, View, Alert, StyleSheet } from "react-native";
-import OnboardingWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
 import AppWrapper from "../../components/layout/app-wrapper";
 import { Feather } from "@expo/vector-icons";
@@ -9,6 +8,7 @@ import colors from "../../theme/colors";
 import { useNavigation } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebaseConfig';
+import SocialSignInButtons from "../../components/buttons/social-sign-in-buttons";
 
 interface LoginScreenProps {}
 
@@ -62,6 +62,8 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
           <Feather name="chevron-right" size={20} color={colors.orange} />
         </TouchableOpacity>
       </View>
+
+      <SocialSignInButtons onSignedIn={() => navigation.navigate("Instructions")} />
 
       <TouchableOpacity onPress={handleNavigateRegister}>
         <Text style={styles.signUpText}>

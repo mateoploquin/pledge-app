@@ -23,7 +23,8 @@
       "config": {
         "usesNonExemptEncryption": false
       },
-      "appleTeamId": "GC2XRZ6HSJ"
+      "appleTeamId": "GC2XRZ6HSJ",
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -73,7 +74,8 @@
           "merchantIdentifier": "merchant.pledge.applepay",
           "enableGooglePay": false
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ]
   }
 }

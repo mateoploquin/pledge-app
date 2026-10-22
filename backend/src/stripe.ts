@@ -60,7 +60,7 @@ export async function createPaymentSheetParams(customerId: string) {
 /** Most recently saved card for the customer. */
 async function latestPaymentMethod(customerId: string): Promise<string | undefined> {
   const customer = await stripe().customers.retrieve(customerId);
-  if (!customer.deleted) {
+  if ("invoice_settings" in customer) {
     const def = customer.invoice_settings?.default_payment_method;
     if (typeof def === "string") return def;
     if (def && "id" in def) return def.id;
