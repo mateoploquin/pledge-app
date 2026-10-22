@@ -3,6 +3,7 @@ import { logger } from "hono/logger";
 import type { DecodedIdToken } from "firebase-admin/auth";
 import { getUser, upsertUser, verifyIdToken } from "./firebase.js";
 import { chargePledge, createPaymentSheetParams, ensureCustomer } from "./stripe.js";
+import { privacyHtml, termsHtml } from "./legal.js";
 
 type Env = { Variables: { user: DecodedIdToken } };
 
@@ -17,6 +18,9 @@ app.onError((err, c) => {
 
 app.get("/", (c) => c.json({ ok: true, service: "pledge-backend" }));
 app.get("/health", (c) => c.json({ ok: true }));
+
+app.get("/terms", (c) => c.html(termsHtml));
+app.get("/privacy", (c) => c.html(privacyHtml));
 
 app.get("/stripe/publishable-key", (c) => {
   const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;

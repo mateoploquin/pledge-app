@@ -1,6 +1,8 @@
 import React from "react";
-import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import { View, Text, Pressable, StyleSheet, ScrollView, Linking, Alert } from "react-native";
 import colors from "../../../theme/colors";
+import { API_URL } from "../../../config";
+import { haptics } from "../../../utils/haptics";
 
 interface AcceptTermsProps {
   termsAccepted: boolean;
@@ -30,6 +32,13 @@ const rules = [
       "If you don’t succeed, your pledge goes to Make-A-Wish, minus a small fee that supports the app.",
   },
 ];
+
+const openLegal = (doc: "terms" | "privacy") => {
+  haptics.tap();
+  Linking.openURL(`${API_URL}/${doc}`).catch(() =>
+    Alert.alert("Could not open page", "Please check your connection and try again.")
+  );
+};
 
 const AcceptTerms: React.FC<AcceptTermsProps> = ({
   termsAccepted,
@@ -64,8 +73,14 @@ const AcceptTerms: React.FC<AcceptTermsProps> = ({
           {termsAccepted && <Text style={styles.checkmark}>✓</Text>}
         </Pressable>
         <Text style={styles.agreementText}>
-          I Agree to the{" "}
-          <Text style={styles.linkText}>Terms and Conditions</Text>
+          I agree to the{" "}
+          <Text style={styles.linkText} onPress={() => openLegal("terms")}>
+            Terms and Conditions
+          </Text>{" "}
+          and{" "}
+          <Text style={styles.linkText} onPress={() => openLegal("privacy")}>
+            Privacy Policy
+          </Text>
         </Text>
       </View>
       <View style={{ height: 100 }} />
