@@ -199,7 +199,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.challengeTitle}>My Challenge</Text>
+        <Text style={styles.challengeTitle}>My Pledge</Text>
         <View style={styles.cardContainer}>
           <View style={styles.cardBackground}>
             <HomeCardWrapper title={"Countdown"}>
