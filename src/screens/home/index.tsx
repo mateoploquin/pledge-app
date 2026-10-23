@@ -62,7 +62,12 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
     async (result: "success" | "failure") => {
       stopChallengeMonitoring();
       await clearChallengeStorage();
-      navigation.replace("ChallengeCompleted", { result });
+      if (result === "success") {
+        navigation.replace("ChallengeCompleted", { result });
+      } else {
+        // Surrendered: apps are unblocked, go straight to setting up a new challenge.
+        navigation.replace("Instructions");
+      }
     },
     [navigation]
   );
