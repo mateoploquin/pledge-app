@@ -11,6 +11,22 @@ import {
   UNLOCK_URL,
 } from "./home.constants";
 import { CURRENCY_SYMBOL } from "../../config";
+import * as Notifications from "expo-notifications";
+
+export const UNLOCK_ACTION = "unlock";
+
+/** Needed so the shield's "Unlock" button can reach the user via a notification. */
+export async function ensureNotificationPermission(): Promise<boolean> {
+  try {
+    const current = await Notifications.getPermissionsAsync();
+    if (current.granted) return true;
+    const asked = await Notifications.requestPermissionsAsync();
+    return asked.granted;
+  } catch (e) {
+    console.warn("Notification permission check failed:", e);
+    return false;
+  }
+}
 
 export type DailyUsage = {
   usedMinutes: number;
@@ -50,12 +66,23 @@ export function configureShield(pledgeValue: number) {
     secondaryButtonLabel: `Unlock for ${CURRENCY_SYMBOL}${pledgeValue}`,
     secondaryButtonLabelColor: orange,
   };
-  // Primary (prominent) button is the healthy choice; the unlock is the quiet
-  // secondary link. "openUrl" is handled by the ShieldAction extension even
-  // though the TS union only lists "openApp".
+  // Primary (prominent) button is the healthy choice. Shield extensions are
+  // not allowed to launch other apps, so the unlock button posts a local
+  // notification; tapping it opens Pledge on the pay dialog (see Home).
   const actions = {
     primary: { type: "dismiss", behavior: "close" } as any,
-    secondary: { type: "openUrl", url: UNLOCK_URL, behavior: "close" } as any,
+    secondary: {
+      type: "sendNotification",
+      behavior: "close",
+      payload: {
+        title: "Unlock your apps?",
+        body: `Tap to open Pledge and pay your ${CURRENCY_SYMBOL}${pledgeValue} pledge to unlock.`,
+        sound: "default",
+        interruptionLevel: "timeSensitive",
+        identifier: "pledge-unlock",
+        userInfo: { action: UNLOCK_ACTION, url: UNLOCK_URL },
+      },
+    } as any,
   };
 
   // Stored under the shield id so the monitor extension can activate it when
@@ -87,6 +114,7 @@ export async function startChallengeMonitoring(
     familyActivitySelection: token,
   });
   configureShield(settings.pledgeValue);
+  await ensureNotificationPermission();
 
   if (options.fresh) {
     DeviceActivity.cleanUpAfterActivity(DAILY_ACTIVITY_NAME);

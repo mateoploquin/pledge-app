@@ -1,5 +1,6 @@
 import { FC, useCallback, useEffect, useRef, useState, Fragment } from "react";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
+import * as Notifications from "expo-notifications";
 import {
   View,
   Text,
@@ -20,6 +21,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PledgeSettings } from "../../types";
 import {
   DailyUsage,
+  UNLOCK_ACTION,
   configureShield,
   getTodayUsage,
   isChallengeMonitoring,
@@ -117,15 +119,29 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
     };
   }, []);
 
-  // Deep link from the shield ("pledge://unlock") opens the surrender dialog.
+  // The shield's "Unlock" button posts a notification; tapping it (or a
+  // pledge://unlock deep link) opens the surrender dialog.
   useEffect(() => {
+    const isUnlockResponse = (r: Notifications.NotificationResponse | null) =>
+      r?.notification.request.content.data?.action === UNLOCK_ACTION;
+
     Linking.getInitialURL().then((url) => {
       if (isUnlockUrl(url)) setModalVisible(true);
     });
-    const sub = Linking.addEventListener("url", ({ url }) => {
+    Notifications.getLastNotificationResponseAsync().then((r) => {
+      if (isUnlockResponse(r)) setModalVisible(true);
+    });
+
+    const linkSub = Linking.addEventListener("url", ({ url }) => {
       if (isUnlockUrl(url)) setModalVisible(true);
     });
-    return () => sub.remove();
+    const notifSub = Notifications.addNotificationResponseReceivedListener((r) => {
+      if (isUnlockResponse(r)) setModalVisible(true);
+    });
+    return () => {
+      linkSub.remove();
+      notifSub.remove();
+    };
   }, []);
 
   useEffect(() => {
