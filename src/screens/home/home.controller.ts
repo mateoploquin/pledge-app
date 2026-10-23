@@ -18,8 +18,10 @@ export type DailyUsage = {
   limitReached: boolean;
 };
 
-const white = { red: 1, green: 1, blue: 1 };
-const orange = { red: 0.95, green: 0.45, blue: 0.1 };
+// The shield extension expects 0-255 channel values.
+const white = { red: 255, green: 255, blue: 255 };
+const orange = { red: 255, green: 89, blue: 0 };
+const softWhite = { red: 255, green: 246, blue: 241 };
 
 const toThreshold = (totalMinutes: number) => ({
   hour: Math.floor(totalMinutes / 60),
@@ -34,22 +36,23 @@ export function configureShield(pledgeValue: number) {
   const configuration = {
     title: "Blocked by Pledge",
     subtitle: `You hit today's limit. Unlocking costs your ${CURRENCY_SYMBOL}${pledgeValue} pledge.`,
-    backgroundBlurStyle: DeviceActivity.UIBlurEffectStyle.systemMaterialDark,
+    backgroundColor: orange,
     titleColor: white,
-    subtitleColor: white,
+    subtitleColor: softWhite,
     iconSystemName: "lock.fill",
-    iconTint: orange,
-    primaryButtonLabel: "Open Pledge to unlock",
-    primaryButtonBackgroundColor: orange,
-    primaryButtonLabelColor: white,
-    secondaryButtonLabel: "Stay strong",
+    iconTint: white,
+    primaryButtonLabel: "Stay strong",
+    primaryButtonBackgroundColor: white,
+    primaryButtonLabelColor: orange,
+    secondaryButtonLabel: `Unlock for ${CURRENCY_SYMBOL}${pledgeValue}`,
     secondaryButtonLabelColor: white,
   };
+  // Primary (prominent) button is the healthy choice; the unlock is the quiet
+  // secondary link. "openUrl" is handled by the ShieldAction extension even
+  // though the TS union only lists "openApp".
   const actions = {
-    // "openUrl" is handled by the ShieldAction extension even though the TS
-    // union only lists "openApp".
-    primary: { type: "openUrl", url: UNLOCK_URL, behavior: "close" } as any,
-    secondary: { type: "dismiss", behavior: "close" } as any,
+    primary: { type: "dismiss", behavior: "close" } as any,
+    secondary: { type: "openUrl", url: UNLOCK_URL, behavior: "close" } as any,
   };
 
   // Stored under the shield id so the monitor extension can activate it when

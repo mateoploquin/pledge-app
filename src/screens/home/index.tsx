@@ -20,6 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PledgeSettings } from "../../types";
 import {
   DailyUsage,
+  configureShield,
   getTodayUsage,
   isChallengeMonitoring,
   splitMinutes,
@@ -90,6 +91,8 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
       setSettings(parsed);
 
       try {
+        // Always refresh the shield design; it is cheap and picks up copy/colour changes.
+        configureShield(parsed.pledgeValue);
         if (!isChallengeMonitoring()) {
           await startChallengeMonitoring(parsed);
         }
