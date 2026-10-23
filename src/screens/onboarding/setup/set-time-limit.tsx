@@ -34,18 +34,15 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
       />
 
       <PresetChips
-        values={[15, 30, 45, 60, 90, 120]}
+        values={[30, 60, 90]}
         selected={timeValue}
         onSelect={(v) => {
           haptics.select();
           setTimeValue(v);
         }}
-        format={(v) => (v >= 60 ? `${v / 60}h${v % 60 ? ` ${v % 60}m` : ""}` : `${v}m`)}
+        format={(v) => `${v}m`}
       />
 
-      <Text style={styles.description}>
-        Remember, every minute saved is a step closer to your goals
-      </Text>
     </View>
   );
 };
