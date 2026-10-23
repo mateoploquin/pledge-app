@@ -3,7 +3,14 @@
     "version": ">= 7.8.4"
   },
   "build": {
+    "base": {
+      "ios": {
+        "cocoapods": "1.16.2",
+        "image": "latest"
+      }
+    },
     "development": {
+      "extends": "base",
       "developmentClient": false,
       "distribution": "internal",
       "ios": {
@@ -11,12 +18,14 @@
       }
     },
     "preview": {
+      "extends": "base",
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
       }
     },
     "production": {
+      "extends": "base",
       "distribution": "store",
       "ios": {
         "resourceClass": "m-medium"

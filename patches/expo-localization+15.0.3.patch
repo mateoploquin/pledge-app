@@ -1,0 +1,14 @@
+diff --git a/node_modules/expo-localization/ios/LocalizationModule.swift b/node_modules/expo-localization/ios/LocalizationModule.swift
+index 17c9cb7..1789754 100644
+--- a/node_modules/expo-localization/ios/LocalizationModule.swift
++++ b/node_modules/expo-localization/ios/LocalizationModule.swift
+@@ -123,6 +123,9 @@ public class LocalizationModule: Module {
+       return "roc"
+     case .iso8601:
+       return "iso8601"
++    default:
++      // Calendars introduced after this module was written (e.g. in iOS 26 SDK).
++      return String(describing: calendar.identifier)
+     }
+   }
+ 

@@ -4,4 +4,5 @@ export type PledgeSettings = {
 	selectionEvent: SelectionInfo;
 	pledgeValue: number;
 	timeValue: number;
+	paymentSetupComplete?: boolean;
 }

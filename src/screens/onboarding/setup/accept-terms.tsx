@@ -1,6 +1,8 @@
 import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet, ScrollView, Linking, Alert } from "react-native";
 import colors from "../../../theme/colors";
+import { API_URL } from "../../../config";
+import { haptics } from "../../../utils/haptics";
 
 interface AcceptTermsProps {
   termsAccepted: boolean;
@@ -25,18 +27,25 @@ const rules = [
   },
   {
     id: 4,
-    title: "If you don’t succeed, your pledge becomes meaningful 💙:",
+    title: "Your Pledge Does Good 💙",
     description:
-      " With Make-A-Wish France, with a small fee to support the app!",
+      "If you don’t succeed, your pledge goes to Make-A-Wish, minus a small fee that supports the app.",
   },
 ];
+
+const openLegal = (doc: "terms" | "privacy") => {
+  haptics.tap();
+  Linking.openURL(`${API_URL}/${doc}`).catch(() =>
+    Alert.alert("Could not open page", "Please check your connection and try again.")
+  );
+};
 
 const AcceptTerms: React.FC<AcceptTermsProps> = ({
   termsAccepted,
   setTermsAccepted,
 }) => {
   return (
-    <View>
+    <ScrollView>
       <Text style={styles.title}>Challenge Rules 🏆</Text>
 
       <View style={styles.rulesContainer}>
@@ -64,11 +73,18 @@ const AcceptTerms: React.FC<AcceptTermsProps> = ({
           {termsAccepted && <Text style={styles.checkmark}>✓</Text>}
         </Pressable>
         <Text style={styles.agreementText}>
-          I Agree to the{" "}
-          <Text style={styles.linkText}>Terms and Conditions</Text>
+          I agree to the{" "}
+          <Text style={styles.linkText} onPress={() => openLegal("terms")}>
+            Terms and Conditions
+          </Text>{" "}
+          and{" "}
+          <Text style={styles.linkText} onPress={() => openLegal("privacy")}>
+            Privacy Policy
+          </Text>
         </Text>
       </View>
-    </View>
+      <View style={{ height: 100 }} />
+    </ScrollView>
   );
 };
 
@@ -102,7 +118,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   highlightText: {
-    color: "#236AB3",
+    color: colors.blue,
   },
   footerText: {
     marginTop: 15,

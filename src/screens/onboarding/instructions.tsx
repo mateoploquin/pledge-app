@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
 import MainButton from "../../components/buttons/main-button";
@@ -9,30 +9,41 @@ import SetPledge from "./setup/set-pledge";
 import ChallengeOn from "./setup/challenge-on";
 import SetTimeLimit from "./setup/set-time-limit";
 import SetApps from "./setup/set-apps";
-import InstructionCarousel from "../../components/carousels/instructions-carousel";
 import AcceptTerms from "./setup/accept-terms";
-import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
-import { getAuthorizationStatus } from 'react-native-device-activity';
-import SetPayment from "./setup/set-up-payment"; // Import the new component
-import { SelectionInfo } from '../../types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import {
+  AuthorizationStatus,
+  AuthorizationStatusType,
+} from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
+import { getAuthorizationStatus } from "react-native-device-activity";
+import SetPayment from "./setup/set-up-payment";
+import { PledgeSettings, SelectionInfo } from "../../types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { startChallengeMonitoring } from "../home/home.controller";
+import Animated, { FadeInRight, FadeInLeft, FadeOutLeft, FadeOutRight } from "react-native-reanimated";
+import { haptics } from "../../utils/haptics";
 
 interface InstructionsProps {
   // define your props here
 }
 
-const Instructions: React.FC<InstructionsProps> = (props) => {
+const Instructions: React.FC<InstructionsProps> = () => {
   const navigation = useNavigation();
-  const [step, setStep] = useState(0);
+  const FIRST_STEP = 1; // app selection; the old explainer carousel (step 0) was removed
+  const [step, setStepState] = useState(FIRST_STEP);
+  const direction = useRef<"forward" | "back">("forward");
+  const setStep = (next: number) => {
+    direction.current = next >= step ? "forward" : "back";
+    setStepState(next);
+  };
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
   const isReturningFromShare = useRef(false);
-  const [pledgeValue, setPledgeValue] = useState(10);
+  const [pledgeValue, setPledgeValue] = useState(5);
   const [timeValue, setTimeValue] = useState(10);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatus>();
+  const [authorizationStatus, setAuthorizationStatus] =
+    useState<AuthorizationStatusType>();
   const [selectionEvent, setSelectionEvent] = useState<SelectionInfo>();
 
   const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
@@ -40,21 +51,27 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
 
   useFocusEffect(
     useCallback(() => {
-      // Reset payment status and step when screen is focused
       setPaymentSetupComplete(false);
-      // Only reset step if we're not returning from SharePledge
       if (!isReturningFromShare.current) {
-        setStep(0);
+        setStep(FIRST_STEP);
       }
-      // Reset the flag
       isReturningFromShare.current = false;
     }, [])
   );
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('blur', () => {
-      // Set the flag when navigating to SharePledge
-      if ((navigation as any).getState().routes.slice(-1)[0]?.name === 'SharePledge') {
+    const unsubscribe = navigation.addListener("blur", () => {
+      if (
+        (navigation as any).getState().routes.slice(-1)[0]?.name ===
+        "SharePledge"
+      ) {
+        isReturningFromShare.current = true;
+      }
+
+      if (
+        (navigation as any).getState().routes.slice(-1)[0]?.name ===
+        "SelectApps"
+      ) {
         isReturningFromShare.current = true;
       }
     });
@@ -64,39 +81,72 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const status = await getAuthorizationStatus();
+      const status = getAuthorizationStatus();
       setAuthorizationStatus(status);
     };
     initializeAuth();
   }, []);
 
+  const [starting, setStarting] = useState(false);
+
+  /** Saves settings, registers the Screen Time schedule and opens Home. */
+  const startChallenge = async () => {
+    if (starting) return;
+    if (!selectionEvent?.familyActivitySelection) {
+      Alert.alert("No apps selected", "Go back and choose the apps you want to limit.");
+      return;
+    }
+    const settings: PledgeSettings = {
+      selectionEvent,
+      pledgeValue,
+      timeValue,
+      paymentSetupComplete: true,
+    };
+    try {
+      setStarting(true);
+      setIsButtonDisabled(true);
+      await startChallengeMonitoring(settings, { fresh: true });
+      await AsyncStorage.multiSet([
+        ["pledgeSettings", JSON.stringify(settings)],
+        ["challengeStartDate", new Date().toISOString()],
+      ]);
+      haptics.success();
+      //@ts-ignore
+      navigation.replace("Home");
+    } catch (error: any) {
+      console.error("Could not start the challenge:", error);
+      Alert.alert(
+        "Could not start monitoring",
+        error?.message ?? "Please check Screen Time permissions and try again."
+      );
+    } finally {
+      setStarting(false);
+      setIsButtonDisabled(false);
+    }
+  };
+
   return (
     <AppWrapper style={{}}>
       {step !== 4 && <MainHeader />}
 
-      {step === 0 ? (
-        <InstructionCarousel />
-      ) : step == 1 ? (
+      <Animated.View
+        key={step}
+        style={styles.stepContainer}
+        entering={(direction.current === "forward" ? FadeInRight : FadeInLeft).duration(380)}
+        exiting={(direction.current === "forward" ? FadeOutLeft : FadeOutRight).duration(220)}
+      >
+      {step == 1 ? (
         <SetApps
           authorizationStatus={authorizationStatus}
           setAuthorizationStatus={setAuthorizationStatus}
           selectionEvent={selectionEvent}
           setSelectionEvent={setSelectionEvent}
+          onSelectionComplete={() => setStep(2)}
         />
       ) : step == 2 ? (
-        <SetTimeLimit
-          isButtonDisabled={isButtonDisabled}
-          setIsButtonDisabled={setIsButtonDisabled}
-          timeValue={timeValue}
-          setTimeValue={setTimeValue}
-        />
+        <SetTimeLimit timeValue={timeValue} setTimeValue={setTimeValue} />
       ) : step == 3 ? (
-        <SetPledge
-          isButtonDisabled={isButtonDisabled}
-          setIsButtonDisabled={setIsButtonDisabled}
-          pledgeValue={pledgeValue}
-          setPledgeValue={setPledgeValue}
-        />
+        <SetPledge pledgeValue={pledgeValue} setPledgeValue={setPledgeValue} />
       ) : step == 4 ? (
         <AcceptTerms
           termsAccepted={termsAccepted}
@@ -104,81 +154,70 @@ const Instructions: React.FC<InstructionsProps> = (props) => {
         />
       ) : step == 5 ? (
         <SetPayment
-          isButtonDisabled={isButtonDisabled}
           setIsButtonDisabled={setIsButtonDisabled}
           paymentSetupComplete={paymentSetupComplete}
           setPaymentSetupComplete={setPaymentSetupComplete}
           pledgeValue={pledgeValue}
           timeValue={timeValue}
           setPublishableKey={setPublishableKey}
+          onComplete={startChallenge}
         />
       ) : step == 6 ? (
         <ChallengeOn />
       ) : null}
+      </Animated.View>
 
-      <View
-        style={{
-          position: "absolute",
-          bottom: step == 5 || step == 0 ? 71 : 38,
-          zIndex: 100,
-          alignSelf: "center",
-        }}
-      >
+      <View style={[styles.buttonContainer, step === 5 && { display: "none" }]}>
         <MainButton
-          onPress={() => {
+          onPress={async () => {
             if (step == 5) {
-              if (!paymentSetupComplete) {
-                Alert.alert(
-                  "Payment Required",
-                  "Please complete the payment setup before proceeding."
-                );
-                return;
-              }
-              AsyncStorage.setItem(
-                'pledgeSettings',
-                JSON.stringify({
-                  selectionEvent,
-                  pledgeValue,
-                  timeValue,
-                  paymentSetupComplete: true
-                })
-              ).then(() => {
-                navigation.navigate("Home");
-              });
-            } else if (step === 1 && authorizationStatus !== AuthorizationStatus.approved) {
-              return;
+              await startChallenge();
             } else {
               setStep(step + 1);
             }
           }}
-          text={step == 5 ? "Track My Pledge" : "Continue"}
-          style={{ width: 162 }}
+          text={step == 5 ? (starting ? "Starting…" : "Track My Pledge") : "Continue"}
+          style={styles.mainButton}
           disabled={
+            isButtonDisabled ||
+            (step === 1 && !selectionEvent?.familyActivitySelection) ||
             (step === 4 && !termsAccepted) || // Disable on AcceptTerms step if unchecked
             (step === 5 && !paymentSetupComplete) // Disable on Payment step if setup not complete
           }
         />
-        {step !== 5 && step > 0 ? (
+        {step !== 5 && step > FIRST_STEP ? (
           <TouchableOpacity
             onPress={() => {
               setStep(step - 1);
             }}
           >
-            <Text
-              style={{
-                textDecorationLine: "underline",
-                color: colors.orange,
-                textAlign: "center",
-                marginTop: 16,
-              }}
-            >
-              Go Back
-            </Text>
+            <Text style={styles.backButton}>Go Back</Text>
           </TouchableOpacity>
         ) : null}
       </View>
     </AppWrapper>
   );
 };
+
+const styles = StyleSheet.create({
+  stepContainer: {
+    flex: 1,
+  },
+  buttonContainer: {
+    position: "absolute",
+    bottom: 71,
+    zIndex: 100,
+    alignSelf: "center",
+  },
+  mainButton: {
+    width: 162,
+  },
+  backButton: {
+    textDecorationLine: "underline",
+    color: colors.orange,
+    textAlign: "center",
+    marginTop: 16,
+  },
+});
 
 export default Instructions;

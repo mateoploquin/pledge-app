@@ -1,125 +1,149 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, NativeSyntheticEvent, Alert, Linking } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  NativeSyntheticEvent,
+  Alert,
+  Linking,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import colors from "../../../theme/colors";
-import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
-import { DeviceActivitySelectionView, requestAuthorization, revokeAuthorization } from 'react-native-device-activity';
-import MainButton from '../../../components/buttons/main-button';
-import { SelectionInfo } from '../../../types';
-import AppsOnboardingGrid from '../../../lists/apps-onboarding-grid';
+import {
+  requestAuthorization,
+  getAuthorizationStatus,
+  AuthorizationStatus,
+  AuthorizationStatusType,
+} from "react-native-device-activity";
+import { SelectionInfo } from "../../../types";
+import AppsOnboardingGrid from "../../../lists/apps-onboarding-grid";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ActivityLabels } from "../../../../modules/pledge-activity-labels";
 
 interface SetAppsProps {
-  authorizationStatus: AuthorizationStatus
-  setAuthorizationStatus: (status: AuthorizationStatus) => void
-  selectionEvent: SelectionInfo;
-  setSelectionEvent: (event: SelectionInfo) => void
+  authorizationStatus: AuthorizationStatusType;
+  setAuthorizationStatus: (status: AuthorizationStatusType) => void;
+  selectionEvent: SelectionInfo | undefined;
+  setSelectionEvent: (event: SelectionInfo) => void;
+  /** Called when the user confirms a non-empty selection in the picker. */
+  onSelectionComplete: () => void;
 }
 
+const hasSelection = (s?: SelectionInfo) =>
+  !!s?.familyActivitySelection &&
+  s.applicationCount + s.categoryCount + s.webDomainCount > 0;
+
+/**
+ * Step 1 of onboarding. Asks for Screen Time access as soon as the step opens,
+ * then opens Apple's app picker right away, so a first-time user only taps
+ * "Allow" and then picks their apps.
+ */
 const SetApps: React.FC<SetAppsProps> = ({
   authorizationStatus,
   setAuthorizationStatus,
   selectionEvent,
-  setSelectionEvent
+  setSelectionEvent,
+  onSelectionComplete,
 }) => {
+  const navigation = useNavigation<any>();
   const [isRequesting, setIsRequesting] = useState(false);
+  const autoOpened = useRef(false);
 
-  const onRequestPress = useCallback(async () => {
-    if (isRequesting) return; // Prevent multiple rapid clicks
-    
+  const onSelectionChange = useCallback(
+    (event: NativeSyntheticEvent<SelectionInfo>) => {
+      if (!event.nativeEvent) return;
+      AsyncStorage.setItem("selectionEvent", JSON.stringify(event.nativeEvent));
+      setSelectionEvent(event.nativeEvent);
+    },
+    [setSelectionEvent]
+  );
+
+  const openPicker = useCallback(() => {
+    navigation.navigate("SelectApps", {
+      deviceActivitySelection: selectionEvent,
+      setDeviceActivitySelection: onSelectionChange,
+      onDone: onSelectionComplete,
+    });
+  }, [navigation, selectionEvent, onSelectionChange, onSelectionComplete]);
+
+  const requestAccess = useCallback(async (): Promise<AuthorizationStatusType> => {
+    if (isRequesting) return authorizationStatus;
+    setIsRequesting(true);
     try {
-      setIsRequesting(true);
-      let status: AuthorizationStatus;
-      
-      if (authorizationStatus === AuthorizationStatus.notDetermined) {
-        status = await requestAuthorization();
-      } else if (authorizationStatus === AuthorizationStatus.denied) {
-        Alert.alert(
-          "Screen Time Access Required",
-          "Please enable Screen Time access in Settings to continue",
-          [
-            {
-              text: "Open Settings",
-              onPress: Linking.openSettings,
-            },
-            {
-              text: "Cancel",
-              style: "cancel",
-            },
-          ],
-        );
-        return;
-      } else if (authorizationStatus === AuthorizationStatus.approved) {
-        status = await revokeAuthorization();
-      } else {
-        console.warn('Unexpected authorization status:', authorizationStatus);
-        return;
-      }
-
-      setAuthorizationStatus(status);
+      await requestAuthorization();
     } catch (error) {
-      console.error('Error handling authorization:', error);
-      Alert.alert(
-        "Error",
-        "There was an error setting up app monitoring. Please try again."
-      );
+      console.error("Error requesting Screen Time authorization:", error);
     } finally {
       setIsRequesting(false);
     }
-  }, [authorizationStatus, isRequesting]);
+    const status = getAuthorizationStatus();
+    setAuthorizationStatus(status);
+    return status;
+  }, [isRequesting, authorizationStatus, setAuthorizationStatus]);
 
-  const onSelectionChange = useCallback((event: NativeSyntheticEvent<SelectionInfo>) => {
-    if (!event.nativeEvent) return;
-    setSelectionEvent(event.nativeEvent)
-  }, []);
+  const showDeniedHelp = () =>
+    Alert.alert(
+      "Screen Time access needed",
+      "Pledge can only limit apps if it has Screen Time access. Enable it in Settings and come back.",
+      [
+        { text: "Open Settings", onPress: Linking.openSettings },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
 
-  // Cleanup effect
+  // First visit: ask for access, then go straight into the picker.
   useEffect(() => {
-    return () => {
-      // Reset selection when component unmounts
-      setSelectionEvent(undefined);
-    };
+    if (autoOpened.current || hasSelection(selectionEvent)) return;
+    autoOpened.current = true;
+    (async () => {
+      let status = authorizationStatus;
+      if (status === AuthorizationStatus.notDetermined) {
+        status = await requestAccess();
+      }
+      if (status === AuthorizationStatus.approved) {
+        openPicker();
+      }
+    })();
   }, []);
+
+  const onButtonPress = async () => {
+    if (authorizationStatus === AuthorizationStatus.approved) {
+      openPicker();
+      return;
+    }
+    if (authorizationStatus === AuthorizationStatus.denied) {
+      showDeniedHelp();
+      return;
+    }
+    const status = await requestAccess();
+    if (status === AuthorizationStatus.approved) openPicker();
+    else if (status === AuthorizationStatus.denied) showDeniedHelp();
+  };
 
   return (
-    <View style={{ flex: 1, marginTop: 69 }}>
-      <Text
-        style={{
-          textAlign: "center",
-          fontSize: 24,
-          fontWeight: "500",
-        }}
-      >
-        The <Text style={{ color: colors.orange }}>Pledge</Text> includes
+    <View style={styles.container}>
+      <Text style={styles.title}>
+        Which apps steal your <Text style={styles.orangeText}>time</Text>?
+      </Text>
+      <Text style={styles.subtitle}>
+        Pick the apps and categories you want to limit.
       </Text>
 
-      <Text
-        style={{
-          marginTop: 10,
-          marginBottom: 25,
-          alignSelf: 'center',
-          fontSize: 13
-        }}
-      >
-          Choose among other apps
-      </Text>
+      {hasSelection(selectionEvent) && (
+        <ActivityLabels
+          familyActivitySelection={selectionEvent?.familyActivitySelection}
+          iconSize={48}
+          showNames
+          style={styles.selectedRow}
+        />
+      )}
 
       <AppsOnboardingGrid
-        onAskPermissions={onRequestPress}
-        onSelectionChange={onSelectionChange}
-        permissionsGranted={authorizationStatus === AuthorizationStatus.approved}
+        authorizationStatus={authorizationStatus}
         selectionEvent={selectionEvent}
+        onPress={onButtonPress}
+        hideIcons={hasSelection(selectionEvent)}
       />
-
-      {/* <Text
-        style={{
-          marginTop: 69,
-          marginHorizontal: 34,
-          textAlign: "center",
-          fontSize: 16,
-          fontFamily: "InstrumentSerif-Regular",
-        }}
-      >
-        Pick the apps that steal your time, and reclaim it for what matters.
-      </Text> */}
     </View>
   );
 };
@@ -127,8 +151,26 @@ const SetApps: React.FC<SetAppsProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    marginTop: 69,
+  },
+  title: {
+    textAlign: "center",
+    fontSize: 24,
+    fontWeight: "500",
+  },
+  orangeText: {
+    color: colors.orange,
+  },
+  subtitle: {
+    marginTop: 10,
+    marginBottom: 25,
+    alignSelf: "center",
+    fontSize: 13,
+  },
+  selectedRow: {
+    height: 84,
+    marginHorizontal: 30,
+    marginBottom: 6,
   },
 });
 

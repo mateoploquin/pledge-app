@@ -1,10 +1,10 @@
 import React from "react";
-import { View, Text, StyleSheet, SafeAreaView } from "react-native";
+import { StyleSheet, SafeAreaView, ViewStyle } from "react-native";
 import colors from "../../theme/colors";
 
 interface AppWrapperProps {
   children: React.ReactNode;
-  style: object;
+  style?: ViewStyle;
 }
 
 const AppWrapper: React.FC<AppWrapperProps> = ({ children, style }) => {
