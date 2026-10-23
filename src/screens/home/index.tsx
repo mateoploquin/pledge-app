@@ -16,7 +16,6 @@ import ScreenTimeList from "../../lists/screen-time-list";
 import SurrenderModal from "../../components/modals/surrender-modal";
 import HomeHeader from "../../components/headers/home-header";
 import HomeWrapper from "../../components/layout/home-wrapper";
-import DayProgressBar from "../../components/bars/days-progress-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PledgeSettings } from "../../types";
 import {
@@ -53,7 +52,6 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
   });
   const [challengeStartDate, setChallengeStartDate] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [currentDay, setCurrentDay] = useState(1);
   const limitRef = useRef(0);
 
   const refreshUsage = useCallback(() => {
@@ -173,8 +171,6 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
         minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
         seconds: Math.floor((difference % (1000 * 60)) / 1000),
       });
-      const daysPassed = Math.ceil((now.getTime() - challengeStartDate.getTime()) / day);
-      setCurrentDay(Math.min(Math.max(1, daysPassed), CHALLENGE_DURATION));
     };
 
     const timer = setInterval(tick, 1000);
@@ -218,6 +214,10 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
                   </Fragment>
                 ))}
               </View>
+              <Text style={styles.pledgeText}>
+                Pledge at stake: {CURRENCY_SYMBOL}
+                {pledgeValue}
+              </Text>
             </HomeCardWrapper>
 
             <HomeCardWrapper style={styles.homeCardWrapper} title={"Daily Consumption"}>
@@ -244,19 +244,6 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
               </View>
             </HomeCardWrapper>
 
-            <HomeCardWrapper style={styles.homeCardWrapper} title={"Progress Bar"}>
-              <View style={styles.progressContainer}>
-                <DayProgressBar
-                  currentDay={currentDay}
-                  daysRemaining={countdown.days}
-                  totalDays={CHALLENGE_DURATION}
-                />
-                <Text style={styles.pledgeText}>
-                  Pledge at stake: {CURRENCY_SYMBOL}
-                  {pledgeValue}
-                </Text>
-              </View>
-            </HomeCardWrapper>
           </View>
         </View>
       </ScrollView>
@@ -335,14 +322,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.orange,
   },
-  progressContainer: {
-    paddingTop: 14,
-    paddingBottom: 19,
-    paddingHorizontal: 16,
-  },
   pledgeText: {
-    marginTop: 12,
+    marginTop: 2,
+    marginBottom: 12,
     fontSize: 14,
+    textAlign: "center",
     color: "rgba(0, 0, 0, 0.70)",
   },
   surrenderButton: {
