@@ -21,7 +21,8 @@ export type DailyUsage = {
 // The shield extension expects 0-255 channel values.
 const white = { red: 255, green: 255, blue: 255 };
 const orange = { red: 255, green: 89, blue: 0 };
-const softWhite = { red: 255, green: 246, blue: 241 };
+const ink = { red: 28, green: 20, blue: 16 };
+const inkSoft = { red: 90, green: 70, blue: 60 };
 
 const toThreshold = (totalMinutes: number) => ({
   hour: Math.floor(totalMinutes / 60),
@@ -36,16 +37,18 @@ export function configureShield(pledgeValue: number) {
   const configuration = {
     title: "Blocked by Pledge",
     subtitle: `You hit today's limit. Unlocking costs your ${CURRENCY_SYMBOL}${pledgeValue} pledge.`,
+    // iOS blends this with a translucent material, so orange renders as a warm
+    // peach wash. Dark text reads on it; the SF Symbol icon stays system-black
+    // (the library ignores iconTint).
     backgroundColor: orange,
-    titleColor: white,
-    subtitleColor: softWhite,
+    titleColor: ink,
+    subtitleColor: inkSoft,
     iconSystemName: "lock.fill",
-    iconTint: white,
     primaryButtonLabel: "Stay strong",
-    primaryButtonBackgroundColor: white,
-    primaryButtonLabelColor: orange,
+    primaryButtonBackgroundColor: orange,
+    primaryButtonLabelColor: white,
     secondaryButtonLabel: `Unlock for ${CURRENCY_SYMBOL}${pledgeValue}`,
-    secondaryButtonLabelColor: white,
+    secondaryButtonLabelColor: orange,
   };
   // Primary (prominent) button is the healthy choice; the unlock is the quiet
   // secondary link. "openUrl" is handled by the ShieldAction extension even
