@@ -18,6 +18,7 @@ import {
 import { SelectionInfo } from "../../../types";
 import AppsOnboardingGrid from "../../../lists/apps-onboarding-grid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ActivityLabels } from "../../../../modules/pledge-activity-labels";
 
 interface SetAppsProps {
   authorizationStatus: AuthorizationStatusType;
@@ -128,10 +129,20 @@ const SetApps: React.FC<SetAppsProps> = ({
         Pick the apps and categories you want to limit.
       </Text>
 
+      {hasSelection(selectionEvent) && (
+        <ActivityLabels
+          familyActivitySelection={selectionEvent?.familyActivitySelection}
+          iconSize={48}
+          showNames
+          style={styles.selectedRow}
+        />
+      )}
+
       <AppsOnboardingGrid
         authorizationStatus={authorizationStatus}
         selectionEvent={selectionEvent}
         onPress={onButtonPress}
+        hideIcons={hasSelection(selectionEvent)}
       />
     </View>
   );
@@ -155,6 +166,11 @@ const styles = StyleSheet.create({
     marginBottom: 25,
     alignSelf: "center",
     fontSize: 13,
+  },
+  selectedRow: {
+    height: 84,
+    marginHorizontal: 30,
+    marginBottom: 6,
   },
 });
 

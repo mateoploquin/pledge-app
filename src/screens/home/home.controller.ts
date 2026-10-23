@@ -199,6 +199,14 @@ export function getTodayUsage(limitMinutes: number): DailyUsage {
   let usedMinutes = 0;
   let limitReached = false;
 
+  if (__DEV__) {
+    const all = DeviceActivity.getEvents();
+    console.log(
+      "[usage] activities:", JSON.stringify(DeviceActivity.getActivities()),
+      "| events:", JSON.stringify(all.map((e) => `${e.activityName}/${e.callbackName}/${e.eventName}@${e.lastCalledAt.toISOString()}`))
+    );
+  }
+
   for (const event of DeviceActivity.getEvents(DAILY_ACTIVITY_NAME)) {
     if (event.callbackName !== "eventDidReachThreshold") continue;
     if (event.lastCalledAt < startOfDay) continue;

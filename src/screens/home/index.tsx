@@ -31,6 +31,7 @@ import {
 import { CHALLENGE_DURATION } from "./home.constants";
 import { Interfaces } from "./home.interfaces";
 import { CURRENCY_SYMBOL } from "../../config";
+import { ActivityLabels } from "../../../modules/pledge-activity-labels";
 
 const isUnlockUrl = (url: string | null | undefined) =>
   !!url && /unlock/i.test(url);
@@ -200,6 +201,12 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.challengeTitle}>My Pledge</Text>
+        <ActivityLabels
+          familyActivitySelection={settings.selectionEvent?.familyActivitySelection}
+          iconSize={44}
+          showNames
+          style={styles.appsRow}
+        />
         <View style={styles.cardContainer}>
           <View style={styles.cardBackground}>
             <HomeCardWrapper title={"Countdown"}>
@@ -278,6 +285,11 @@ const styles = StyleSheet.create({
     color: colors.white,
     marginTop: 20,
     marginBottom: 17,
+  },
+  appsRow: {
+    height: 76,
+    marginHorizontal: 26,
+    marginBottom: 14,
   },
   cardContainer: {
     borderRadius: 25,

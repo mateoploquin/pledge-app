@@ -64,12 +64,15 @@ interface AppsOnboardingListProps {
   authorizationStatus: AuthorizationStatusType;
   selectionEvent: SelectionInfo | undefined;
   onPress: () => void;
+  /** Hide the decorative sample icons (e.g. once real selections are shown). */
+  hideIcons?: boolean;
 }
 
 const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
   authorizationStatus,
   selectionEvent,
   onPress,
+  hideIcons = false,
 }) => {
   const renderApp = ({ item }) => {
     return (
@@ -109,6 +112,7 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
 
   return (
     <View>
+      {!hideIcons && (
       <FlatList
         data={appData}
         keyExtractor={(item) => item.id.toString()}
@@ -117,6 +121,7 @@ const AppsOnboardingGrid: React.FC<AppsOnboardingListProps> = ({
         columnWrapperStyle={styles.column}
         contentContainerStyle={styles.grid}
       />
+      )}
 
       <TouchableOpacity
         activeOpacity={0.8}
