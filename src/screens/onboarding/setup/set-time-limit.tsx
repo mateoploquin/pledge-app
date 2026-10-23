@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
+import AnimatedNumber from "../../../components/text/animated-number";
 import colors from "../../../theme/colors";
 import PresetChips from "../../../components/buttons/preset-chips";
 import { haptics } from "../../../utils/haptics";
@@ -22,7 +23,7 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
       </Text>
 
       <View style={styles.pledgeContainer}>
-        <Text style={styles.xxText}>{timeValue}</Text>
+        <AnimatedNumber style={styles.xxText} value={timeValue} />
         <Text style={styles.dollarSign}>m</Text>
       </View>
 

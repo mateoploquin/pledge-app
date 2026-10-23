@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
+import AnimatedNumber from "../../../components/text/animated-number";
 import colors from "../../../theme/colors";
 import PresetChips from "../../../components/buttons/preset-chips";
 import { haptics } from "../../../utils/haptics";
@@ -19,7 +20,7 @@ const SetPledge: React.FC<SetPledgeProps> = ({
       <Text style={styles.title}>How Much Do You Pledge?</Text>
 
       <View style={styles.pledgeContainer}>
-        <Text style={styles.xxText}>{pledgeValue}</Text>
+        <AnimatedNumber style={styles.xxText} value={pledgeValue} />
         <Text style={styles.dollarSign}>$</Text>
       </View>
 
@@ -31,7 +32,7 @@ const SetPledge: React.FC<SetPledgeProps> = ({
       />
 
       <PresetChips
-        values={[5, 10, 20, 50, 100]}
+        values={[5, 10, 20]}
         selected={pledgeValue}
         onSelect={(v) => {
           haptics.select();
@@ -40,10 +41,6 @@ const SetPledge: React.FC<SetPledgeProps> = ({
         format={(v) => `$${v}`}
       />
 
-      <Text style={styles.description}>
-        The higher your pledge, the greater your commitment—and the bigger the
-        impact.
-      </Text>
     </View>
   );
 };

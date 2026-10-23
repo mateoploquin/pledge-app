@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { haptics } from "../../utils/haptics";
 import { View, Text, StyleSheet, PanResponder } from "react-native";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
 import colors from "../../theme/colors";
 const SLIDER_WIDTH = SCREEN_WIDTH * 0.8;
@@ -17,12 +18,24 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, value: controlled, onVa
   const [value, setValue] = useState(controlled ?? min);
   const valueRef = useRef(controlled ?? min);
 
+  const toPosition = (v: number) => ((v - min) / (max - min)) * SLIDER_WIDTH;
+  // Thumb/fill position on the UI thread. Dragging sets it directly; a preset
+  // tap glides to the new spot as if the user had swiped there.
+  const position = useSharedValue(toPosition(controlled ?? min));
+
   useEffect(() => {
     if (controlled !== undefined && controlled !== valueRef.current) {
       valueRef.current = controlled;
       setValue(controlled);
+      position.value = withTiming(toPosition(controlled), {
+        duration: 420,
+        easing: Easing.out(Easing.cubic),
+      });
     }
   }, [controlled]);
+
+  const fillStyle = useAnimatedStyle(() => ({ width: position.value }));
+  const thumbStyle = useAnimatedStyle(() => ({ left: position.value - 10 }));
   const [startX, setStartX] = useState(0);
 
   const generateTickValues = (min: number, max: number): number[] => {
@@ -58,14 +71,11 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, value: controlled, onVa
         valueRef.current = newValue;
         haptics.select();
       }
+      position.value = toPosition(newValue);
       setValue(newValue);
       onValueChange(newValue);
     },
   });
-
-  const getThumbPosition = () => {
-    return ((value - min) / (max - min)) * SLIDER_WIDTH;
-  };
 
   const renderTickMarks = () => {
     const ticks = generateTickValues(min, max);
@@ -83,11 +93,8 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, value: controlled, onVa
   return (
     <View style={styles.sliderContainer}>
       <View style={styles.track}>
-        <View style={[styles.fill, { width: getThumbPosition() }]} />
-        <View
-          {...panResponder.panHandlers}
-          style={[styles.thumb, { left: getThumbPosition() - 10 }]}
-        />
+        <Animated.View style={[styles.fill, fillStyle]} />
+        <Animated.View {...panResponder.panHandlers} style={[styles.thumb, thumbStyle]} />
       </View>
       <View style={styles.ticksContainer}>{renderTickMarks()}</View>
     </View>
