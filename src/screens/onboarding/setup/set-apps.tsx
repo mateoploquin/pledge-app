@@ -126,8 +126,8 @@ const SetApps: React.FC<SetAppsProps> = ({
         Which apps steal your <Text style={styles.orangeText}>time</Text>?
       </Text>
       <Text style={styles.subtitle}>
-        Pick the apps and categories you want to limit.{"\n"}
-        Use a site in Safari too? Add it under “Websites” in the picker.
+        Pick the apps themselves, e.g. Instagram under “Social”.{"\n"}
+        A website like instagram.com only counts time in Safari, not in the app.
       </Text>
 
       {hasSelection(selectionEvent) && (
