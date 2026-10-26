@@ -11,10 +11,12 @@ interface SetSliderProps {
   max: number;
   /** Controlled value; when it changes externally (e.g. a preset tap) the thumb follows. */
   value?: number;
+  /** Explicit tick labels; generated from min/max when omitted. */
+  ticks?: number[];
   onValueChange: (value: number) => void;
 }
 
-const SetSlider: React.FC<SetSliderProps> = ({ min, max, value: controlled, onValueChange }) => {
+const SetSlider: React.FC<SetSliderProps> = ({ min, max, value: controlled, ticks, onValueChange }) => {
   const [value, setValue] = useState(controlled ?? min);
   const valueRef = useRef(controlled ?? min);
 
@@ -86,8 +88,8 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, value: controlled, onVa
   });
 
   const renderTickMarks = () => {
-    const ticks = generateTickValues(min, max);
-    return ticks.map((tick) => {
+    const values = ticks ?? generateTickValues(min, max);
+    return values.map((tick) => {
       const left = ((tick - min) / (max - min)) * SLIDER_WIDTH;
       return (
         <View key={tick} style={[styles.tickContainer, { left }]}>

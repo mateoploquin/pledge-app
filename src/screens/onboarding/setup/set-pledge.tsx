@@ -27,6 +27,7 @@ const SetPledge: React.FC<SetPledgeProps> = ({
       <SetSlider
         min={5}
         max={100}
+        ticks={[5, 25, 50, 75, 100]}
         value={pledgeValue}
         onValueChange={(value) => setPledgeValue(value)}
       />

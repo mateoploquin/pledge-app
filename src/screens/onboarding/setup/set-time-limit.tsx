@@ -30,6 +30,7 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
       <SetSlider
         min={10}
         max={120}
+        ticks={[10, 30, 60, 90, 120]}
         value={timeValue}
         onValueChange={(value) => setTimeValue(value)}
       />
