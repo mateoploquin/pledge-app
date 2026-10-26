@@ -150,13 +150,14 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
   }, []);
 
   useEffect(() => {
-    if (!challengeStartDate) return;
+    if (!challengeStartDate || !settings) return;
+    const durationDays = settings.durationDays ?? CHALLENGE_DURATION;
 
     const tick = () => {
       const now = new Date();
       const day = 1000 * 60 * 60 * 24;
-      // Fixed 30 x 24h, so a DST change inside the window doesn't add or drop an hour.
-      const endTime = challengeStartDate.getTime() + CHALLENGE_DURATION * day;
+      // Fixed N x 24h, so a DST change inside the window doesn't add or drop an hour.
+      const endTime = challengeStartDate.getTime() + durationDays * day;
       const difference = endTime - now.getTime();
 
       if (difference <= 0) {
@@ -177,7 +178,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
     const timer = setInterval(tick, 1000);
     tick();
     return () => clearInterval(timer);
-  }, [challengeStartDate, endChallenge]);
+  }, [challengeStartDate, settings, endChallenge]);
 
   if (!settings) {
     return null;

@@ -68,12 +68,16 @@ const PLEDGE_MIN = 1;
 const PLEDGE_MAX = 100;
 const TIME_MIN = 0;
 const TIME_MAX = 24 * 60;
+const DURATION_MIN = 1;
+const DURATION_MAX = 365;
 
 app.post("/pledge", async (c) => {
   const decoded = c.get("user");
   const body = await c.req.json().catch(() => ({}));
   const pledgeValue = Number(body.pledgeValue);
   const timeValue = Number(body.timeValue);
+  // Older app builds send no duration; they run for 30 days.
+  const durationDays = body.durationDays === undefined ? 30 : Number(body.durationDays);
 
   if (!Number.isFinite(pledgeValue) || pledgeValue < PLEDGE_MIN || pledgeValue > PLEDGE_MAX) {
     return c.json({ error: `pledgeValue must be between ${PLEDGE_MIN} and ${PLEDGE_MAX}` }, 400);
@@ -81,19 +85,23 @@ app.post("/pledge", async (c) => {
   if (!Number.isFinite(timeValue) || timeValue < TIME_MIN || timeValue > TIME_MAX) {
     return c.json({ error: `timeValue must be between ${TIME_MIN} and ${TIME_MAX} minutes` }, 400);
   }
+  if (!Number.isInteger(durationDays) || durationDays < DURATION_MIN || durationDays > DURATION_MAX) {
+    return c.json({ error: `durationDays must be between ${DURATION_MIN} and ${DURATION_MAX}` }, 400);
+  }
 
   const user = await upsertUser(decoded, {
     pledgeValue,
     timeValue,
+    durationDays,
     pledgeSetAt: new Date().toISOString(),
   });
-  return c.json({ pledgeValue: user.pledgeValue, timeValue: user.timeValue, pledgeSetAt: user.pledgeSetAt });
+  return c.json({ pledgeValue: user.pledgeValue, timeValue: user.timeValue, durationDays: user.durationDays, pledgeSetAt: user.pledgeSetAt });
 });
 
 app.get("/pledge", async (c) => {
   const user = await getUser(c.get("user").uid);
   if (!user?.pledgeSetAt) return c.json({ error: "No pledge" }, 404);
-  return c.json({ pledgeValue: user.pledgeValue, timeValue: user.timeValue, pledgeSetAt: user.pledgeSetAt });
+  return c.json({ pledgeValue: user.pledgeValue, timeValue: user.timeValue, durationDays: user.durationDays, pledgeSetAt: user.pledgeSetAt });
 });
 
 app.post("/stripe/charge", async (c) => {

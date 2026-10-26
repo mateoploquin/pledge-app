@@ -50,6 +50,7 @@ export type UserRecord = {
   stripeCustomerId?: string;
   pledgeValue?: number;
   timeValue?: number;
+  durationDays?: number;
   pledgeSetAt?: string;
   createdAt?: string;
   updatedAt?: string;

@@ -8,6 +8,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import SetPledge from "./setup/set-pledge";
 import ChallengeOn from "./setup/challenge-on";
 import SetTimeLimit from "./setup/set-time-limit";
+import SetDuration from "./setup/set-duration";
 import SetApps from "./setup/set-apps";
 import AcceptTerms from "./setup/accept-terms";
 import {
@@ -19,6 +20,7 @@ import SetPayment from "./setup/set-up-payment";
 import { PledgeSettings, SelectionInfo } from "../../types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { startChallengeMonitoring } from "../home/home.controller";
+import { CHALLENGE_DURATION } from "../home/home.constants";
 import Animated, { FadeInRight, FadeInLeft, FadeOutLeft, FadeOutRight } from "react-native-reanimated";
 import { haptics } from "../../utils/haptics";
 
@@ -28,7 +30,10 @@ interface InstructionsProps {
 
 const Instructions: React.FC<InstructionsProps> = () => {
   const navigation = useNavigation();
-  const FIRST_STEP = 1; // app selection; the old explainer carousel (step 0) was removed
+  // 1 apps, 2 daily limit, 3 duration, 4 pledge amount, 5 terms, 6 card, 7 done
+  const FIRST_STEP = 1;
+  const TERMS_STEP = 5;
+  const PAYMENT_STEP = 6;
   const [step, setStepState] = useState(FIRST_STEP);
   const direction = useRef<"forward" | "back">("forward");
   const setStep = (next: number) => {
@@ -40,6 +45,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
   const isReturningFromShare = useRef(false);
   const [pledgeValue, setPledgeValue] = useState(5);
   const [timeValue, setTimeValue] = useState(10);
+  const [durationDays, setDurationDays] = useState(CHALLENGE_DURATION);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [authorizationStatus, setAuthorizationStatus] =
@@ -100,6 +106,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
       selectionEvent,
       pledgeValue,
       timeValue,
+      durationDays,
       paymentSetupComplete: true,
     };
     try {
@@ -127,7 +134,7 @@ const Instructions: React.FC<InstructionsProps> = () => {
 
   return (
     <AppWrapper style={{}}>
-      {step !== 4 && <MainHeader />}
+      {step !== TERMS_STEP && <MainHeader />}
 
       <Animated.View
         key={step}
@@ -146,46 +153,49 @@ const Instructions: React.FC<InstructionsProps> = () => {
       ) : step == 2 ? (
         <SetTimeLimit timeValue={timeValue} setTimeValue={setTimeValue} />
       ) : step == 3 ? (
-        <SetPledge pledgeValue={pledgeValue} setPledgeValue={setPledgeValue} />
+        <SetDuration durationDays={durationDays} setDurationDays={setDurationDays} />
       ) : step == 4 ? (
+        <SetPledge pledgeValue={pledgeValue} setPledgeValue={setPledgeValue} />
+      ) : step == TERMS_STEP ? (
         <AcceptTerms
           termsAccepted={termsAccepted}
           setTermsAccepted={setTermsAccepted}
         />
-      ) : step == 5 ? (
+      ) : step == PAYMENT_STEP ? (
         <SetPayment
           setIsButtonDisabled={setIsButtonDisabled}
           paymentSetupComplete={paymentSetupComplete}
           setPaymentSetupComplete={setPaymentSetupComplete}
           pledgeValue={pledgeValue}
           timeValue={timeValue}
+          durationDays={durationDays}
           setPublishableKey={setPublishableKey}
           onComplete={startChallenge}
         />
-      ) : step == 6 ? (
+      ) : step == PAYMENT_STEP + 1 ? (
         <ChallengeOn />
       ) : null}
       </Animated.View>
 
-      <View style={[styles.buttonContainer, step === 5 && { display: "none" }]}>
+      <View style={[styles.buttonContainer, step === PAYMENT_STEP && { display: "none" }]}>
         <MainButton
           onPress={async () => {
-            if (step == 5) {
+            if (step == PAYMENT_STEP) {
               await startChallenge();
             } else {
               setStep(step + 1);
             }
           }}
-          text={step == 5 ? (starting ? "Starting…" : "Track My Pledge") : "Continue"}
+          text={step == PAYMENT_STEP ? (starting ? "Starting…" : "Track My Pledge") : "Continue"}
           style={styles.mainButton}
           disabled={
             isButtonDisabled ||
             (step === 1 && !selectionEvent?.familyActivitySelection) ||
-            (step === 4 && !termsAccepted) || // Disable on AcceptTerms step if unchecked
-            (step === 5 && !paymentSetupComplete) // Disable on Payment step if setup not complete
+            (step === TERMS_STEP && !termsAccepted) ||
+            (step === PAYMENT_STEP && !paymentSetupComplete)
           }
         />
-        {step !== 5 && step > FIRST_STEP ? (
+        {step !== PAYMENT_STEP && step > FIRST_STEP ? (
           <TouchableOpacity
             onPress={() => {
               setStep(step - 1);

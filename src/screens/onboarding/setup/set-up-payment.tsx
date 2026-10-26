@@ -14,6 +14,7 @@ interface SetPaymentProps {
   setPaymentSetupComplete: (complete: boolean) => void;
   pledgeValue: number;
   timeValue: number;
+  durationDays: number;
   setPublishableKey: (publishableKey: string) => void;
   /** Called once the card is saved and the pledge recorded. */
   onComplete?: () => void | Promise<void>;
@@ -28,6 +29,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
   setPaymentSetupComplete,
   pledgeValue,
   timeValue,
+  durationDays,
   setPublishableKey,
   onComplete,
 }) => {
@@ -90,7 +92,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
       const user = auth.currentUser;
       if (!user) throw new Error("Signed out");
       const idToken = await user.getIdToken();
-      await sendPledgeData({ pledgeValue, timeValue }, idToken);
+      await sendPledgeData({ pledgeValue, timeValue, durationDays }, idToken);
       setPaymentSetupComplete(true);
       await onComplete?.();
     } catch (err) {
@@ -141,7 +143,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
           <Text style={styles.title}>Put your card down</Text>
           <Text style={styles.subtitle}>
             Nothing is charged now. You only pay your {CURRENCY_SYMBOL}
-            {pledgeValue} pledge if you unlock your apps before the 30 days are up.
+            {pledgeValue} pledge if you unlock your apps before the {durationDays} days are up.
           </Text>
           <MainButton onPress={handleSetUpPayment} text="Add a card" style={styles.button} />
         </>

@@ -41,7 +41,7 @@ export const termsHtml = page(
 <p>These terms govern your use of the Pledge app ("Pledge", "we", "us"). By creating an account or starting a challenge you agree to them. If you do not agree, do not use the app.</p>
 
 <h2>1. What Pledge does</h2>
-<p>Pledge helps you reduce screen time. You choose apps, set a daily time limit and a money pledge, and start a 30-day challenge. When you reach your daily limit, Pledge blocks the selected apps for the rest of the day using Apple's Screen Time features. You can unlock the apps at any time by surrendering the challenge, which charges your pledge.</p>
+<p>Pledge helps you reduce screen time. You choose apps, set a daily time limit and a money pledge, and start a challenge that runs for a number of days you choose (7, 15 or 30). When you reach your daily limit, Pledge blocks the selected apps for the rest of the day using Apple's Screen Time features. You can unlock the apps at any time by surrendering the challenge, which charges your pledge.</p>
 
 <h2>2. Eligibility</h2>
 <p>You must be at least 18 years old and able to enter a binding contract. The app is not intended for children, and Screen Time authorization is requested for your own device only.</p>
@@ -52,8 +52,8 @@ export const termsHtml = page(
 <h2>4. The pledge and payments</h2>
 <ul>
   <li>Before a challenge starts you save a payment card. <strong>Nothing is charged at that point.</strong> Card details are handled by Stripe; we never see your full card number.</li>
-  <li>Your pledge is charged <strong>only if you surrender</strong>, meaning you choose to unlock your blocked apps before the 30 days are over. Surrendering ends the challenge.</li>
-  <li>If you complete the 30 days without surrendering, nothing is charged.</li>
+  <li>Your pledge is charged <strong>only if you surrender</strong>, meaning you choose to unlock your blocked apps before the challenge period is over. Surrendering ends the challenge.</li>
+  <li>If you complete the challenge period without surrendering, nothing is charged.</li>
   <li>Charges are in euros for the pledge amount you chose and are <strong>non-refundable</strong>, since the charge is the agreed consequence of ending the challenge early.</li>
   <li>Of each charged pledge, we donate the amount to ${CHARITY} after deducting a small fee that covers payment processing and the running of the app. [Confirm the exact fee and donation arrangement before launch.]</li>
   <li>If a charge fails, your apps remain blocked until the payment goes through or the challenge ends.</li>
