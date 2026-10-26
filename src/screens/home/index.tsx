@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     marginBottom: 17,
   },
   appsRow: {
-    height: 104,
+    height: 48,
     marginHorizontal: 26,
     marginBottom: 14,
   },

@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   selectedRow: {
-    height: 110,
+    height: 52,
     marginHorizontal: 30,
     marginBottom: 6,
   },

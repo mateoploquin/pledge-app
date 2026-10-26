@@ -15,7 +15,7 @@ struct ActivityLabelsView: View {
 
   var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
-      HStack(alignment: .top, spacing: 10) {
+      HStack(alignment: .center, spacing: 8) {
         ForEach(Array(selection.applicationTokens), id: \.self) { token in
           bubble { Label(token) }
         }
@@ -31,32 +31,20 @@ struct ActivityLabelsView: View {
     }
   }
 
-  /// One rounded card per selection: icon on top, name underneath.
+  /// One pill per selection, laid out by the system label itself
+  /// (icon + name side by side), which is the only arrangement the
+  /// privacy-preserving label renders reliably.
   @ViewBuilder
   private func bubble<L: View>(@ViewBuilder label: () -> L) -> some View {
-    let content = label()
-    VStack(spacing: 6) {
-      content
-        .labelStyle(.iconOnly)
-        .font(.system(size: iconSize * 0.55))
-        .frame(width: iconSize, height: iconSize)
-      if showNames {
-        // The system label ignores font/lineLimit, so never constrain its
-        // width (no truncation) and shrink it visually instead.
-        content
-          .labelStyle(.titleOnly)
-          .font(.footnote)
-          .foregroundColor(Color(red: 0.11, green: 0.08, blue: 0.06))
-          .fixedSize(horizontal: true, vertical: false)
-          .scaleEffect(0.78)
-          .frame(height: 16)
-      }
-    }
-    .padding(.vertical, 10)
-    .padding(.horizontal, 12)
-    .frame(minWidth: bubbleWidth)
-    .background(Color.white.opacity(0.92))
-    .cornerRadius(16)
+    label()
+      .labelStyle(.titleAndIcon)
+      .font(.system(size: 14, weight: .medium))
+      .foregroundColor(Color(red: 0.11, green: 0.08, blue: 0.06))
+      .fixedSize()
+      .padding(.vertical, 9)
+      .padding(.horizontal, 14)
+      .background(Color.white.opacity(0.92))
+      .clipShape(Capsule())
   }
 }
 
