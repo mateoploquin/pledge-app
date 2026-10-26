@@ -126,7 +126,8 @@ const SetApps: React.FC<SetAppsProps> = ({
         Which apps steal your <Text style={styles.orangeText}>time</Text>?
       </Text>
       <Text style={styles.subtitle}>
-        Pick the apps and categories you want to limit.
+        Pick the apps and categories you want to limit.{"\n"}
+        Use a site in Safari too? Add it under “Websites” in the picker.
       </Text>
 
       {hasSelection(selectionEvent) && (
@@ -164,11 +165,13 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: 10,
     marginBottom: 25,
-    alignSelf: "center",
+    marginHorizontal: 36,
+    textAlign: "center",
     fontSize: 13,
+    lineHeight: 19,
   },
   selectedRow: {
-    height: 84,
+    height: 110,
     marginHorizontal: 30,
     marginBottom: 6,
   },

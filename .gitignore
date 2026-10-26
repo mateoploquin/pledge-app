@@ -35,6 +35,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-ios/
-android/
-targets/
+/ios/
+/android/
+/targets/
