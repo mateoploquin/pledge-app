@@ -3,61 +3,43 @@ import FamilyControls
 import ManagedSettings
 import SwiftUI
 
-/// Shows the apps / categories / web domains inside a FamilyActivitySelection.
-/// Apple's `Label(token)` draws the real icon and name; our code only ever sees
-/// opaque tokens, so no extra entitlement is needed and nothing leaks.
-struct ActivityLabelsView: View {
-  let selection: FamilyActivitySelection
-  let iconSize: CGFloat
-  let showNames: Bool
-
-  /// Wide enough for names like "Entertainment" at the system's label size.
-  private let labelWidth: CGFloat = 200
+/// Draws ONE selection (app, category or web domain) using Apple's
+/// privacy-preserving `Label(token)`: the system renders the real icon and
+/// name, our code only ever holds opaque tokens. Layout of rows/pills is done
+/// in React Native, which keeps scrolling and styling on the JS side.
+struct SingleLabelView: View {
+  let applicationToken: ApplicationToken?
+  let categoryToken: ActivityCategoryToken?
+  let webDomainToken: WebDomainToken?
+  let fontSize: CGFloat
 
   var body: some View {
-    ScrollView(.horizontal, showsIndicators: false) {
-      HStack(alignment: .center, spacing: 8) {
-        ForEach(Array(selection.applicationTokens), id: \.self) { token in
-          bubble { Label(token) }
-        }
-        ForEach(Array(selection.categoryTokens), id: \.self) { token in
-          bubble { Label(token) }
-        }
-        ForEach(Array(selection.webDomainTokens), id: \.self) { token in
-          bubble { Label(token) }
-        }
+    Group {
+      if let t = applicationToken {
+        Label(t)
+      } else if let t = categoryToken {
+        Label(t)
+      } else if let t = webDomainToken {
+        Label(t)
+      } else {
+        EmptyView()
       }
-      .padding(.horizontal, 2)
-      .padding(.vertical, 2)
     }
-  }
-
-  /// One pill per selection, laid out by the system label itself
-  /// (icon + name side by side), which is the only arrangement the
-  /// privacy-preserving label renders reliably.
-  @ViewBuilder
-  private func bubble<L: View>(@ViewBuilder label: () -> L) -> some View {
-    // The privacy label reports ~zero intrinsic width but draws fine into a
-    // given frame, so every pill gets the same fixed width.
-    label()
-      .labelStyle(.titleAndIcon)
-      .font(.system(size: 14, weight: .medium))
-      .foregroundColor(Color(red: 0.11, green: 0.08, blue: 0.06))
-      .lineLimit(1)
-      .truncationMode(.tail)
-      .frame(width: labelWidth, alignment: .leading)
-      .padding(.vertical, 9)
-      .padding(.horizontal, 14)
-      .background(Color.white.opacity(0.92))
-      .clipShape(Capsule())
+    .labelStyle(.titleAndIcon)
+    .font(.system(size: fontSize, weight: .medium))
+    .foregroundColor(Color(red: 0.11, green: 0.08, blue: 0.06))
+    .lineLimit(1)
+    .truncationMode(.tail)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
   }
 }
 
-final class PledgeActivityLabelsView: ExpoView {
+final class PledgeActivityLabelView: ExpoView {
   private var host: UIHostingController<AnyView>?
-  private var selectionToken: String = ""
-  private var iconSize: CGFloat = 44
-  private var showNames = true
+  private var applicationToken: ApplicationToken?
+  private var categoryToken: ActivityCategoryToken?
+  private var webDomainToken: WebDomainToken?
+  private var fontSize: CGFloat = 15
 
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
@@ -65,30 +47,41 @@ final class PledgeActivityLabelsView: ExpoView {
     render()
   }
 
-  func update(token: String?, iconSize: Double?, showNames: Bool?) {
-    if let token { selectionToken = token }
-    if let iconSize { self.iconSize = CGFloat(iconSize) }
-    if let showNames { self.showNames = showNames }
+  func setApplication(_ b64: String?) {
+    applicationToken = decode(ApplicationToken.self, b64)
+    render()
+  }
+  func setCategory(_ b64: String?) {
+    categoryToken = decode(ActivityCategoryToken.self, b64)
+    render()
+  }
+  func setWebDomain(_ b64: String?) {
+    webDomainToken = decode(WebDomainToken.self, b64)
+    render()
+  }
+  func setFontSize(_ size: Double?) {
+    if let size { fontSize = CGFloat(size) }
     render()
   }
 
-  private func decode(_ token: String) -> FamilyActivitySelection {
-    guard let data = Data(base64Encoded: token),
-      let selection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data)
-    else { return FamilyActivitySelection() }
-    return selection
+  private func decode<T: Decodable>(_ type: T.Type, _ b64: String?) -> T? {
+    guard let b64, let data = Data(base64Encoded: b64) else { return nil }
+    return try? JSONDecoder().decode(type, from: data)
   }
 
   private func render() {
     let root = AnyView(
-      ActivityLabelsView(
-        selection: decode(selectionToken), iconSize: iconSize, showNames: showNames)
-    )
+      SingleLabelView(
+        applicationToken: applicationToken,
+        categoryToken: categoryToken,
+        webDomainToken: webDomainToken,
+        fontSize: fontSize))
     if let host {
       host.rootView = root
     } else {
       let controller = UIHostingController(rootView: root)
       controller.view.backgroundColor = .clear
+      controller.view.isUserInteractionEnabled = false
       addSubview(controller.view)
       host = controller
     }
@@ -104,15 +97,37 @@ public class PledgeActivityLabelsModule: Module {
   public func definition() -> ModuleDefinition {
     Name("PledgeActivityLabels")
 
-    View(PledgeActivityLabelsView.self) {
-      Prop("familyActivitySelection") { (view: PledgeActivityLabelsView, token: String?) in
-        view.update(token: token, iconSize: nil, showNames: nil)
+    /// Splits a base64 FamilyActivitySelection into per-item opaque tokens
+    /// (each re-encoded as base64 JSON) so JS can render one label per item.
+    Function("listTokens") { (selection: String) -> [String: [String]] in
+      guard let data = Data(base64Encoded: selection),
+        let sel = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data)
+      else {
+        return ["applications": [], "categories": [], "webDomains": []]
       }
-      Prop("iconSize") { (view: PledgeActivityLabelsView, size: Double?) in
-        view.update(token: nil, iconSize: size, showNames: nil)
+      let enc = JSONEncoder()
+      func encodeAll<T: Encodable>(_ items: Set<T>) -> [String] {
+        items.compactMap { (try? enc.encode($0))?.base64EncodedString() }
       }
-      Prop("showNames") { (view: PledgeActivityLabelsView, show: Bool?) in
-        view.update(token: nil, iconSize: nil, showNames: show)
+      return [
+        "applications": encodeAll(sel.applicationTokens),
+        "categories": encodeAll(sel.categoryTokens),
+        "webDomains": encodeAll(sel.webDomainTokens),
+      ]
+    }
+
+    View(PledgeActivityLabelView.self) {
+      Prop("applicationToken") { (view: PledgeActivityLabelView, token: String?) in
+        view.setApplication(token)
+      }
+      Prop("categoryToken") { (view: PledgeActivityLabelView, token: String?) in
+        view.setCategory(token)
+      }
+      Prop("webDomainToken") { (view: PledgeActivityLabelView, token: String?) in
+        view.setWebDomain(token)
+      }
+      Prop("fontSize") { (view: PledgeActivityLabelView, size: Double?) in
+        view.setFontSize(size)
       }
     }
   }
