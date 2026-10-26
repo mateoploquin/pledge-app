@@ -41,18 +41,20 @@ struct ActivityLabelsView: View {
         .font(.system(size: iconSize * 0.55))
         .frame(width: iconSize, height: iconSize)
       if showNames {
+        // The system label ignores font/lineLimit, so never constrain its
+        // width (no truncation) and shrink it visually instead.
         content
           .labelStyle(.titleOnly)
-          .font(.system(size: 11, weight: .medium))
-          .lineLimit(2)
-          .minimumScaleFactor(0.6)
-          .multilineTextAlignment(.center)
+          .font(.footnote)
           .foregroundColor(Color(red: 0.11, green: 0.08, blue: 0.06))
-          .frame(width: bubbleWidth - 12, height: 28, alignment: .top)
+          .fixedSize(horizontal: true, vertical: false)
+          .scaleEffect(0.78)
+          .frame(height: 16)
       }
     }
     .padding(.vertical, 10)
-    .frame(width: bubbleWidth)
+    .padding(.horizontal, 12)
+    .frame(minWidth: bubbleWidth)
     .background(Color.white.opacity(0.92))
     .cornerRadius(16)
   }
