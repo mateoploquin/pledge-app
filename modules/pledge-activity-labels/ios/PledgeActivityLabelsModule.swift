@@ -12,7 +12,7 @@ struct ActivityLabelsView: View {
   let showNames: Bool
 
   /// Wide enough for names like "Entertainment" at the system's label size.
-  private let labelWidth: CGFloat = 150
+  private let labelWidth: CGFloat = 200
 
   var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
