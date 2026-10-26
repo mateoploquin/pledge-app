@@ -36,7 +36,8 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, value: controlled, onVa
 
   const fillStyle = useAnimatedStyle(() => ({ width: position.value }));
   const thumbStyle = useAnimatedStyle(() => ({ left: position.value - 10 }));
-  const [startX, setStartX] = useState(0);
+  // Page x of the track's left edge, captured when a touch starts.
+  const trackPageX = useRef(0);
 
   const generateTickValues = (min: number, max: number): number[] => {
     const range = max - min;
@@ -55,25 +56,32 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, value: controlled, onVa
     return ticks;
   };
 
+  const applyPageX = (pageX: number) => {
+    const relative = (pageX - trackPageX.current) / SLIDER_WIDTH;
+    let newValue = Math.round(relative * (max - min) + min);
+    if (newValue < min) newValue = min;
+    if (newValue > max) newValue = max;
+    if (newValue !== valueRef.current) {
+      valueRef.current = newValue;
+      haptics.select();
+    }
+    position.value = toPosition(newValue);
+    setValue(newValue);
+    onValueChange(newValue);
+  };
+
+  // The whole track is the touch target: tap anywhere to jump, or drag.
+  // Value follows the finger's absolute position, so the thumb stays under it.
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: (event, gestureState) => {
-      setStartX(gestureState.x0);
+    onPanResponderGrant: (event) => {
+      const { pageX, locationX } = event.nativeEvent;
+      trackPageX.current = pageX - locationX;
+      applyPageX(pageX);
     },
-    onPanResponderMove: (event, gestureState) => {
-      let dx = gestureState.moveX - startX;
-      let relativePosition = dx / SLIDER_WIDTH;
-      let newValue = Math.round(relativePosition * (max - min) + min);
-      if (newValue < min) newValue = min;
-      if (newValue > max) newValue = max;
-      if (newValue !== valueRef.current) {
-        valueRef.current = newValue;
-        haptics.select();
-      }
-      position.value = toPosition(newValue);
-      setValue(newValue);
-      onValueChange(newValue);
+    onPanResponderMove: (_event, gestureState) => {
+      applyPageX(gestureState.moveX);
     },
   });
 
@@ -94,7 +102,8 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, value: controlled, onVa
     <View style={styles.sliderContainer}>
       <View style={styles.track}>
         <Animated.View style={[styles.fill, fillStyle]} />
-        <Animated.View {...panResponder.panHandlers} style={[styles.thumb, thumbStyle]} />
+        <Animated.View pointerEvents="none" style={[styles.thumb, thumbStyle]} />
+        <View {...panResponder.panHandlers} style={styles.hitArea} />
       </View>
       <View style={styles.ticksContainer}>{renderTickMarks()}</View>
     </View>
@@ -111,6 +120,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.darkGray,
     borderRadius: 4,
     position: "relative",
+  },
+  hitArea: {
+    position: "absolute",
+    left: 0,
+    width: SLIDER_WIDTH,
+    top: -20,
+    height: 48,
   },
   fill: {
     height: 8,
