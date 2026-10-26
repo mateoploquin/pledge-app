@@ -133,8 +133,6 @@ const SetApps: React.FC<SetAppsProps> = ({
       {hasSelection(selectionEvent) && (
         <ActivityLabels
           familyActivitySelection={selectionEvent?.familyActivitySelection}
-          iconSize={48}
-          showNames
           style={styles.selectedRow}
         />
       )}

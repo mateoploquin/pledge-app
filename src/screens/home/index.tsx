@@ -203,8 +203,6 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
         <Text style={styles.challengeTitle}>My Pledge</Text>
         <ActivityLabels
           familyActivitySelection={settings.selectionEvent?.familyActivitySelection}
-          iconSize={44}
-          showNames
           style={styles.appsRow}
         />
         <View style={styles.cardContainer}>
