@@ -32,8 +32,7 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
         max={120}
         ticks={[0, 30, 60, 90, 120]}
         value={timeValue}
-        // The scale starts at 0 for even ticks, but a limit below 5 minutes makes no sense.
-        onValueChange={(value) => setTimeValue(Math.max(5, value))}
+        onValueChange={(value) => setTimeValue(value)}
       />
 
       <PresetChips

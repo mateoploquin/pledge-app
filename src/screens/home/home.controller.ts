@@ -49,7 +49,7 @@ const toThreshold = (totalMinutes: number) => ({
  * Shield shown on top of a blocked app. The primary button deep-links back into
  * Pledge where the user can pay the pledge to unlock (= surrender).
  */
-export function configureShield(pledgeValue: number) {
+export function shieldPayload(pledgeValue: number): [any, any] {
   const configuration = {
     title: "Blocked by Pledge",
     subtitle: `You hit today's limit. Unlocking costs your ${CURRENCY_SYMBOL}${pledgeValue} pledge.`,
@@ -85,6 +85,11 @@ export function configureShield(pledgeValue: number) {
     } as any,
   };
 
+  return [configuration, actions];
+}
+
+export function configureShield(pledgeValue: number) {
+  const [configuration, actions] = shieldPayload(pledgeValue);
   // Stored under the shield id so the monitor extension can activate it when
   // the limit event fires, and also set as the active shield right away.
   DeviceActivity.updateShieldWithId(configuration, actions, pledgeShieldId);
@@ -107,7 +112,8 @@ export async function startChallengeMonitoring(
   if (!token) {
     throw new Error("No apps selected for this pledge");
   }
-  const limit = Math.max(TICK_MINUTES, Math.round(settings.timeValue));
+  const limit = Math.max(0, Math.round(settings.timeValue));
+  const fullBlock = limit === 0;
 
   DeviceActivity.setFamilyActivitySelectionId({
     id: pledgeActivitySelectionId,
@@ -121,46 +127,64 @@ export async function startChallengeMonitoring(
     DeviceActivity.resetBlocks("newChallenge");
   }
 
-  DeviceActivity.configureActions({
-    activityName: DAILY_ACTIVITY_NAME,
-    callbackName: "eventDidReachThreshold",
-    eventName: LIMIT_EVENT_NAME,
-    actions: [
-      {
-        type: "blockSelection",
-        familyActivitySelectionId: pledgeActivitySelectionId,
-        shieldId: pledgeShieldId,
-      },
-    ],
-  });
-  for (const callbackName of ["intervalDidStart", "intervalDidEnd"] as const) {
-    DeviceActivity.configureActions({
-      activityName: DAILY_ACTIVITY_NAME,
-      callbackName,
-      actions: [
-        {
-          type: "unblockSelection",
-          familyActivitySelectionId: pledgeActivitySelectionId,
-        },
-      ],
-    });
-  }
+  const blockAction = {
+    type: "blockSelection" as const,
+    familyActivitySelectionId: pledgeActivitySelectionId,
+    shieldId: pledgeShieldId,
+  };
+  const unblockAction = {
+    type: "unblockSelection" as const,
+    familyActivitySelectionId: pledgeActivitySelectionId,
+  };
 
   const events: DeviceActivityEvent[] = [];
-  for (let m = TICK_MINUTES; m < limit; m += TICK_MINUTES) {
+
+  if (fullBlock) {
+    // No allowance: block now and re-assert the block at the start of every day.
+    DeviceActivity.configureActions({
+      activityName: DAILY_ACTIVITY_NAME,
+      callbackName: "intervalDidStart",
+      actions: [blockAction],
+    });
+    DeviceActivity.configureActions({
+      activityName: DAILY_ACTIVITY_NAME,
+      callbackName: "intervalDidEnd",
+      actions: [],
+    });
+    DeviceActivity.updateShield(
+      ...shieldPayload(settings.pledgeValue),
+      "fullBlock"
+    );
+    DeviceActivity.blockSelection({ activitySelectionId: pledgeActivitySelectionId }, "fullBlock");
+  } else {
+    DeviceActivity.configureActions({
+      activityName: DAILY_ACTIVITY_NAME,
+      callbackName: "eventDidReachThreshold",
+      eventName: LIMIT_EVENT_NAME,
+      actions: [blockAction],
+    });
+    for (const callbackName of ["intervalDidStart", "intervalDidEnd"] as const) {
+      DeviceActivity.configureActions({
+        activityName: DAILY_ACTIVITY_NAME,
+        callbackName,
+        actions: [unblockAction],
+      });
+    }
+    for (let m = TICK_MINUTES; m < limit; m += TICK_MINUTES) {
+      events.push({
+        eventName: `${TICK_EVENT_PREFIX}${m}`,
+        familyActivitySelection: token,
+        threshold: toThreshold(m),
+        includesPastActivity: true,
+      });
+    }
     events.push({
-      eventName: `${TICK_EVENT_PREFIX}${m}`,
+      eventName: LIMIT_EVENT_NAME,
       familyActivitySelection: token,
-      threshold: toThreshold(m),
+      threshold: toThreshold(limit),
       includesPastActivity: true,
     });
   }
-  events.push({
-    eventName: LIMIT_EVENT_NAME,
-    familyActivitySelection: token,
-    threshold: toThreshold(limit),
-    includesPastActivity: true,
-  });
 
   await DeviceActivity.startMonitoring(
     DAILY_ACTIVITY_NAME,
@@ -193,6 +217,9 @@ export function stopChallengeMonitoring() {
 
 /** Reads today's threshold events recorded by the monitor extension. */
 export function getTodayUsage(limitMinutes: number): DailyUsage {
+  if (limitMinutes <= 0) {
+    return { usedMinutes: 0, remainingMinutes: 0, limitReached: true };
+  }
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 

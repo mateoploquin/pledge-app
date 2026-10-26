@@ -232,7 +232,11 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = (props) => {
                 <Text style={styles.hoursMinutesText}>
                   {used.hours}h {used.minutes}m
                 </Text>
-                {usage.limitReached ? (
+                {timeValue === 0 ? (
+                  <Text style={styles.blockedText}>
+                    No allowance: your apps stay blocked for the whole pledge.
+                  </Text>
+                ) : usage.limitReached ? (
                   <Text style={styles.blockedText}>
                     Limit reached. Your apps are blocked until midnight.
                   </Text>
