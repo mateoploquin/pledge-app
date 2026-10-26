@@ -11,7 +11,8 @@ struct ActivityLabelsView: View {
   let iconSize: CGFloat
   let showNames: Bool
 
-  private var bubbleWidth: CGFloat { iconSize + 34 }
+  /// Wide enough for names like "Entertainment" at the system's label size.
+  private let labelWidth: CGFloat = 150
 
   var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
@@ -36,11 +37,15 @@ struct ActivityLabelsView: View {
   /// privacy-preserving label renders reliably.
   @ViewBuilder
   private func bubble<L: View>(@ViewBuilder label: () -> L) -> some View {
+    // The privacy label reports ~zero intrinsic width but draws fine into a
+    // given frame, so every pill gets the same fixed width.
     label()
       .labelStyle(.titleAndIcon)
       .font(.system(size: 14, weight: .medium))
       .foregroundColor(Color(red: 0.11, green: 0.08, blue: 0.06))
-      .fixedSize()
+      .lineLimit(1)
+      .truncationMode(.tail)
+      .frame(width: labelWidth, alignment: .leading)
       .padding(.vertical, 9)
       .padding(.horizontal, 14)
       .background(Color.white.opacity(0.92))
