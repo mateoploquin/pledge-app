@@ -191,8 +191,7 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
       <SurrenderModal
         isVisible={isModalVisible}
         onClose={() => setModalVisible(false)}
-        pledgeId={pledge.id}
-        pledgeValue={pledgeValue}
+        pledge={pledge}
         onSurrender={() => {
           setModalVisible(false);
           endPledge("failure");

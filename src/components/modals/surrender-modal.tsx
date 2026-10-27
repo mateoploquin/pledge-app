@@ -10,6 +10,9 @@ import {
 } from "react-native";
 import colors from "../../theme/colors";
 import { chargePledge } from "../../services/stripe-api";
+import { sendPledgeData } from "../../services/sendPledgeData";
+import { updatePledge } from "../../services/pledges";
+import { Pledge } from "../../types";
 import { auth } from "../../firebaseConfig";
 import { CURRENCY_SYMBOL } from "../../config";
 import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
@@ -18,8 +21,7 @@ import { haptics } from "../../utils/haptics";
 
 interface SurrenderModalProps {
   isVisible: boolean;
-  pledgeId: string;
-  pledgeValue: number;
+  pledge: Pledge;
   onClose: () => void;
   /** Called only after the pledge was charged successfully. */
   onSurrender: () => void;
@@ -27,12 +29,12 @@ interface SurrenderModalProps {
 
 const SurrenderModal: React.FC<SurrenderModalProps> = ({
   isVisible,
-  pledgeId,
-  pledgeValue,
+  pledge,
   onClose,
   onSurrender,
 }) => {
   const [loading, setLoading] = useState(false);
+  const { pledgeValue } = pledge;
 
   if (!isVisible) return null;
 
@@ -46,7 +48,21 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
         throw new Error("You are signed out. Sign in again to pay your pledge.");
       }
       const idToken = await user.getIdToken();
-      const result = await chargePledge(idToken, pledgeId);
+      if (!pledge.synced) {
+        // Carried over from the old build: the backend must know it before it can charge it.
+        await sendPledgeData(
+          {
+            id: pledge.id,
+            pledgeValue: pledge.pledgeValue,
+            timeValue: pledge.timeValue,
+            durationDays: pledge.durationDays,
+            startedAt: pledge.startedAt,
+          },
+          idToken
+        );
+        await updatePledge(pledge.id, { synced: true });
+      }
+      const result = await chargePledge(idToken, pledge.id);
       if (result.status !== "succeeded" && result.status !== "processing") {
         throw new Error(`Payment ${result.status ?? "failed"}`);
       }
