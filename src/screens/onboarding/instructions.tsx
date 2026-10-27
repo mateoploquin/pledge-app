@@ -1,12 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import AppWrapper from "../../components/layout/app-wrapper";
 import MainHeader from "../../components/headers/main-header";
 import MainButton from "../../components/buttons/main-button";
 import colors from "../../theme/colors";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import SetPledge from "./setup/set-pledge";
-import ChallengeOn from "./setup/challenge-on";
 import SetTimeLimit from "./setup/set-time-limit";
 import SetDuration from "./setup/set-duration";
 import SetApps from "./setup/set-apps";
@@ -17,124 +16,135 @@ import {
 } from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
 import { getAuthorizationStatus } from "react-native-device-activity";
 import SetPayment from "./setup/set-up-payment";
-import { PledgeSettings, SelectionInfo } from "../../types";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { startChallengeMonitoring } from "../home/home.controller";
+import { Pledge, SelectionInfo } from "../../types";
+import { startPledgeMonitoring } from "../home/home.controller";
 import { CHALLENGE_DURATION } from "../home/home.constants";
 import Animated, { FadeInRight, FadeInLeft, FadeOutLeft, FadeOutRight } from "react-native-reanimated";
 import { haptics } from "../../utils/haptics";
+import { addPledge, hasAcceptedTerms, markTermsAccepted, newPledgeId } from "../../services/pledges";
+import { sendPledgeData } from "../../services/sendPledgeData";
+import { fetchHasCard } from "../../services/stripe-api";
+import { auth } from "../../firebaseConfig";
 
-interface InstructionsProps {
-  // define your props here
-}
+type StepName = "apps" | "limit" | "duration" | "amount" | "terms" | "card";
 
-const Instructions: React.FC<InstructionsProps> = () => {
-  const navigation = useNavigation();
-  // 1 apps, 2 daily limit, 3 duration, 4 pledge amount, 5 terms, 6 card, 7 done
-  const FIRST_STEP = 1;
-  const TERMS_STEP = 5;
-  const PAYMENT_STEP = 6;
-  const [step, setStepState] = useState(FIRST_STEP);
-  const direction = useRef<"forward" | "back">("forward");
-  const setStep = (next: number) => {
-    direction.current = next >= step ? "forward" : "back";
-    setStepState(next);
-  };
-  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+/**
+ * Pledge creation wizard. Terms are asked once per device and the card step
+ * is skipped when a card is already on file, so a second pledge takes four taps.
+ */
+const Instructions: React.FC = () => {
+  const navigation = useNavigation<any>();
 
-  const isReturningFromShare = useRef(false);
-  const [pledgeValue, setPledgeValue] = useState(5);
+  const [selectionEvent, setSelectionEvent] = useState<SelectionInfo>();
   const [timeValue, setTimeValue] = useState(10);
   const [durationDays, setDurationDays] = useState(CHALLENGE_DURATION);
+  const [pledgeValue, setPledgeValue] = useState(5);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatusType>();
 
-  const [authorizationStatus, setAuthorizationStatus] =
-    useState<AuthorizationStatusType>();
-  const [selectionEvent, setSelectionEvent] = useState<SelectionInfo>();
+  // Unknown until checked; while unknown we assume the step is needed.
+  const [termsDone, setTermsDone] = useState(false);
+  const [hasCard, setHasCard] = useState(false);
 
   const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
-  const [publishableKey, setPublishableKey] = useState<string>(""); // add publishableKey state
-
-  useFocusEffect(
-    useCallback(() => {
-      setPaymentSetupComplete(false);
-      if (!isReturningFromShare.current) {
-        setStep(FIRST_STEP);
-      }
-      isReturningFromShare.current = false;
-    }, [])
-  );
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("blur", () => {
-      if (
-        (navigation as any).getState().routes.slice(-1)[0]?.name ===
-        "SharePledge"
-      ) {
-        isReturningFromShare.current = true;
-      }
-
-      if (
-        (navigation as any).getState().routes.slice(-1)[0]?.name ===
-        "SelectApps"
-      ) {
-        isReturningFromShare.current = true;
-      }
-    });
-
-    return unsubscribe;
-  }, [navigation]);
-
-  useEffect(() => {
-    const initializeAuth = async () => {
-      const status = getAuthorizationStatus();
-      setAuthorizationStatus(status);
-    };
-    initializeAuth();
-  }, []);
-
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [starting, setStarting] = useState(false);
 
-  /** Saves settings, registers the Screen Time schedule and opens Home. */
-  const startChallenge = async () => {
+  const steps = useMemo<StepName[]>(
+    () => [
+      "apps",
+      "limit",
+      "duration",
+      "amount",
+      ...(termsDone ? [] : (["terms"] as StepName[])),
+      ...(hasCard ? [] : (["card"] as StepName[])),
+    ],
+    [termsDone, hasCard]
+  );
+  const [index, setIndexState] = useState(0);
+  const step = steps[Math.min(index, steps.length - 1)];
+  const direction = useRef<"forward" | "back">("forward");
+  const setIndex = (next: number) => {
+    direction.current = next >= index ? "forward" : "back";
+    setIndexState(next);
+  };
+
+  useEffect(() => {
+    setAuthorizationStatus(getAuthorizationStatus());
+    hasAcceptedTerms().then(setTermsDone).catch(() => {});
+    (async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
+        setHasCard(await fetchHasCard(await user.getIdToken()));
+      } catch (e) {
+        console.warn("Could not check for a saved card:", e);
+      }
+    })();
+  }, []);
+
+  /** Records the pledge, registers its Screen Time schedule and opens Home. */
+  const startPledge = useCallback(async () => {
     if (starting) return;
     if (!selectionEvent?.familyActivitySelection) {
       Alert.alert("No apps selected", "Go back and choose the apps you want to limit.");
       return;
     }
-    const settings: PledgeSettings = {
+    const pledge: Pledge = {
+      id: newPledgeId(),
       selectionEvent,
       pledgeValue,
       timeValue,
       durationDays,
-      paymentSetupComplete: true,
+      startedAt: new Date().toISOString(),
     };
     try {
       setStarting(true);
       setIsButtonDisabled(true);
-      await startChallengeMonitoring(settings, { fresh: true });
-      await AsyncStorage.multiSet([
-        ["pledgeSettings", JSON.stringify(settings)],
-        ["challengeStartDate", new Date().toISOString()],
-      ]);
+      const user = auth.currentUser;
+      if (!user) throw new Error("You are signed out. Sign in again to start a pledge.");
+      await sendPledgeData(
+        { id: pledge.id, pledgeValue, timeValue, durationDays },
+        await user.getIdToken()
+      );
+      await startPledgeMonitoring(pledge, { fresh: true });
+      await addPledge(pledge);
+      if (termsAccepted) await markTermsAccepted();
       haptics.success();
-      //@ts-ignore
-      navigation.replace("Home");
+      navigation.reset({ index: 0, routes: [{ name: "Home" }] });
     } catch (error: any) {
-      console.error("Could not start the challenge:", error);
+      console.error("Could not start the pledge:", error);
       Alert.alert(
-        "Could not start monitoring",
-        error?.message ?? "Please check Screen Time permissions and try again."
+        "Could not start your pledge",
+        error?.response?.data?.error ??
+          error?.message ??
+          "Please check Screen Time permissions and try again."
       );
     } finally {
       setStarting(false);
       setIsButtonDisabled(false);
     }
+  }, [starting, selectionEvent, pledgeValue, timeValue, durationDays, termsAccepted, navigation]);
+
+  const isLast = index >= steps.length - 1;
+
+  const onContinue = async () => {
+    if (isLast) {
+      await startPledge();
+    } else {
+      setIndex(index + 1);
+    }
   };
+
+  const continueDisabled =
+    isButtonDisabled ||
+    (step === "apps" && !selectionEvent?.familyActivitySelection) ||
+    (step === "terms" && !termsAccepted) ||
+    (step === "card" && !paymentSetupComplete);
 
   return (
     <AppWrapper style={{}}>
-      {step !== TERMS_STEP && <MainHeader />}
+      {step !== "terms" && <MainHeader />}
 
       <Animated.View
         key={step}
@@ -142,68 +152,52 @@ const Instructions: React.FC<InstructionsProps> = () => {
         entering={(direction.current === "forward" ? FadeInRight : FadeInLeft).duration(380)}
         exiting={(direction.current === "forward" ? FadeOutLeft : FadeOutRight).duration(220)}
       >
-      {step == 1 ? (
-        <SetApps
-          authorizationStatus={authorizationStatus}
-          setAuthorizationStatus={setAuthorizationStatus}
-          selectionEvent={selectionEvent}
-          setSelectionEvent={setSelectionEvent}
-          onSelectionComplete={() => setStep(2)}
-        />
-      ) : step == 2 ? (
-        <SetTimeLimit timeValue={timeValue} setTimeValue={setTimeValue} />
-      ) : step == 3 ? (
-        <SetDuration durationDays={durationDays} setDurationDays={setDurationDays} />
-      ) : step == 4 ? (
-        <SetPledge pledgeValue={pledgeValue} setPledgeValue={setPledgeValue} />
-      ) : step == TERMS_STEP ? (
-        <AcceptTerms
-          termsAccepted={termsAccepted}
-          setTermsAccepted={setTermsAccepted}
-        />
-      ) : step == PAYMENT_STEP ? (
-        <SetPayment
-          setIsButtonDisabled={setIsButtonDisabled}
-          paymentSetupComplete={paymentSetupComplete}
-          setPaymentSetupComplete={setPaymentSetupComplete}
-          pledgeValue={pledgeValue}
-          timeValue={timeValue}
-          durationDays={durationDays}
-          setPublishableKey={setPublishableKey}
-          onComplete={startChallenge}
-        />
-      ) : step == PAYMENT_STEP + 1 ? (
-        <ChallengeOn />
-      ) : null}
+        {step === "apps" ? (
+          <SetApps
+            authorizationStatus={authorizationStatus}
+            setAuthorizationStatus={setAuthorizationStatus}
+            selectionEvent={selectionEvent}
+            setSelectionEvent={setSelectionEvent}
+            onSelectionComplete={() => setIndex(1)}
+          />
+        ) : step === "limit" ? (
+          <SetTimeLimit timeValue={timeValue} setTimeValue={setTimeValue} />
+        ) : step === "duration" ? (
+          <SetDuration durationDays={durationDays} setDurationDays={setDurationDays} />
+        ) : step === "amount" ? (
+          <SetPledge pledgeValue={pledgeValue} setPledgeValue={setPledgeValue} />
+        ) : step === "terms" ? (
+          <AcceptTerms termsAccepted={termsAccepted} setTermsAccepted={setTermsAccepted} />
+        ) : step === "card" ? (
+          <SetPayment
+            setIsButtonDisabled={setIsButtonDisabled}
+            paymentSetupComplete={paymentSetupComplete}
+            setPaymentSetupComplete={setPaymentSetupComplete}
+            pledgeValue={pledgeValue}
+            durationDays={durationDays}
+            setPublishableKey={() => {}}
+            onComplete={startPledge}
+          />
+        ) : null}
       </Animated.View>
 
-      <View style={[styles.buttonContainer, step === PAYMENT_STEP && { display: "none" }]}>
+      <View style={[styles.buttonContainer, step === "card" && { display: "none" }]}>
         <MainButton
-          onPress={async () => {
-            if (step == PAYMENT_STEP) {
-              await startChallenge();
-            } else {
-              setStep(step + 1);
-            }
-          }}
-          text={step == PAYMENT_STEP ? (starting ? "Starting…" : "Track My Pledge") : "Continue"}
+          onPress={onContinue}
+          text={isLast ? (starting ? "Starting…" : "Start My Pledge") : "Continue"}
           style={styles.mainButton}
-          disabled={
-            isButtonDisabled ||
-            (step === 1 && !selectionEvent?.familyActivitySelection) ||
-            (step === TERMS_STEP && !termsAccepted) ||
-            (step === PAYMENT_STEP && !paymentSetupComplete)
-          }
+          disabled={continueDisabled}
         />
-        {step !== PAYMENT_STEP && step > FIRST_STEP ? (
-          <TouchableOpacity
-            onPress={() => {
-              setStep(step - 1);
-            }}
-          >
-            <Text style={styles.backButton}>Go Back</Text>
-          </TouchableOpacity>
-        ) : null}
+        <TouchableOpacity
+          onPress={() => {
+            if (index > 0) setIndex(index - 1);
+            else if (navigation.canGoBack()) navigation.goBack();
+          }}
+        >
+          <Text style={styles.backButton}>
+            {index > 0 ? "Go Back" : navigation.canGoBack() ? "Cancel" : ""}
+          </Text>
+        </TouchableOpacity>
       </View>
     </AppWrapper>
   );

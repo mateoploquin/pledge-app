@@ -5,7 +5,6 @@ import MainButton from "../../../components/buttons/main-button";
 import { useStripe } from "@stripe/stripe-react-native";
 import { fetchPaymentSheetParams } from "../../../services/stripe-api";
 import { auth } from "../../../firebaseConfig";
-import { sendPledgeData } from "../../../services/sendPledgeData";
 import { CURRENCY_SYMBOL, STRIPE_MERCHANT_COUNTRY } from "../../../config";
 
 interface SetPaymentProps {
@@ -13,10 +12,9 @@ interface SetPaymentProps {
   paymentSetupComplete: boolean;
   setPaymentSetupComplete: (complete: boolean) => void;
   pledgeValue: number;
-  timeValue: number;
   durationDays: number;
   setPublishableKey: (publishableKey: string) => void;
-  /** Called once the card is saved and the pledge recorded. */
+  /** Called once the card is saved. */
   onComplete?: () => void | Promise<void>;
 }
 
@@ -28,7 +26,6 @@ const SetPayment: React.FC<SetPaymentProps> = ({
   paymentSetupComplete,
   setPaymentSetupComplete,
   pledgeValue,
-  timeValue,
   durationDays,
   setPublishableKey,
   onComplete,
@@ -87,21 +84,9 @@ const SetPayment: React.FC<SetPaymentProps> = ({
       return;
     }
 
-    // Card saved. Now record the pledge on the backend so it knows what to charge.
-    try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("Signed out");
-      const idToken = await user.getIdToken();
-      await sendPledgeData({ pledgeValue, timeValue, durationDays }, idToken);
-      setPaymentSetupComplete(true);
-      await onComplete?.();
-    } catch (err) {
-      console.error("Error sending pledge data:", err);
-      Alert.alert(
-        "Could not save your pledge",
-        `Your card is saved but the pledge was not recorded. Please try again.\n\n${describeError(err)}`
-      );
-    }
+    // Card saved. The wizard records the pledge and starts it.
+    setPaymentSetupComplete(true);
+    await onComplete?.();
   };
 
   const handleSetUpPayment = async () => {
@@ -135,7 +120,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
         <>
           <ActivityIndicator color={colors.orange} size="large" />
           <Text style={styles.subtitle}>
-            {paymentSetupComplete ? "Starting your challenge…" : "Opening secure card setup…"}
+            {paymentSetupComplete ? "Starting your pledge…" : "Opening secure card setup…"}
           </Text>
         </>
       ) : dismissed ? (

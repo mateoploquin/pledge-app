@@ -14,6 +14,7 @@ import RegisterScreen from "../screens/onboarding/register";
 import Instructions from "../screens/onboarding/instructions";
 import SharePledge from "../screens/onboarding/share-pledge";
 import ChallengeCompleted from "../screens/challenge-completed";
+import PledgeDetail from "../screens/pledge-detail";
 import SelectAppsView from "../screens/select-apps";
 
 const Stack = createStackNavigator();
@@ -78,6 +79,7 @@ const AppNavigator = ({ initialRouteName }) => {
         component={HomeScreen}
         options={{ ...softFade, gestureEnabled: false }}
       />
+      <Stack.Screen name="PledgeDetail" component={PledgeDetail} />
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Instructions" component={Instructions} />
       <Stack.Screen name="Details" component={DetailsScreen} />

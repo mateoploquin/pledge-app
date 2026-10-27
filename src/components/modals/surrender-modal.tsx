@@ -18,6 +18,7 @@ import { haptics } from "../../utils/haptics";
 
 interface SurrenderModalProps {
   isVisible: boolean;
+  pledgeId: string;
   pledgeValue: number;
   onClose: () => void;
   /** Called only after the pledge was charged successfully. */
@@ -26,6 +27,7 @@ interface SurrenderModalProps {
 
 const SurrenderModal: React.FC<SurrenderModalProps> = ({
   isVisible,
+  pledgeId,
   pledgeValue,
   onClose,
   onSurrender,
@@ -44,7 +46,7 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
         throw new Error("You are signed out. Sign in again to pay your pledge.");
       }
       const idToken = await user.getIdToken();
-      const result = await chargePledge(idToken);
+      const result = await chargePledge(idToken, pledgeId);
       if (result.status !== "succeeded" && result.status !== "processing") {
         throw new Error(`Payment ${result.status ?? "failed"}`);
       }
@@ -65,7 +67,7 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
     <Animated.View style={styles.blurContainer} entering={FadeIn.duration(220)}>
       <Animated.View style={styles.modalContainer} entering={ZoomIn.springify().damping(16)}>
         <Text style={styles.modalText}>
-          Unlocking your apps means giving up your challenge and paying your{" "}
+          Unlocking these apps means giving up this pledge and paying your{" "}
           {CURRENCY_SYMBOL}
           {pledgeValue} pledge. You’ve come this far, just a little more to go!
         </Text>

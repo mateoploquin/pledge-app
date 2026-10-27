@@ -56,6 +56,29 @@ export type UserRecord = {
   updatedAt?: string;
 };
 
+export type PledgeStatus = "active" | "surrendered" | "completed";
+
+export type PledgeRecord = {
+  id: string;
+  pledgeValue: number;
+  timeValue: number;
+  durationDays: number;
+  status: PledgeStatus;
+  createdAt: string;
+  endsAt: string;
+  chargedAt?: string;
+  completedAt?: string;
+  paymentIntentId?: string;
+};
+
+export const pledgesRef = (uid: string) =>
+  db().collection("users").doc(uid).collection("pledges");
+
+export async function getPledge(uid: string, id: string): Promise<PledgeRecord | undefined> {
+  const snap = await pledgesRef(uid).doc(id).get();
+  return snap.exists ? ({ id, ...snap.data() } as PledgeRecord) : undefined;
+}
+
 export async function getUser(uid: string): Promise<UserRecord | undefined> {
   const snap = await db().collection("users").doc(uid).get();
   return snap.exists ? ({ uid, ...snap.data() } as UserRecord) : undefined;

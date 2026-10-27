@@ -1,13 +1,12 @@
 import * as DeviceActivity from "react-native-device-activity";
 import type { DeviceActivityEvent } from "react-native-device-activity";
-import { PledgeSettings } from "../../types";
+import { Pledge } from "../../types";
 import {
-  DAILY_ACTIVITY_NAME,
+  LEGACY_ACTIVITY_NAME,
   LIMIT_EVENT_NAME,
   TICK_EVENT_PREFIX,
   TICK_MINUTES,
-  pledgeActivitySelectionId,
-  pledgeShieldId,
+  pledgeNames,
   UNLOCK_URL,
 } from "./home.constants";
 import { CURRENCY_SYMBOL } from "../../config";
@@ -46,10 +45,11 @@ const toThreshold = (totalMinutes: number) => ({
 });
 
 /**
- * Shield shown on top of a blocked app. The primary button deep-links back into
- * Pledge where the user can pay the pledge to unlock (= surrender).
+ * Shield shown on top of an app blocked by this pledge. The secondary button
+ * posts a notification that opens Pledge on the pay dialog for this pledge.
  */
-export function shieldPayload(pledgeValue: number): [any, any] {
+export function shieldPayload(pledge: Pick<Pledge, "id" | "pledgeValue">): [any, any] {
+  const { pledgeValue } = pledge;
   const configuration = {
     title: "Blocked by Pledge",
     subtitle: `You hit today's limit. Unlocking costs your ${CURRENCY_SYMBOL}${pledgeValue} pledge.`,
@@ -66,9 +66,8 @@ export function shieldPayload(pledgeValue: number): [any, any] {
     secondaryButtonLabel: `Unlock for ${CURRENCY_SYMBOL}${pledgeValue}`,
     secondaryButtonLabelColor: orange,
   };
-  // Primary (prominent) button is the healthy choice. Shield extensions are
-  // not allowed to launch other apps, so the unlock button posts a local
-  // notification; tapping it opens Pledge on the pay dialog (see Home).
+  // Shield extensions are not allowed to launch other apps, so the unlock
+  // button posts a local notification; tapping it opens Pledge (see Home).
   const actions = {
     primary: { type: "dismiss", behavior: "close" } as any,
     secondary: {
@@ -79,8 +78,8 @@ export function shieldPayload(pledgeValue: number): [any, any] {
         body: `Tap to open Pledge and pay your ${CURRENCY_SYMBOL}${pledgeValue} pledge to unlock.`,
         sound: "default",
         interruptionLevel: "timeSensitive",
-        identifier: "pledge-unlock",
-        userInfo: { action: UNLOCK_ACTION, url: UNLOCK_URL },
+        identifier: `pledge-unlock-${pledge.id}`,
+        userInfo: { action: UNLOCK_ACTION, url: UNLOCK_URL, pledgeId: pledge.id },
       },
     } as any,
   };
@@ -88,53 +87,67 @@ export function shieldPayload(pledgeValue: number): [any, any] {
   return [configuration, actions];
 }
 
-export function configureShield(pledgeValue: number) {
-  const [configuration, actions] = shieldPayload(pledgeValue);
-  // Stored under the shield id so the monitor extension can activate it when
-  // the limit event fires, and also set as the active shield right away.
-  DeviceActivity.updateShieldWithId(configuration, actions, pledgeShieldId);
+/**
+ * Stores the shield for this pledge under its shield id (used by the block
+ * action in the monitor extension) and under its selection id (what the shield
+ * extensions look up for an app in that selection).
+ */
+export function configureShield(pledge: Pick<Pledge, "id" | "pledgeValue">) {
+  const [configuration, actions] = shieldPayload(pledge);
+  const { shieldId, selectionId } = pledgeNames(pledge.id);
+  const stamp = { shieldId, updatedAt: new Date().toISOString() };
+  DeviceActivity.updateShieldWithId(configuration, actions, shieldId);
+  DeviceActivity.userDefaultsSet(`shieldConfigurationForSelection_${selectionId}`, {
+    ...configuration,
+    ...stamp,
+  });
+  DeviceActivity.userDefaultsSet(`shieldActionsForSelection_${selectionId}`, {
+    ...actions,
+    ...stamp,
+  });
+  // Fallback for anything blocked outside a known selection.
   DeviceActivity.updateShield(configuration, actions, "pledge");
 }
 
 /**
- * Registers a repeating daily DeviceActivity schedule for the selected apps.
+ * Registers a repeating daily DeviceActivity schedule for one pledge.
  *
  * - tick events every TICK_MINUTES feed the "daily consumption" display
  * - LIMIT_EVENT_NAME fires at the daily limit and the monitor extension blocks
  *   the selection (runs even when the app is closed)
  * - at the start of each day the block is lifted again
  */
-export async function startChallengeMonitoring(
-  settings: PledgeSettings,
+export async function startPledgeMonitoring(
+  pledge: Pledge,
   options: { fresh?: boolean } = {}
 ) {
-  const token = settings.selectionEvent?.familyActivitySelection;
+  const token = pledge.selectionEvent?.familyActivitySelection;
   if (!token) {
     throw new Error("No apps selected for this pledge");
   }
-  const limit = Math.max(0, Math.round(settings.timeValue));
+  const { activityName, selectionId, shieldId } = pledgeNames(pledge.id);
+  const limit = Math.max(0, Math.round(pledge.timeValue));
   const fullBlock = limit === 0;
 
   DeviceActivity.setFamilyActivitySelectionId({
-    id: pledgeActivitySelectionId,
+    id: selectionId,
     familyActivitySelection: token,
   });
-  configureShield(settings.pledgeValue);
+  configureShield(pledge);
   await ensureNotificationPermission();
 
   if (options.fresh) {
-    DeviceActivity.cleanUpAfterActivity(DAILY_ACTIVITY_NAME);
-    DeviceActivity.resetBlocks("newChallenge");
+    DeviceActivity.cleanUpAfterActivity(activityName);
   }
 
   const blockAction = {
     type: "blockSelection" as const,
-    familyActivitySelectionId: pledgeActivitySelectionId,
-    shieldId: pledgeShieldId,
+    familyActivitySelectionId: selectionId,
+    shieldId,
   };
   const unblockAction = {
     type: "unblockSelection" as const,
-    familyActivitySelectionId: pledgeActivitySelectionId,
+    familyActivitySelectionId: selectionId,
   };
 
   const events: DeviceActivityEvent[] = [];
@@ -142,30 +155,26 @@ export async function startChallengeMonitoring(
   if (fullBlock) {
     // No allowance: block now and re-assert the block at the start of every day.
     DeviceActivity.configureActions({
-      activityName: DAILY_ACTIVITY_NAME,
+      activityName,
       callbackName: "intervalDidStart",
       actions: [blockAction],
     });
     DeviceActivity.configureActions({
-      activityName: DAILY_ACTIVITY_NAME,
+      activityName,
       callbackName: "intervalDidEnd",
       actions: [],
     });
-    DeviceActivity.updateShield(
-      ...shieldPayload(settings.pledgeValue),
-      "fullBlock"
-    );
-    DeviceActivity.blockSelection({ activitySelectionId: pledgeActivitySelectionId }, "fullBlock");
+    DeviceActivity.blockSelection({ activitySelectionId: selectionId }, "fullBlock");
   } else {
     DeviceActivity.configureActions({
-      activityName: DAILY_ACTIVITY_NAME,
+      activityName,
       callbackName: "eventDidReachThreshold",
       eventName: LIMIT_EVENT_NAME,
       actions: [blockAction],
     });
     for (const callbackName of ["intervalDidStart", "intervalDidEnd"] as const) {
       DeviceActivity.configureActions({
-        activityName: DAILY_ACTIVITY_NAME,
+        activityName,
         callbackName,
         actions: [unblockAction],
       });
@@ -187,7 +196,7 @@ export async function startChallengeMonitoring(
   }
 
   await DeviceActivity.startMonitoring(
-    DAILY_ACTIVITY_NAME,
+    activityName,
     {
       intervalStart: { hour: 0, minute: 0, second: 0 },
       intervalEnd: { hour: 23, minute: 59, second: 59 },
@@ -197,26 +206,46 @@ export async function startChallengeMonitoring(
   );
 }
 
-export function isChallengeMonitoring(): boolean {
+export function isPledgeMonitoring(id: string): boolean {
   try {
-    return DeviceActivity.getActivities().includes(DAILY_ACTIVITY_NAME);
+    return DeviceActivity.getActivities().includes(pledgeNames(id).activityName);
   } catch {
     return false;
   }
 }
 
-/** Stops the schedule, forgets recorded events and lifts any block. */
-export function stopChallengeMonitoring() {
+/** Stops this pledge's schedule, forgets its events and lifts its block only. */
+export function stopPledgeMonitoring(id: string) {
+  const { activityName, selectionId } = pledgeNames(id);
   try {
-    DeviceActivity.stopMonitoring([DAILY_ACTIVITY_NAME]);
-    DeviceActivity.cleanUpAfterActivity(DAILY_ACTIVITY_NAME);
+    DeviceActivity.stopMonitoring([activityName]);
+    DeviceActivity.cleanUpAfterActivity(activityName);
   } finally {
-    DeviceActivity.resetBlocks("challengeEnded");
+    try {
+      DeviceActivity.unblockSelection({ activitySelectionId: selectionId }, "pledgeEnded");
+    } catch (e) {
+      console.warn("Could not unblock selection:", e);
+    }
+    DeviceActivity.userDefaultsRemove(`shieldConfigurationForSelection_${selectionId}`);
+    DeviceActivity.userDefaultsRemove(`shieldActionsForSelection_${selectionId}`);
   }
 }
 
-/** Reads today's threshold events recorded by the monitor extension. */
-export function getTodayUsage(limitMinutes: number): DailyUsage {
+/** Removes the schedule and blocks left by the single-pledge version of the app. */
+export function stopLegacyMonitoring() {
+  try {
+    if (DeviceActivity.getActivities().includes(LEGACY_ACTIVITY_NAME)) {
+      DeviceActivity.stopMonitoring([LEGACY_ACTIVITY_NAME]);
+    }
+    DeviceActivity.cleanUpAfterActivity(LEGACY_ACTIVITY_NAME);
+    DeviceActivity.resetBlocks("legacyMigration");
+  } catch (e) {
+    console.warn("Could not stop legacy monitoring:", e);
+  }
+}
+
+/** Reads today's threshold events recorded by the monitor extension for one pledge. */
+export function getTodayUsage(id: string, limitMinutes: number): DailyUsage {
   if (limitMinutes <= 0) {
     return { usedMinutes: 0, remainingMinutes: 0, limitReached: true };
   }
@@ -226,15 +255,7 @@ export function getTodayUsage(limitMinutes: number): DailyUsage {
   let usedMinutes = 0;
   let limitReached = false;
 
-  if (__DEV__) {
-    const all = DeviceActivity.getEvents();
-    console.log(
-      "[usage] activities:", JSON.stringify(DeviceActivity.getActivities()),
-      "| events:", JSON.stringify(all.map((e) => `${e.activityName}/${e.callbackName}/${e.eventName}@${e.lastCalledAt.toISOString()}`))
-    );
-  }
-
-  for (const event of DeviceActivity.getEvents(DAILY_ACTIVITY_NAME)) {
+  for (const event of DeviceActivity.getEvents(pledgeNames(id).activityName)) {
     if (event.callbackName !== "eventDidReachThreshold") continue;
     if (event.lastCalledAt < startOfDay) continue;
 
@@ -252,14 +273,6 @@ export function getTodayUsage(limitMinutes: number): DailyUsage {
     remainingMinutes: Math.max(0, limitMinutes - usedMinutes),
     limitReached,
   };
-}
-
-export function isShieldActive(): boolean {
-  try {
-    return DeviceActivity.isShieldActive();
-  } catch {
-    return false;
-  }
 }
 
 export const splitMinutes = (total: number) => ({

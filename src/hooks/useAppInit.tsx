@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { loadFonts } from "../utils/fonts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { PledgeSettings } from "../types";
 
 export default function useAppInit() {
   const [isLoadingComplete, setLoadingComplete] = useState(false);
@@ -12,8 +11,9 @@ export default function useAppInit() {
       try {
         await loadFonts();
 
-        const settings = await AsyncStorage.getItem("pledgeSettings");
-        setInitialRouteName(settings ? "Home" : "Splash");
+        const [pledges, legacy] = await AsyncStorage.multiGet(["pledges", "pledgeSettings"]);
+        const hasPledges = !!pledges[1] && pledges[1] !== "[]";
+        setInitialRouteName(hasPledges || legacy[1] ? "Home" : "Splash");
       } catch (e) {
         console.error("Failed to initialize app:", e);
       } finally {

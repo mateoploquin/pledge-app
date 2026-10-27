@@ -4,9 +4,7 @@ import { NavigationProp, RouteProp } from "@react-navigation/native";
 import {
   DeviceActivitySelectionEvent,
   DeviceActivitySelectionView,
-  setFamilyActivitySelectionId,
 } from "react-native-device-activity";
-import { pledgeActivitySelectionId } from "../home/home.constants";
 import colors from "../../theme/colors";
 
 export type SelectAppsViewProps = {
@@ -38,10 +36,6 @@ const SelectAppsView = ({ navigation, route }: SelectAppsViewProps) => {
     setSelection(event.nativeEvent);
     if (event.nativeEvent.familyActivitySelection) {
       route.params?.setDeviceActivitySelection?.(event);
-      setFamilyActivitySelectionId({
-        id: pledgeActivitySelectionId,
-        familyActivitySelection: event.nativeEvent.familyActivitySelection,
-      });
     }
   };
 

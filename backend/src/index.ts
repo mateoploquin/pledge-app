@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import type { DecodedIdToken } from "firebase-admin/auth";
-import { getUser, upsertUser, verifyIdToken } from "./firebase.js";
-import { chargePledge, createPaymentSheetParams, ensureCustomer } from "./stripe.js";
+import { getPledge, getUser, pledgesRef, upsertUser, verifyIdToken } from "./firebase.js";
+import { chargePledge, createPaymentSheetParams, ensureCustomer, hasPaymentMethod } from "./stripe.js";
 import { privacyHtml, termsHtml } from "./legal.js";
 
 type Env = { Variables: { user: DecodedIdToken } };
@@ -35,6 +35,18 @@ app.use("/auth/*", async (c, next) => {
   c.set("user", await verifyIdToken(c.req.header("authorization")));
   await next();
 });
+app.use("/pledge/*", async (c, next) => {
+  c.set("user", await verifyIdToken(c.req.header("authorization")));
+  await next();
+});
+app.use("/pledges", async (c, next) => {
+  c.set("user", await verifyIdToken(c.req.header("authorization")));
+  await next();
+});
+app.use("/stripe/payment-method", async (c, next) => {
+  c.set("user", await verifyIdToken(c.req.header("authorization")));
+  await next();
+});
 app.use("/pledge", async (c, next) => {
   c.set("user", await verifyIdToken(c.req.header("authorization")));
   await next();
@@ -64,6 +76,11 @@ app.post("/stripe/payment-sheet", async (c) => {
   return c.json(await createPaymentSheetParams(customerId));
 });
 
+app.get("/stripe/payment-method", async (c) => {
+  const user = await getUser(c.get("user").uid);
+  return c.json({ hasCard: await hasPaymentMethod(user) });
+});
+
 const PLEDGE_MIN = 1;
 const PLEDGE_MAX = 100;
 const TIME_MIN = 0;
@@ -71,6 +88,9 @@ const TIME_MAX = 24 * 60;
 const DURATION_MIN = 1;
 const DURATION_MAX = 365;
 
+const ID_RE = /^[a-z0-9]{6,32}$/;
+
+/** Creates a pledge. Several may be active at once, one per selection of apps. */
 app.post("/pledge", async (c) => {
   const decoded = c.get("user");
   const body = await c.req.json().catch(() => ({}));
@@ -78,7 +98,9 @@ app.post("/pledge", async (c) => {
   const timeValue = Number(body.timeValue);
   // Older app builds send no duration; they run for 30 days.
   const durationDays = body.durationDays === undefined ? 30 : Number(body.durationDays);
+  const id = typeof body.id === "string" ? body.id : Math.random().toString(36).slice(2, 12);
 
+  if (!ID_RE.test(id)) return c.json({ error: "id must be 6-32 lowercase letters or digits" }, 400);
   if (!Number.isFinite(pledgeValue) || pledgeValue < PLEDGE_MIN || pledgeValue > PLEDGE_MAX) {
     return c.json({ error: `pledgeValue must be between ${PLEDGE_MIN} and ${PLEDGE_MAX}` }, 400);
   }
@@ -89,25 +111,46 @@ app.post("/pledge", async (c) => {
     return c.json({ error: `durationDays must be between ${DURATION_MIN} and ${DURATION_MAX}` }, 400);
   }
 
-  const user = await upsertUser(decoded, {
+  await upsertUser(decoded);
+  const now = new Date();
+  const record = {
     pledgeValue,
     timeValue,
     durationDays,
-    pledgeSetAt: new Date().toISOString(),
-  });
-  return c.json({ pledgeValue: user.pledgeValue, timeValue: user.timeValue, durationDays: user.durationDays, pledgeSetAt: user.pledgeSetAt });
+    status: "active" as const,
+    createdAt: now.toISOString(),
+    endsAt: new Date(now.getTime() + durationDays * 86400000).toISOString(),
+  };
+  await pledgesRef(decoded.uid).doc(id).set(record);
+  return c.json({ id, ...record });
 });
 
-app.get("/pledge", async (c) => {
-  const user = await getUser(c.get("user").uid);
-  if (!user?.pledgeSetAt) return c.json({ error: "No pledge" }, 404);
-  return c.json({ pledgeValue: user.pledgeValue, timeValue: user.timeValue, durationDays: user.durationDays, pledgeSetAt: user.pledgeSetAt });
+app.get("/pledges", async (c) => {
+  const snap = await pledgesRef(c.get("user").uid).where("status", "==", "active").get();
+  return c.json({ pledges: snap.docs.map((d) => ({ id: d.id, ...d.data() })) });
+});
+
+app.post("/pledge/:id/complete", async (c) => {
+  const uid = c.get("user").uid;
+  const pledge = await getPledge(uid, c.req.param("id"));
+  if (!pledge) return c.json({ error: "No such pledge" }, 404);
+  if (pledge.status === "active") {
+    await pledgesRef(uid)
+      .doc(pledge.id)
+      .set({ status: "completed", completedAt: new Date().toISOString() }, { merge: true });
+  }
+  return c.json({ id: pledge.id, status: pledge.status === "active" ? "completed" : pledge.status });
 });
 
 app.post("/stripe/charge", async (c) => {
-  const user = await getUser(c.get("user").uid);
+  const uid = c.get("user").uid;
+  const body = await c.req.json().catch(() => ({}));
+  const user = await getUser(uid);
   if (!user) return c.json({ error: "Unknown user" }, 404);
-  const outcome = await chargePledge(user);
+  if (typeof body.pledgeId !== "string") return c.json({ error: "pledgeId is required" }, 400);
+  const pledge = await getPledge(uid, body.pledgeId);
+  if (!pledge) return c.json({ error: "No such pledge" }, 404);
+  const outcome = await chargePledge(user, pledge);
   const httpStatus = outcome.status === "succeeded" || outcome.status === "processing" ? 200 : 402;
   return c.json(outcome, httpStatus);
 });

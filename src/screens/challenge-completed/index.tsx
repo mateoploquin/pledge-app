@@ -1,12 +1,10 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { View, Text, StyleSheet, Image, Pressable } from "react-native";
 import colors from "../../theme/colors";
 import MainHeaderLight from "../../components/headers/main-header-light";
 import AppWrapper from "../../components/layout/app-wrapper";
 import PledgeFormIcon from "../../../assets/images/icons/pledge-form";
 import { SCREEN_HEIGHT } from "../../utils/constants/dimensions";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { stopChallengeMonitoring } from "../home/home.controller";
 
 interface ChallengeCompletedProps {
   navigation: any;
@@ -23,23 +21,14 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
 }) => {
   const result = route.params?.result || "success";
 
-  const handleRestart = async () => {
-    stopChallengeMonitoring();
-    await AsyncStorage.multiRemove(["pledgeSettings", "challengeStartDate"]);
-    navigation.replace("Instructions");
-  };
-
-  useEffect(() => {
-    // Whatever the outcome, the challenge is over: lift blocks and stop tracking.
-    stopChallengeMonitoring();
-  }, []);
+  const handleDone = () => navigation.reset({ index: 0, routes: [{ name: "Home" }] });
 
   return (
     <AppWrapper style={styles.wrapper}>
       <MainHeaderLight />
 
       <Text style={styles.headerText}>
-        Challenge outcome
+        Pledge outcome
       </Text>
 
       <View style={styles.card}>
@@ -70,13 +59,8 @@ const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
       </View>
 
       <View style={styles.buttonContainer}>
-        <Pressable
-          onPress={() => handleRestart()}
-          style={styles.button}
-        >
-          <Text style={styles.buttonText}>
-            New Challenge
-          </Text>
+        <Pressable onPress={handleDone} style={styles.button}>
+          <Text style={styles.buttonText}>Back to my pledges</Text>
         </Pressable>
       </View>
     </AppWrapper>

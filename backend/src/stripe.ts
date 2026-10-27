@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import type { DecodedIdToken } from "firebase-admin/auth";
-import { db, upsertUser, type UserRecord } from "./firebase.js";
+import { db, pledgesRef, upsertUser, type PledgeRecord, type UserRecord } from "./firebase.js";
 
 let client: Stripe | undefined;
 
@@ -81,23 +81,23 @@ export type ChargeOutcome = {
 };
 
 /**
- * Charges the pledge off-session. Idempotent per pledge: calling it twice for
- * the same pledgeSetAt returns the same PaymentIntent instead of charging again.
+ * Charges one pledge off-session. Idempotent per pledge: calling it twice for
+ * the same pledge id returns the same PaymentIntent instead of charging again.
  */
-export async function chargePledge(user: UserRecord): Promise<ChargeOutcome> {
+export async function chargePledge(user: UserRecord, pledge: PledgeRecord): Promise<ChargeOutcome> {
   if (!user.stripeCustomerId) {
     throw Object.assign(new Error("No payment method on file"), { status: 400 });
   }
-  if (!user.pledgeValue || !user.pledgeSetAt) {
-    throw Object.assign(new Error("No active pledge to charge"), { status: 400 });
+  if (pledge.status === "completed") {
+    throw Object.assign(new Error("This pledge was already completed"), { status: 400 });
   }
   const paymentMethod = await latestPaymentMethod(user.stripeCustomerId);
   if (!paymentMethod) {
     throw Object.assign(new Error("No saved card found"), { status: 400 });
   }
 
-  const amount = Math.round(user.pledgeValue * 100);
-  const idempotencyKey = `pledge-${user.uid}-${user.pledgeSetAt}`;
+  const amount = Math.round(pledge.pledgeValue * 100);
+  const idempotencyKey = `pledge-${user.uid}-${pledge.id}`;
 
   let intent: Stripe.PaymentIntent;
   try {
@@ -109,8 +109,8 @@ export async function chargePledge(user: UserRecord): Promise<ChargeOutcome> {
         payment_method: paymentMethod,
         off_session: true,
         confirm: true,
-        description: "Pledge: surrendered screen-time challenge",
-        metadata: { firebaseUid: user.uid, pledgeSetAt: user.pledgeSetAt },
+        description: "Pledge: surrendered screen-time pledge",
+        metadata: { firebaseUid: user.uid, pledgeId: pledge.id },
       },
       { idempotencyKey }
     );
@@ -123,18 +123,25 @@ export async function chargePledge(user: UserRecord): Promise<ChargeOutcome> {
     }
   }
 
+  const now = new Date().toISOString();
   await db()
     .collection("users")
     .doc(user.uid)
     .collection("charges")
     .doc(intent.id)
-    .set({
-      status: intent.status,
-      amount,
-      currency: CURRENCY,
-      pledgeSetAt: user.pledgeSetAt,
-      createdAt: new Date().toISOString(),
-    });
+    .set({ status: intent.status, amount, currency: CURRENCY, pledgeId: pledge.id, createdAt: now });
+
+  if (intent.status === "succeeded" || intent.status === "processing") {
+    await pledgesRef(user.uid)
+      .doc(pledge.id)
+      .set({ status: "surrendered", chargedAt: now, paymentIntentId: intent.id }, { merge: true });
+  }
 
   return { status: intent.status, paymentIntentId: intent.id, amount, currency: CURRENCY };
+}
+
+/** Whether the customer has any saved card. */
+export async function hasPaymentMethod(user?: UserRecord): Promise<boolean> {
+  if (!user?.stripeCustomerId) return false;
+  return !!(await latestPaymentMethod(user.stripeCustomerId));
 }

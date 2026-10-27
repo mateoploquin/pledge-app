@@ -39,12 +39,20 @@ export type ChargeResult = {
   currency?: string;
 };
 
-/** Charges the user's saved card for their pledge amount. */
-export async function chargePledge(idToken: string): Promise<ChargeResult> {
+/** Charges the user's saved card for one pledge's amount. */
+export async function chargePledge(idToken: string, pledgeId: string): Promise<ChargeResult> {
   const { data } = await axios.post<ChargeResult>(
     `${STRIPE_URL}/charge`,
-    { signal: "charge" },
+    { pledgeId },
     { headers: authHeaders(idToken) }
   );
   return data;
+}
+
+/** Whether the user already has a card on file, so the card step can be skipped. */
+export async function fetchHasCard(idToken: string): Promise<boolean> {
+  const { data } = await axios.get<{ hasCard: boolean }>(`${STRIPE_URL}/payment-method`, {
+    headers: authHeaders(idToken),
+  });
+  return !!data.hasCard;
 }
