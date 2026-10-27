@@ -1,6 +1,8 @@
 import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet, ScrollView, Linking, Alert } from "react-native";
 import colors from "../../../theme/colors";
+import { API_URL } from "../../../config";
+import { haptics } from "../../../utils/haptics";
 
 interface AcceptTermsProps {
   termsAccepted: boolean;
@@ -16,7 +18,8 @@ const rules = [
   {
     id: 2,
     title: "Keep Tracking On ⏲️",
-    description: "Disabling your app blocker means you're out.",
+    description:
+      "Deleting Pledge or turning off its Screen Time access while a pledge runs forfeits it, and your pledge is charged.",
   },
   {
     id: 3,
@@ -25,18 +28,30 @@ const rules = [
   },
   {
     id: 4,
-    title: "If you don’t succeed, your pledge becomes meaningful 💙:",
+    title: "Your Pledge Does Good 💙",
     description:
-      " With Make-A-Wish France, with a small fee to support the app!",
+      "If you don’t succeed, your pledge goes to Make-A-Wish, minus a small fee that supports the app.",
   },
 ];
+
+const openLegal = async (doc: "terms" | "privacy") => {
+  haptics.tap();
+  const url = `${API_URL}/${doc}`;
+  if (__DEV__) console.log("[legal] opening", url);
+  try {
+    await Linking.openURL(url);
+  } catch (e) {
+    console.warn("[legal] openURL failed:", e);
+    Alert.alert("Could not open page", `${url}\n\n${(e as any)?.message ?? ""}`);
+  }
+};
 
 const AcceptTerms: React.FC<AcceptTermsProps> = ({
   termsAccepted,
   setTermsAccepted,
 }) => {
   return (
-    <View>
+    <ScrollView>
       <Text style={styles.title}>Challenge Rules 🏆</Text>
 
       <View style={styles.rulesContainer}>
@@ -63,12 +78,21 @@ const AcceptTerms: React.FC<AcceptTermsProps> = ({
         >
           {termsAccepted && <Text style={styles.checkmark}>✓</Text>}
         </Pressable>
-        <Text style={styles.agreementText}>
-          I Agree to the{" "}
-          <Text style={styles.linkText}>Terms and Conditions</Text>
-        </Text>
+        <View style={styles.agreementTextBlock}>
+          <Text style={styles.agreementText}>I agree to the</Text>
+          <View style={styles.linksRow}>
+            <Pressable onPress={() => openLegal("terms")} hitSlop={10}>
+              <Text style={styles.linkText}>Terms and Conditions</Text>
+            </Pressable>
+            <Text style={styles.agreementText}> and </Text>
+            <Pressable onPress={() => openLegal("privacy")} hitSlop={10}>
+              <Text style={styles.linkText}>Privacy Policy</Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
-    </View>
+      <View style={{ height: 100 }} />
+    </ScrollView>
   );
 };
 
@@ -102,7 +126,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   highlightText: {
-    color: "#236AB3",
+    color: colors.blue,
   },
   footerText: {
     marginTop: 15,
@@ -130,11 +154,22 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   agreementText: {
-    marginLeft: 7,
     fontWeight: "400",
+  },
+  agreementTextBlock: {
+    flex: 1,
+    marginLeft: 7,
+  },
+  linksRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginTop: 2,
   },
   linkText: {
     textDecorationLine: "underline",
+    color: colors.orange,
+    fontWeight: "500",
   },
 });
 

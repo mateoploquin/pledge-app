@@ -2,7 +2,8 @@
   "expo": {
     "name": "Pledge",
     "slug": "pledge-app",
-    "version": "1.0.0",
+    "scheme": "pledge",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,22 +14,23 @@
     },
     "ios": {
       "supportsTablet": false,
-      "buildNumber": "7",
+      "buildNumber": "11",
       "bundleIdentifier": "com.pledgecompany.pledge",
       "infoPlist": {
-        "NSCameraUsageDescription": "Pledge does not use the camera for any purpose"
-      },
-      "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.com.pledgecompany.pledge"
-        ],
-        "com.apple.developer.family-controls": true
+        "NSCameraUsageDescription": "Pledge does not use the camera for any purpose",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       },
       "googleServicesFile": "./GoogleService-Info.plist",
       "config": {
         "usesNonExemptEncryption": false
       },
-      "appleTeamId": "GC2XRZ6HSJ"
+      "appleTeamId": "GC2XRZ6HSJ",
+      "usesAppleSignIn": true,
+      "entitlements": {
+        "aps-environment": "development"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -42,47 +44,15 @@
     },
     "extra": {
       "eas": {
-        "projectId": "e7e2e883-b2f3-4d92-964c-0e0608a1ff96",
-        "build": {
-          "experimental": {
-            "ios": {
-              "appExtensions": [
-                {
-                  "targetName": "ActivityMonitorExtension",
-                  "bundleIdentifier": "com.pledgecompany.pledge.ActivityMonitorExtension",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.pledgecompany.pledge"
-                    ],
-                    "com.apple.developer.family-controls": true
-                  }
-                },
-                {
-                  "targetName": "ShieldAction",
-                  "bundleIdentifier": "com.pledgecompany.pledge.ShieldAction",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.pledgecompany.pledge"
-                    ],
-                    "com.apple.developer.family-controls": true
-                  }
-                },
-                {
-                  "targetName": "ShieldConfiguration",
-                  "bundleIdentifier": "com.pledgecompany.pledge.ShieldConfiguration",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.pledgecompany.pledge"
-                    ],
-                    "com.apple.developer.family-controls": true
-                  }
-                }
-              ]
-            }
-          }
-        }
+        "projectId": "e7e2e883-b2f3-4d92-964c-0e0608a1ff96"
       }
     },
+    "sourceExts": [
+      "js",
+      "jsx",
+      "ts",
+      "tsx"
+    ],
     "owner": "pledge",
     "plugins": [
       "expo-font",
@@ -110,7 +80,9 @@
           "merchantIdentifier": "merchant.pledge.applepay",
           "enableGooglePay": false
         }
-      ]
+      ],
+      "expo-apple-authentication",
+      "expo-notifications"
     ]
   }
 }

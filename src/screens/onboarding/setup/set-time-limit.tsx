@@ -1,49 +1,50 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
+import AnimatedNumber from "../../../components/text/animated-number";
+import colors from "../../../theme/colors";
+import PresetChips from "../../../components/buttons/preset-chips";
+import { haptics } from "../../../utils/haptics";
 
 interface SetTimeLimitProps {
-  isButtonDisabled: boolean;
-  setIsButtonDisabled: (value: boolean) => void;
   timeValue: number;
   setTimeValue: (value: number) => void;
 }
 
 const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
-  isButtonDisabled,
-  setIsButtonDisabled,
   timeValue,
   setTimeValue,
 }) => {
   return (
     <View style={styles.setPledgeContainer}>
       <Text style={styles.title}>
-        Choose Your Time Limit{" "}
-        <Text style={{ fontSize: 12, fontWeight: "400" }}>(Per Day)</Text>
+        Choose Your Time Limit
+        <Text style={styles.subtitle}>(Per Day)</Text>
       </Text>
 
       <View style={styles.pledgeContainer}>
-        <Text style={styles.xxText}>{timeValue}</Text>
+        <AnimatedNumber style={styles.xxText} value={timeValue} />
         <Text style={styles.dollarSign}>m</Text>
       </View>
 
       <SetSlider
-        min={10}
+        min={0}
         max={120}
+        ticks={[0, 30, 60, 90, 120]}
+        value={timeValue}
         onValueChange={(value) => setTimeValue(value)}
       />
 
-      <Text
-        style={{
-          marginTop: 69,
-          marginHorizontal: 34,
-          textAlign: "center",
-          fontSize: 16,
-          fontFamily: "InstrumentSerif-Regular",
+      <PresetChips
+        values={[30, 60, 90]}
+        selected={timeValue}
+        onSelect={(v) => {
+          haptics.select();
+          setTimeValue(v);
         }}
-      >
-        Remember, every minute saved is a step closer to your goals
-      </Text>
+        format={(v) => `${v}m`}
+      />
+
     </View>
   );
 };
@@ -59,7 +60,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "500",
     marginBottom: 77,
-    color: "#333",
+    color: colors.gray300,
+  },
+  subtitle: {
+    fontSize: 12,
+    fontWeight: "400"
   },
   pledgeContainer: {
     flexDirection: "row",
@@ -68,20 +73,27 @@ const styles = StyleSheet.create({
   },
   xxText: {
     fontSize: 100,
-    color: "#ccc",
+    color: colors.darkGray2,
     fontWeight: "500",
   },
   dollarSign: {
     fontSize: 100,
-    color: "#333",
+    color: colors.gray300,
     fontWeight: "500",
     borderBottomWidth: 3,
-    borderBottomColor: "#1E90FF",
+    borderBottomColor: colors.darkBlue,
   },
   slider: {
     width: "90%",
     height: 40,
   },
+  description: {
+    marginTop: 40,
+    marginHorizontal: 34,
+    textAlign: "center",
+    fontSize: 16,
+    fontFamily: "InstrumentSerif-Regular",
+  }
 });
 
 export default SetTimeLimit;

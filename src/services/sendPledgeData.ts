@@ -1,26 +1,27 @@
-// services/sendPledgeData.ts
-import axios from 'axios';
+import axios from "axios";
+import { API_URL } from "../config";
 
 interface PledgeData {
+  id: string;
   pledgeValue: number;
   timeValue: number;
-  // selectedApps: string[];
+  durationDays: number;
+  /** ISO date; lets a pledge created earlier (migrated) keep its real end date. */
+  startedAt?: string;
 }
 
+const authHeaders = (idToken: string) => ({ Authorization: `Bearer ${idToken}` });
+
+/** Records a new pledge on the backend so it knows what to charge on surrender. */
 export async function sendPledgeData(data: PledgeData, idToken: string) {
-  try {
-    console.log('Sending pledge data:', data); // Log the request payload
-    const response = await axios.post('https://pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io/pledge', data, {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error sending pledge data:', error);
-    if (error.response) {
-      console.error('Server response:', error.response.data); // Log the server response
-    }
-    throw error;
-  }
+  const response = await axios.post(`${API_URL}/pledge`, data, { headers: authHeaders(idToken) });
+  return response.data;
+}
+
+/** Marks a pledge as completed without a charge. Best effort. */
+export async function completePledge(id: string, idToken: string) {
+  const response = await axios.post(`${API_URL}/pledge/${id}/complete`, {}, {
+    headers: authHeaders(idToken),
+  });
+  return response.data;
 }

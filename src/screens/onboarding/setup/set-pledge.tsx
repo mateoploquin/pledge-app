@@ -1,17 +1,17 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
+import AnimatedNumber from "../../../components/text/animated-number";
+import colors from "../../../theme/colors";
+import PresetChips from "../../../components/buttons/preset-chips";
+import { haptics } from "../../../utils/haptics";
 
 interface SetPledgeProps {
-  isButtonDisabled: boolean;
-  setIsButtonDisabled: (value: boolean) => void;
   pledgeValue: number;
   setPledgeValue: (value: number) => void;
 }
 
 const SetPledge: React.FC<SetPledgeProps> = ({
-  isButtonDisabled,
-  setIsButtonDisabled,
   pledgeValue,
   setPledgeValue,
 }) => {
@@ -20,28 +20,28 @@ const SetPledge: React.FC<SetPledgeProps> = ({
       <Text style={styles.title}>How Much Do You Pledge?</Text>
 
       <View style={styles.pledgeContainer}>
-        <Text style={styles.xxText}>{pledgeValue}</Text>
+        <AnimatedNumber style={styles.xxText} value={pledgeValue} />
         <Text style={styles.dollarSign}>$</Text>
       </View>
 
       <SetSlider
-        min={10}
-        max={1000}
+        min={5}
+        max={100}
+        ticks={[5, 25, 50, 75, 100]}
+        value={pledgeValue}
         onValueChange={(value) => setPledgeValue(value)}
       />
 
-      <Text
-        style={{
-          marginTop: 69,
-          marginHorizontal: 34,
-          textAlign: "center",
-          fontSize: 16,
-          fontFamily: "InstrumentSerif-Regular",
+      <PresetChips
+        values={[5, 10, 20]}
+        selected={pledgeValue}
+        onSelect={(v) => {
+          haptics.select();
+          setPledgeValue(v);
         }}
-      >
-        The higher your pledge, the greater your commitment—and the bigger the
-        impact.
-      </Text>
+        format={(v) => `$${v}`}
+      />
+
     </View>
   );
 };
@@ -66,19 +66,26 @@ const styles = StyleSheet.create({
   },
   xxText: {
     fontSize: 100,
-    color: "#ccc",
+    color: colors.darkGray2,
     fontWeight: "500",
   },
   dollarSign: {
     fontSize: 100,
-    color: "#333",
+    color: colors.gray300,
     fontWeight: "500",
     borderBottomWidth: 3,
-    borderBottomColor: "#1E90FF",
+    borderBottomColor: colors.darkBlue,
   },
   slider: {
     width: "90%",
     height: 40,
+  },
+  description: {
+    marginTop: 40,
+    marginHorizontal: 34,
+    textAlign: "center",
+    fontSize: 16,
+    fontFamily: "InstrumentSerif-Regular",
   },
 });
 

@@ -1,80 +1,39 @@
-import React, { useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { getEvents } from 'react-native-device-activity';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import colors from "../theme/colors";
 
 interface ScreenTimeListProps {
-  // define your props here
+  usedMinutes?: number;
+  limitMinutes?: number;
 }
 
-const ScreenTimeList: React.FC<ScreenTimeListProps> = (props) => {
-  useEffect(() => {
-    // Get real screen time data from device activity events
-    const events = getEvents();
-    let totalMinutes = 0;
-    
-    // Count the number of threshold events to determine total screen time
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      if (event.callbackName === 'eventDidReachThreshold' && 
-          event.eventName.includes('minutes_reached')) {
-        totalMinutes++;
-      }
-    }
-    
-    // Group events by hour to see usage patterns
-    const hourlyUsage = analyzeHourlyUsage(events);
-    
-    // Log the real aggregated screen time data
-    console.log("Real screen time data:", {
-      totalMinutes,
-      hours: Math.floor(totalMinutes / 60),
-      minutes: totalMinutes % 60,
-      totalEvents: events.length,
-      hourlyUsage
-    });
-  }, []);
-  
-  // Analyze events to get hourly usage patterns
-  const analyzeHourlyUsage = (events) => {
-    const hourlyData = {};
-    
-    events.forEach(event => {
-      if (event.callbackName === 'eventDidReachThreshold' && 
-          event.eventName.includes('minutes_reached')) {
-        // Extract timestamp from event
-        const timestamp = event.date || new Date();
-        const hour = timestamp.getHours();
-        
-        // Initialize hour counter if not exists
-        if (!hourlyData[hour]) {
-          hourlyData[hour] = 0;
-        }
-        
-        // Increment minute count for this hour
-        hourlyData[hour]++;
-      }
-    });
-    
-    // Convert to array for easier reading
-    const hourlyUsage = Object.keys(hourlyData).map(hour => ({
-      hour: parseInt(hour),
-      minutes: hourlyData[hour],
-      formattedHour: `${hour}:00 - ${hour}:59`
-    }));
-    
-    // Sort by hour
-    return hourlyUsage.sort((a, b) => a.hour - b.hour);
-  };
+/** Thin bar showing today's usage against the daily limit. */
+const ScreenTimeList: React.FC<ScreenTimeListProps> = ({
+  usedMinutes = 0,
+  limitMinutes = 0,
+}) => {
+  const ratio = limitMinutes > 0 ? Math.min(1, usedMinutes / limitMinutes) : 0;
 
   return (
-    <View>
-      {/* Progress bar removed as requested */}
+    <View style={styles.track}>
+      <View style={[styles.fill, { width: `${Math.round(ratio * 100)}%` }]} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  // Styles removed for brevity
+  track: {
+    marginTop: 14,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(0, 0, 0, 0.08)",
+    overflow: "hidden",
+  },
+  fill: {
+    height: "100%",
+    borderRadius: 4,
+    backgroundColor: colors.orange,
+  },
 });
 
 export default ScreenTimeList;

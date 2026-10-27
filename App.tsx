@@ -5,62 +5,59 @@ import "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import useAppInit from "./src/hooks/useAppInit";
 import { StripeProvider } from "@stripe/stripe-react-native";
+import useAppInit from "./src/hooks/useAppInit";
 import AppNavigator from "./src/navigation";
-import { fetchPublishableKey } from "./src/services/stripe-api"; // Import the fetch function
+import { fetchPublishableKey } from "./src/services/stripe-api";
+import { STRIPE_MERCHANT_ID, STRIPE_PUBLISHABLE_KEY } from "./src/config";
+// Defines the background heartbeat task at launch, so silent pushes can run it.
+import "./src/services/devices";
 
 SplashScreen.preventAutoHideAsync();
 
-function AppContent({ initialRouteName, onLayoutRootView }) {
-  return (
-    <SafeAreaProvider>
-      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-        <AppNavigator initialRouteName={initialRouteName} />
-      </View>
-    </SafeAreaProvider>
-  );
-}
-
 export default function App() {
   const { isLoadingComplete, initialRouteName } = useAppInit();
-  const [publishableKey, setPublishableKey] = useState<string>("");
+  const [publishableKey, setPublishableKey] = useState<string>(STRIPE_PUBLISHABLE_KEY);
 
+  // The key is only needed on the payment step, so never block the UI on it.
   useEffect(() => {
-    const loadPublishableKey = async () => {
+    if (publishableKey) return;
+    let cancelled = false;
+    const load = async (attempt = 0) => {
       try {
-        // If you have authentication, get the ID token from auth:
-        // const user = auth.currentUser;
-        // const idToken = user ? await user.getIdToken() : undefined;
-        
         const key = await fetchPublishableKey();
-        setPublishableKey(key);
+        if (!cancelled && key) setPublishableKey(key);
       } catch (error) {
-        console.error("Failed to load publishable key:", error);
+        console.warn("Failed to load Stripe publishable key:", error);
+        if (!cancelled && attempt < 5) {
+          setTimeout(() => load(attempt + 1), 5000 * (attempt + 1));
+        }
       }
     };
-
-    loadPublishableKey();
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const onLayoutRootView = useCallback(async () => {
-    if (isLoadingComplete && publishableKey) {
+    if (isLoadingComplete) {
       await SplashScreen.hideAsync();
     }
-  }, [isLoadingComplete, publishableKey]);
+  }, [isLoadingComplete]);
 
-  if (!initialRouteName || !isLoadingComplete || !publishableKey) {
-    // Render a loading state until we have both initialRouteName and publishableKey
+  if (!initialRouteName || !isLoadingComplete) {
     return null;
   }
 
   return (
-    <StripeProvider publishableKey={publishableKey} merchantIdentifier="merchant.pledge.applepay">
+    <StripeProvider publishableKey={publishableKey} merchantIdentifier={STRIPE_MERCHANT_ID}>
       <NavigationContainer>
-        <AppContent
-          initialRouteName={initialRouteName}
-          onLayoutRootView={onLayoutRootView}
-        />
+        <SafeAreaProvider>
+          <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+            <AppNavigator initialRouteName={initialRouteName} />
+          </View>
+        </SafeAreaProvider>
       </NavigationContainer>
     </StripeProvider>
   );

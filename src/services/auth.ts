@@ -1,55 +1,35 @@
-// // signUp.js
-import { createUserWithEmailAndPassword, updateProfile, getIdToken } from 'firebase/auth';
-import axios from 'axios';
-import { auth } from '../../firebaseConfig';
-// import * as FileSystem from 'expo-file-system';
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  getIdToken,
+  type User,
+} from "firebase/auth";
+import axios from "axios";
+import { auth } from "../firebaseConfig";
+import { API_URL } from "../config";
 
-
-export async function signUp(email, password, displayName) {
+/**
+ * Registers (or refreshes) the user with the backend. Not fatal: the backend
+ * upserts the user again on the first authenticated call.
+ */
+export async function registerWithBackend(user: User, displayName?: string | null) {
   try {
-    // Create user with email and password
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    // Update user profile with display name
-    await updateProfile(user, { displayName });
-
-    // Get ID token
-    
-    await user.reload(); // Reloads user to fetch updated profile info
     const idToken = await getIdToken(user, true);
-
-    // // Save ID token to a text file
-    // await saveIdTokenToFile(idToken);
-
-    // Send token to backend
-    await sendTokenToBackend(idToken);
+    await axios.post(
+      `${API_URL}/auth/firebase/signup`,
+      { displayName: displayName ?? user.displayName ?? undefined },
+      { headers: { Authorization: `Bearer ${idToken}` } }
+    );
   } catch (error) {
-    console.error('Error during sign-up:', error);
-    throw error;
+    console.warn("Backend signup failed, will retry on next request:", error);
   }
 }
 
-async function sendTokenToBackend(idToken) {
-  try {
-    await axios.post('https://pledgecontainer--o7wsrym.lemonbay-3b8260a5.spaincentral.azurecontainerapps.io/auth/firebase/signup', {}, {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-  } catch (error) {
-    console.error('Error sending token to backend:', error);
-    throw error;
-  }
-}
+export async function signUp(email: string, password: string, displayName: string) {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const user = userCredential.user;
 
-// // async function saveIdTokenToFile(idToken) {
-// //   try {
-// //     const path = `${FileSystem.documentDirectory}idToken.txt`;
-// //     await FileSystem.writeAsStringAsync(path, idToken, { encoding: FileSystem.EncodingType.UTF8 });
-// //     console.log('ID token saved to', path);
-// //   } catch (error) {
-// //     console.error('Error saving ID token to file:', error);
-// //     throw error;
-// //   }
-// // }
+  await updateProfile(user, { displayName });
+  await user.reload();
+  await registerWithBackend(user, displayName);
+}
