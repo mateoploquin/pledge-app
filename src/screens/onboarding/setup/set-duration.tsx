@@ -114,7 +114,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 34,
     textAlign: "center",
     fontSize: 14,
-    color: colors.darkGray2,
+    lineHeight: 20,
+    color: "rgba(0, 0, 0, 0.6)",
   },
 });
 
