@@ -61,7 +61,7 @@ export const termsHtml = page(
 
 <h2>5. Challenge rules</h2>
 <ul>
-  <li>Deleting the app, revoking Screen Time access, or otherwise disabling the blocking during a challenge counts as giving up the challenge.</li>
+  <li><strong>Deleting the app, revoking Screen Time access, or otherwise disabling the blocking while a pledge is running counts as surrendering.</strong> Every running pledge is forfeited and charged, the same as if you had unlocked your apps. To detect this, the app registers an Apple push token with our server and reports in while it runs; the server pings the device once a day. If Apple reports the app as removed, or the app reports that Screen Time access was turned off, your running pledges are charged.</li>
   <li>Pledge relies on Apple's Screen Time system. We cannot guarantee blocking in every situation, for example after an iOS update or a device restore.</li>
 </ul>
 
@@ -94,7 +94,7 @@ export const privacyHtml = page(
 </ul>
 
 <h2>2. Why we use it</h2>
-<p>To run your account and challenge, to charge your pledge when you surrender, to prevent fraud, and to respond when you contact us. We do not sell your data and we do not use it for advertising.</p>
+<p>To run your account and pledges, to charge your pledge when you surrender or forfeit, to detect that the app was deleted or Screen Time access removed during a pledge (Apple push token, last check-in time, Screen Time permission status), to prevent fraud, and to respond when you contact us. We do not sell your data and we do not use it for advertising.</p>
 
 <h2>3. Who processes it</h2>
 <ul>

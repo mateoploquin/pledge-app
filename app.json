@@ -17,14 +17,20 @@
       "buildNumber": "11",
       "bundleIdentifier": "com.pledgecompany.pledge",
       "infoPlist": {
-        "NSCameraUsageDescription": "Pledge does not use the camera for any purpose"
+        "NSCameraUsageDescription": "Pledge does not use the camera for any purpose",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       },
       "googleServicesFile": "./GoogleService-Info.plist",
       "config": {
         "usesNonExemptEncryption": false
       },
       "appleTeamId": "GC2XRZ6HSJ",
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "entitlements": {
+        "aps-environment": "development"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -75,7 +81,8 @@
           "enableGooglePay": false
         }
       ],
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "expo-notifications"
     ]
   }
 }

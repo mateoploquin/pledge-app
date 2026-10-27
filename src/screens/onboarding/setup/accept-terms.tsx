@@ -18,7 +18,8 @@ const rules = [
   {
     id: 2,
     title: "Keep Tracking On ⏲️",
-    description: "Disabling your app blocker means you're out.",
+    description:
+      "Deleting Pledge or turning off its Screen Time access while a pledge runs forfeits it, and your pledge is charged.",
   },
   {
     id: 3,

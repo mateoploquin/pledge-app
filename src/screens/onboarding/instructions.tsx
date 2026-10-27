@@ -25,6 +25,7 @@ import { addPledge, hasAcceptedTerms, markTermsAccepted, newPledgeId } from "../
 import { sendPledgeData } from "../../services/sendPledgeData";
 import { fetchHasCard } from "../../services/stripe-api";
 import { auth } from "../../firebaseConfig";
+import { registerDevice } from "../../services/devices";
 
 type StepName = "apps" | "limit" | "duration" | "amount" | "terms" | "card";
 
@@ -110,6 +111,7 @@ const Instructions: React.FC = () => {
       await startPledgeMonitoring(pledge, { fresh: true });
       await addPledge(pledge);
       if (termsAccepted) await markTermsAccepted();
+      registerDevice();
       haptics.success();
       navigation.reset({ index: 0, routes: [{ name: "Home" }] });
     } catch (error: any) {

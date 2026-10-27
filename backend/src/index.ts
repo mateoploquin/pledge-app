@@ -1,7 +1,9 @@
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import type { DecodedIdToken } from "firebase-admin/auth";
-import { getPledge, getUser, pledgesRef, upsertUser, verifyIdToken } from "./firebase.js";
+import { devicesRef, getPledge, getUser, pledgesRef, upsertUser, verifyIdToken } from "./firebase.js";
+import { checkDevices, forfeitActivePledges } from "./forfeit.js";
+import { apnsConfigured } from "./apns.js";
 import { chargePledge, createPaymentSheetParams, ensureCustomer, hasPaymentMethod } from "./stripe.js";
 import { privacyHtml, termsHtml } from "./legal.js";
 
@@ -40,6 +42,14 @@ app.use("/pledge/*", async (c, next) => {
   await next();
 });
 app.use("/pledges", async (c, next) => {
+  c.set("user", await verifyIdToken(c.req.header("authorization")));
+  await next();
+});
+app.use("/device", async (c, next) => {
+  c.set("user", await verifyIdToken(c.req.header("authorization")));
+  await next();
+});
+app.use("/heartbeat", async (c, next) => {
   c.set("user", await verifyIdToken(c.req.header("authorization")));
   await next();
 });
@@ -87,6 +97,61 @@ const TIME_MIN = 0;
 const TIME_MAX = 24 * 60;
 const DURATION_MIN = 1;
 const DURATION_MAX = 365;
+
+/** The phone registers its Apple push token so deletion can be detected. */
+app.post("/device", async (c) => {
+  const decoded = c.get("user");
+  const body = await c.req.json().catch(() => ({}));
+  const token = typeof body.token === "string" ? body.token.trim() : "";
+  if (!/^[0-9a-f]{32,200}$/i.test(token)) return c.json({ error: "token must be an APNs device token" }, 400);
+  await upsertUser(decoded);
+  const now = new Date().toISOString();
+  const ref = devicesRef(decoded.uid).doc(token.toLowerCase());
+  const existing = (await ref.get()).data();
+  await ref.set(
+    {
+      token: token.toLowerCase(),
+      platform: "ios",
+      registeredAt: existing?.registeredAt ?? now,
+      lastSeenAt: now,
+      // Re-registering means the app is installed again; a fresh install
+      // gets a new token anyway, but be safe.
+      unregisteredAt: null,
+    },
+    { merge: true }
+  );
+  return c.json({ ok: true, pushConfigured: apnsConfigured() });
+});
+
+/**
+ * The app reports in whenever it runs. Losing Screen Time access while a
+ * pledge is active forfeits it under the terms.
+ */
+app.post("/heartbeat", async (c) => {
+  const decoded = c.get("user");
+  const body = await c.req.json().catch(() => ({}));
+  const screenTimeAuthorized = body.screenTimeAuthorized !== false;
+  await upsertUser(decoded, { lastHeartbeatAt: new Date().toISOString(), screenTimeAuthorized });
+
+  let forfeited: string[] = [];
+  if (!screenTimeAuthorized) {
+    forfeited = await forfeitActivePledges(decoded.uid, "screen_time_revoked");
+  }
+  const activeSnap = await pledgesRef(decoded.uid).where("status", "==", "active").get();
+  return c.json({ ok: true, forfeited, active: activeSnap.docs.map((d) => d.id) });
+});
+
+/** Vercel cron: ping every device with an active pledge; forfeit deleted ones. */
+app.get("/cron/check-devices", async (c) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || c.req.header("authorization") !== `Bearer ${secret}`) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  if (!apnsConfigured()) return c.json({ error: "APNs is not configured" }, 500);
+  const report = await checkDevices();
+  console.log("check-devices:", JSON.stringify(report));
+  return c.json(report);
+});
 
 const ID_RE = /^[a-z0-9]{6,32}$/;
 

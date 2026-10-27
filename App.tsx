@@ -10,6 +10,8 @@ import useAppInit from "./src/hooks/useAppInit";
 import AppNavigator from "./src/navigation";
 import { fetchPublishableKey } from "./src/services/stripe-api";
 import { STRIPE_MERCHANT_ID, STRIPE_PUBLISHABLE_KEY } from "./src/config";
+// Defines the background heartbeat task at launch, so silent pushes can run it.
+import "./src/services/devices";
 
 SplashScreen.preventAutoHideAsync();
 

@@ -84,7 +84,11 @@ export type ChargeOutcome = {
  * Charges one pledge off-session. Idempotent per pledge: calling it twice for
  * the same pledge id returns the same PaymentIntent instead of charging again.
  */
-export async function chargePledge(user: UserRecord, pledge: PledgeRecord): Promise<ChargeOutcome> {
+export async function chargePledge(
+  user: UserRecord,
+  pledge: PledgeRecord,
+  mode: { status: "surrendered" | "forfeited"; reason?: string } = { status: "surrendered" }
+): Promise<ChargeOutcome> {
   if (!user.stripeCustomerId) {
     throw Object.assign(new Error("No payment method on file"), { status: 400 });
   }
@@ -109,8 +113,11 @@ export async function chargePledge(user: UserRecord, pledge: PledgeRecord): Prom
         payment_method: paymentMethod,
         off_session: true,
         confirm: true,
-        description: "Pledge: surrendered screen-time pledge",
-        metadata: { firebaseUid: user.uid, pledgeId: pledge.id },
+        description:
+          mode.status === "forfeited"
+            ? `Pledge: forfeited screen-time pledge (${mode.reason ?? "terms"})`
+            : "Pledge: surrendered screen-time pledge",
+        metadata: { firebaseUid: user.uid, pledgeId: pledge.id, outcome: mode.status },
       },
       { idempotencyKey }
     );
@@ -134,7 +141,15 @@ export async function chargePledge(user: UserRecord, pledge: PledgeRecord): Prom
   if (intent.status === "succeeded" || intent.status === "processing") {
     await pledgesRef(user.uid)
       .doc(pledge.id)
-      .set({ status: "surrendered", chargedAt: now, paymentIntentId: intent.id }, { merge: true });
+      .set(
+        {
+          status: mode.status,
+          chargedAt: now,
+          paymentIntentId: intent.id,
+          ...(mode.reason ? { forfeitReason: mode.reason } : {}),
+        },
+        { merge: true }
+      );
   }
 
   return { status: intent.status, paymentIntentId: intent.id, amount, currency: CURRENCY };

@@ -128,7 +128,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
           <Text style={styles.title}>Put your card down</Text>
           <Text style={styles.subtitle}>
             Nothing is charged now. You only pay your {CURRENCY_SYMBOL}
-            {pledgeValue} pledge if you unlock your apps before the {durationDays} days are up.
+            {pledgeValue} pledge if you unlock your apps, delete Pledge or turn off Screen Time access before the {durationDays} days are up.
           </Text>
           <MainButton onPress={handleSetUpPayment} text="Add a card" style={styles.button} />
         </>

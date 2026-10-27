@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
 import * as Notifications from "expo-notifications";
-import { View, Text, ScrollView, StyleSheet, AppState, Linking } from "react-native";
+import { View, Text, ScrollView, StyleSheet, AppState, Linking, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import colors from "../../theme/colors";
 import HomeHeader from "../../components/headers/home-header";
@@ -20,9 +20,11 @@ import {
   stopPledgeMonitoring,
 } from "./home.controller";
 import { Interfaces } from "./home.interfaces";
+import { CURRENCY_SYMBOL } from "../../config";
 import { loadPledges, migrateLegacyPledge, pledgeIsOver, removePledge } from "../../services/pledges";
 import { completePledge } from "../../services/sendPledgeData";
 import { auth } from "../../firebaseConfig";
+import { enableBackgroundHeartbeat, registerDevice, sendHeartbeat } from "../../services/devices";
 
 const NO_USAGE: DailyUsage = { usedMinutes: 0, remainingMinutes: 0, limitReached: false };
 
@@ -57,6 +59,24 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
     [navigation]
   );
 
+  /** Reports in; a pledge forfeited server-side (Screen Time turned off) is dropped here. */
+  const heartbeat = useCallback(async () => {
+    const result = await sendHeartbeat();
+    if (!result || result.forfeited.length === 0) return;
+    const forfeited = pledgesRef.current.filter((p) => result.forfeited.includes(p.id));
+    for (const p of forfeited) stopPledgeMonitoring(p.id);
+    let list = pledgesRef.current;
+    for (const p of forfeited) list = await removePledge(p.id);
+    pledgesRef.current = list;
+    setPledges(list);
+    Alert.alert(
+      "Pledge forfeited",
+      forfeited.length === 1
+        ? `Screen Time access was turned off, so your ${CURRENCY_SYMBOL}${forfeited[0].pledgeValue} pledge was charged, as agreed in the terms.`
+        : `Screen Time access was turned off, so your ${forfeited.length} running pledges were charged, as agreed in the terms.`
+    );
+  }, []);
+
   const load = useCallback(async () => {
     const migrated = await migrateLegacyPledge();
     if (migrated) {
@@ -84,7 +104,13 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
       }
     }
     refreshUsage();
-  }, [finishPledge, refreshUsage]);
+
+    if (list.length > 0) {
+      registerDevice();
+      enableBackgroundHeartbeat();
+      heartbeat();
+    }
+  }, [finishPledge, refreshUsage, heartbeat]);
 
   useFocusEffect(
     useCallback(() => {
@@ -100,13 +126,16 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
   useEffect(() => {
     const sub = ReactNativeDeviceActivity.onDeviceActivityMonitorEvent(() => refreshUsage());
     const appState = AppState.addEventListener("change", (state) => {
-      if (state === "active") refreshUsage();
+      if (state === "active") {
+        refreshUsage();
+        if (pledgesRef.current.length > 0) heartbeat();
+      }
     });
     return () => {
       sub.remove();
       appState.remove();
     };
-  }, [refreshUsage]);
+  }, [refreshUsage, heartbeat]);
 
   // The shield's "Unlock" button posts a notification; tapping it (or a
   // pledge://unlock deep link) opens that pledge on the surrender dialog.

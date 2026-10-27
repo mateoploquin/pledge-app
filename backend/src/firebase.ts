@@ -54,9 +54,12 @@ export type UserRecord = {
   pledgeSetAt?: string;
   createdAt?: string;
   updatedAt?: string;
+  lastHeartbeatAt?: string;
+  screenTimeAuthorized?: boolean;
 };
 
-export type PledgeStatus = "active" | "surrendered" | "completed";
+export type PledgeStatus = "active" | "surrendered" | "completed" | "forfeited";
+export type ForfeitReason = "app_deleted" | "screen_time_revoked";
 
 export type PledgeRecord = {
   id: string;
@@ -69,7 +72,22 @@ export type PledgeRecord = {
   chargedAt?: string;
   completedAt?: string;
   paymentIntentId?: string;
+  forfeitReason?: ForfeitReason;
+  /** Set when a forfeit charge was attempted but did not succeed. */
+  chargeError?: string;
 };
+
+export type DeviceRecord = {
+  token: string;
+  platform: "ios";
+  registeredAt: string;
+  lastSeenAt: string;
+  /** Set once APNs reported the token as unregistered (app deleted). */
+  unregisteredAt?: string;
+};
+
+export const devicesRef = (uid: string) =>
+  db().collection("users").doc(uid).collection("devices");
 
 export const pledgesRef = (uid: string) =>
   db().collection("users").doc(uid).collection("pledges");
