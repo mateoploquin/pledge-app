@@ -29,6 +29,31 @@ export async function forfeitActivePledges(uid: string, reason: ForfeitReason): 
   return forfeited;
 }
 
+/**
+ * Users who have at least one active pledge. Uses the grouped query when its
+ * Firestore index exists, otherwise walks the users one by one (fine while
+ * the user base is small).
+ */
+async function usersWithActivePledges(): Promise<Set<string>> {
+  const uids = new Set<string>();
+  try {
+    const active = await db().collectionGroup("pledges").where("status", "==", "active").get();
+    for (const doc of active.docs) {
+      const uid = doc.ref.parent.parent?.id;
+      if (uid) uids.add(uid);
+    }
+    return uids;
+  } catch (e: any) {
+    if (e?.code !== 9 && !/FAILED_PRECONDITION/.test(String(e?.message))) throw e;
+  }
+  const users = await db().collection("users").select().get();
+  for (const user of users.docs) {
+    const one = await pledgesRef(user.id).where("status", "==", "active").limit(1).get();
+    if (!one.empty) uids.add(user.id);
+  }
+  return uids;
+}
+
 export type DeviceCheckReport = {
   usersChecked: number;
   devicesPinged: number;
@@ -51,12 +76,7 @@ export async function checkDevices(): Promise<DeviceCheckReport> {
     skipped: [],
   };
 
-  const active = await db().collectionGroup("pledges").where("status", "==", "active").get();
-  const uids = new Set<string>();
-  for (const doc of active.docs) {
-    const uid = doc.ref.parent.parent?.id;
-    if (uid) uids.add(uid);
-  }
+  const uids = await usersWithActivePledges();
 
   for (const uid of uids) {
     report.usersChecked++;
