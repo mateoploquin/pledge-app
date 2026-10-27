@@ -1,9 +1,8 @@
 import React from "react";
 import { StyleSheet, View, Text } from "react-native";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
-import { SCREEN_HEIGHT, SCREEN_WIDTH } from "../../utils/constants/dimensions";
-import OnboardingMenIconHarmsOpen from "../../../assets/icons/onboarding-men-icon-harms-open";
+import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
 import MainButton from "../../components/buttons/main-button";
 import SecondaryButton from "../../components/buttons/secondary-button";
 import colors from "../../theme/colors";
@@ -14,10 +13,6 @@ const Onboarding: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Animated.View entering={FadeIn.duration(600)} style={styles.illustration}>
-        <OnboardingMenIconHarmsOpen width={SCREEN_WIDTH} height={SCREEN_HEIGHT * 0.4} style={{}} />
-      </Animated.View>
-
       <Animated.View entering={FadeInDown.duration(500).delay(120)} style={styles.content}>
         <Text style={styles.title}>Pledge</Text>
         <Text style={styles.tagline}>Live more, scroll less.</Text>
@@ -43,16 +38,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.onboardingBackground,
   },
-  illustration: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-  },
   content: {
-    position: "absolute",
-    top: 75,
+    flex: 1,
+    justifyContent: "center",
+    paddingBottom: 60,
     width: SCREEN_WIDTH,
     alignItems: "center",
   },
