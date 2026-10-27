@@ -25,6 +25,8 @@ import { loadPledges, migrateLegacyPledge, pledgeIsOver, removePledge, updatePle
 import { completePledge, sendPledgeData } from "../../services/sendPledgeData";
 import { auth } from "../../firebaseConfig";
 import { enableBackgroundHeartbeat, registerDevice, sendHeartbeat } from "../../services/devices";
+import { AuthorizationStatus, getAuthorizationStatus } from "react-native-device-activity";
+import { TopApps, TotalScreenTime, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
 
 const NO_USAGE: DailyUsage = { usedMinutes: 0, remainingMinutes: 0, limitReached: false };
 
@@ -184,6 +186,11 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
 
   if (pledges === null) return <HomeWrapper><HomeHeader /></HomeWrapper>;
 
+  // The real Screen Time of the last 7 days, drawn by the system. Only once
+  // Screen Time access is granted; before that the report would be blank.
+  const showReport =
+    isActivityReportAvailable() && getAuthorizationStatus() === AuthorizationStatus.approved;
+
   return (
     <HomeWrapper>
       <HomeHeader />
@@ -192,8 +199,16 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
 
         {pledges.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No pledge running</Text>
-            <Text style={styles.emptyText}>
+            {showReport ? (
+              <>
+                <Text style={styles.reportKicker}>Your last 7 days on this phone</Text>
+                <TotalScreenTime range="week" style={styles.reportTotal} />
+                <TopApps range="week" maxApps={3} style={styles.reportApps} />
+              </>
+            ) : (
+              <Text style={styles.emptyTitle}>No pledge running</Text>
+            )}
+            <Text style={[styles.emptyText, showReport && styles.emptyTextAfterReport]}>
               Pick the apps that steal your time, set a daily limit and put money on it.
             </Text>
           </View>
@@ -251,6 +266,28 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
     color: "rgba(0, 0, 0, 0.70)",
+  },
+  emptyTextAfterReport: {
+    textAlign: "left",
+    alignSelf: "stretch",
+    marginTop: 12,
+  },
+  reportKicker: {
+    alignSelf: "stretch",
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+    color: "rgba(0, 0, 0, 0.55)",
+    marginBottom: 4,
+  },
+  reportTotal: {
+    alignSelf: "stretch",
+    height: 54,
+    marginBottom: 8,
+  },
+  reportApps: {
+    alignSelf: "stretch",
   },
   newButton: {
     backgroundColor: colors.white,

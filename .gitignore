@@ -37,4 +37,5 @@ yarn-error.*
 
 /ios/
 /android/
-/targets/
+/targets/*
+!/targets/ReportExtension/

@@ -16,6 +16,7 @@ import {
 } from "../home/home.controller";
 import { CURRENCY_SYMBOL } from "../../config";
 import { ActivityLabels } from "../../../modules/pledge-activity-labels";
+import { TopApps } from "../../../modules/pledge-activity-report";
 import { getPledge, pledgeEndsAt, removePledge } from "../../services/pledges";
 import { completePledge } from "../../services/sendPledgeData";
 import { auth } from "../../firebaseConfig";
@@ -176,6 +177,12 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
                   </Text>
                 )}
                 <ScreenTimeList usedMinutes={usage.usedMinutes} limitMinutes={timeValue} />
+                <TopApps
+                  range="today"
+                  maxApps={3}
+                  familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
+                  style={styles.topApps}
+                />
               </View>
             </HomeCardWrapper>
           </View>
@@ -248,6 +255,9 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 19,
     paddingHorizontal: 16,
+  },
+  topApps: {
+    marginTop: 16,
   },
   hoursMinutesText: {
     fontSize: 48,
