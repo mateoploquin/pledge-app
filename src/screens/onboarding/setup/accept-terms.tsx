@@ -34,11 +34,16 @@ const rules = [
   },
 ];
 
-const openLegal = (doc: "terms" | "privacy") => {
+const openLegal = async (doc: "terms" | "privacy") => {
   haptics.tap();
-  Linking.openURL(`${API_URL}/${doc}`).catch(() =>
-    Alert.alert("Could not open page", "Please check your connection and try again.")
-  );
+  const url = `${API_URL}/${doc}`;
+  if (__DEV__) console.log("[legal] opening", url);
+  try {
+    await Linking.openURL(url);
+  } catch (e) {
+    console.warn("[legal] openURL failed:", e);
+    Alert.alert("Could not open page", `${url}\n\n${(e as any)?.message ?? ""}`);
+  }
 };
 
 const AcceptTerms: React.FC<AcceptTermsProps> = ({
@@ -73,16 +78,18 @@ const AcceptTerms: React.FC<AcceptTermsProps> = ({
         >
           {termsAccepted && <Text style={styles.checkmark}>✓</Text>}
         </Pressable>
-        <Text style={styles.agreementText}>
-          I agree to the{" "}
-          <Text style={styles.linkText} onPress={() => openLegal("terms")}>
-            Terms and Conditions
-          </Text>{" "}
-          and{" "}
-          <Text style={styles.linkText} onPress={() => openLegal("privacy")}>
-            Privacy Policy
-          </Text>
-        </Text>
+        <View style={styles.agreementTextBlock}>
+          <Text style={styles.agreementText}>I agree to the</Text>
+          <View style={styles.linksRow}>
+            <Pressable onPress={() => openLegal("terms")} hitSlop={10}>
+              <Text style={styles.linkText}>Terms and Conditions</Text>
+            </Pressable>
+            <Text style={styles.agreementText}> and </Text>
+            <Pressable onPress={() => openLegal("privacy")} hitSlop={10}>
+              <Text style={styles.linkText}>Privacy Policy</Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
       <View style={{ height: 100 }} />
     </ScrollView>
@@ -147,11 +154,22 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   agreementText: {
-    marginLeft: 7,
     fontWeight: "400",
+  },
+  agreementTextBlock: {
+    flex: 1,
+    marginLeft: 7,
+  },
+  linksRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginTop: 2,
   },
   linkText: {
     textDecorationLine: "underline",
+    color: colors.orange,
+    fontWeight: "500",
   },
 });
 
