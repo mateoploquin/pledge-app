@@ -12,4 +12,6 @@ export type Pledge = {
   durationDays: number;
   /** ISO date the pledge started. */
   startedAt: string;
+  /** True once the backend knows about it (needed to charge it). */
+  synced?: boolean;
 };

@@ -51,6 +51,12 @@ export async function removePledge(id: string): Promise<Pledge[]> {
   return list;
 }
 
+export async function updatePledge(id: string, patch: Partial<Pledge>): Promise<Pledge[]> {
+  const list = (await loadPledges()).map((p) => (p.id === id ? { ...p, ...patch } : p));
+  await savePledges(list);
+  return list;
+}
+
 export async function getPledge(id: string): Promise<Pledge | undefined> {
   return (await loadPledges()).find((p) => p.id === id);
 }

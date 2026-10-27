@@ -21,8 +21,8 @@ import {
 } from "./home.controller";
 import { Interfaces } from "./home.interfaces";
 import { CURRENCY_SYMBOL } from "../../config";
-import { loadPledges, migrateLegacyPledge, pledgeIsOver, removePledge } from "../../services/pledges";
-import { completePledge } from "../../services/sendPledgeData";
+import { loadPledges, migrateLegacyPledge, pledgeIsOver, removePledge, updatePledge } from "../../services/pledges";
+import { completePledge, sendPledgeData } from "../../services/sendPledgeData";
 import { auth } from "../../firebaseConfig";
 import { enableBackgroundHeartbeat, registerDevice, sendHeartbeat } from "../../services/devices";
 
@@ -104,6 +104,23 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
       }
     }
     refreshUsage();
+
+    // Pledges carried over from the single-pledge build were never recorded
+    // server-side; without that they cannot be charged or watched.
+    for (const p of list) {
+      if (p.synced) continue;
+      try {
+        const user = auth.currentUser;
+        if (!user) break;
+        await sendPledgeData(
+          { id: p.id, pledgeValue: p.pledgeValue, timeValue: p.timeValue, durationDays: p.durationDays, startedAt: p.startedAt },
+          await user.getIdToken()
+        );
+        pledgesRef.current = await updatePledge(p.id, { synced: true });
+      } catch (e) {
+        console.warn("Could not sync pledge to backend:", e);
+      }
+    }
 
     if (list.length > 0) {
       registerDevice();

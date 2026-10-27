@@ -6,6 +6,8 @@ interface PledgeData {
   pledgeValue: number;
   timeValue: number;
   durationDays: number;
+  /** ISO date; lets a pledge created earlier (migrated) keep its real end date. */
+  startedAt?: string;
 }
 
 const authHeaders = (idToken: string) => ({ Authorization: `Bearer ${idToken}` });

@@ -98,6 +98,7 @@ const Instructions: React.FC = () => {
       timeValue,
       durationDays,
       startedAt: new Date().toISOString(),
+      synced: true,
     };
     try {
       setStarting(true);

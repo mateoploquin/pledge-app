@@ -177,16 +177,23 @@ app.post("/pledge", async (c) => {
   }
 
   await upsertUser(decoded);
-  const now = new Date();
+  const ref = pledgesRef(decoded.uid).doc(id);
+  const existing = (await ref.get()).data();
+  if (existing) return c.json({ id, ...existing });
+
+  const startedAt = typeof body.startedAt === "string" ? new Date(body.startedAt) : new Date();
+  if (Number.isNaN(startedAt.getTime()) || startedAt.getTime() > Date.now() + 60_000) {
+    return c.json({ error: "startedAt must be a past ISO date" }, 400);
+  }
   const record = {
     pledgeValue,
     timeValue,
     durationDays,
     status: "active" as const,
-    createdAt: now.toISOString(),
-    endsAt: new Date(now.getTime() + durationDays * 86400000).toISOString(),
+    createdAt: startedAt.toISOString(),
+    endsAt: new Date(startedAt.getTime() + durationDays * 86400000).toISOString(),
   };
-  await pledgesRef(decoded.uid).doc(id).set(record);
+  await ref.set(record);
   return c.json({ id, ...record });
 });
 
