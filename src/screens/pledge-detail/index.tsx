@@ -132,7 +132,6 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
         <Text style={styles.backText}>‹ My Pledges</Text>
       </TouchableOpacity>
       <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.challengeTitle}>My Pledge</Text>
         <ActivityLabels
           familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
           style={styles.appsRow}
@@ -217,17 +216,10 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
   },
-  challengeTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginHorizontal: 30,
-    color: colors.white,
-    marginTop: 14,
-    marginBottom: 17,
-  },
   appsRow: {
     height: 48,
     marginHorizontal: 26,
+    marginTop: 18,
     marginBottom: 14,
   },
   cardContainer: {
