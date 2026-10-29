@@ -12,40 +12,21 @@ https://appstoreconnect.apple.com/apps/6738790677/testflight/ios once
 Apple finishes processing. Add testers there (Internal Testing for the
 team, External Testing for others; external needs a short Beta App Review).
 
-**Store builds ship without the report extension for now.**
+**Report extension approved.** Apple granted Family Controls
+(Distribution) for `com.pledgecompany.pledge.ReportExtension` on
+29 October 2026 (request 3D9M9QX3QF). The temporary exclusion is removed:
+`.easignore` no longer lists `targets/ReportExtension/` and `eas.json` no
+longer sets `PLEDGE_WITHOUT_REPORT`. Store builds from build 19 on include
+the Screen Time panels.
 
-- The `ReportExtension` target draws the user's own Screen Time: the
-  "Your last seven days" step of the pledge flow, the seven-day panel on
-  Home, and the "Today" top apps on the pledge detail screen.
-- Apple approves the Family Controls (Distribution) capability per App ID.
-  The four older targets (main app, `ActivityMonitorExtension`,
-  `ShieldAction`, `ShieldConfiguration`) are approved. The report
-  extension's App ID `com.pledgecompany.pledge.ReportExtension` was only
-  created on 29 October 2026 and is not yet approved.
-- Request filed with Apple on 29 October 2026, **Request ID 3D9M9QX3QF**.
-  Apple emails the account owner (mateoploquina@gmail.com) when decided.
-  Check under developer.apple.com → Identifiers → the ReportExtension App ID
-  → Capability Requests → "Family Controls (Distribution)".
-- Until then two switches keep it out of store builds: `.easignore`
-  excludes `targets/ReportExtension/` from the upload, and
-  `PLEDGE_WITHOUT_REPORT=1` in the `preview` and `production` profiles of
-  `eas.json` makes `app.config.js` drop the target from the list EAS
-  expects credentials for. The app notices at launch
-  (`isActivityReportAvailable()` in `modules/pledge-activity-report`) and
-  hides every Screen Time panel: the mirror step is skipped, Home shows the
-  headline only, pledge detail shows the usage number and bar without the
-  top apps. Pledging, blocking, paying and forfeiting are unaffected.
-- Dev builds made on a Mac still include the extension, so the panels are
-  visible there.
-
-**When Apple approves:**
-
-1. Delete the `targets/ReportExtension/` line from `.easignore` and the
-   `PLEDGE_WITHOUT_REPORT` entries from `eas.json`.
-2. Run `npx eas build --platform ios --profile production` interactively
-   once, so EAS regenerates the ReportExtension provisioning profile with
-   the new capability (say yes when it offers a new profile).
-3. Nothing in the app code needs to change; the panels appear on their own.
+The app still checks at launch whether `ReportExtension.appex` is bundled
+(`isActivityReportAvailable()` in `modules/pledge-activity-report`) and
+hides every Screen Time panel when it is not. Keep that: it makes a build
+without the extension degrade cleanly instead of drawing blanks. To ship
+without the extension again, re-add the `.easignore` line and set
+`PLEDGE_WITHOUT_REPORT=1` in the build profile's `env`; `app.config.js`
+reads that flag to drop the target from the list EAS expects credentials
+for.
 
 ## Build and submit
 
@@ -92,4 +73,4 @@ team, External Testing for others; external needs a short Beta App Review).
 | ActivityMonitorExtension | .ActivityMonitorExtension | approved |
 | ShieldAction | .ShieldAction | approved |
 | ShieldConfiguration | .ShieldConfiguration | approved |
-| ReportExtension | .ReportExtension | requested 29 Oct 2026, ID 3D9M9QX3QF |
+| ReportExtension | .ReportExtension | approved 29 Oct 2026 |
