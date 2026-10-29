@@ -82,7 +82,8 @@
         }
       ],
       "expo-apple-authentication",
-      "expo-notifications"
+      "expo-notifications",
+      "./plugins/with-pods-deployment-target"
     ]
   }
 }
