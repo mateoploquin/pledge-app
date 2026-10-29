@@ -1,4 +1,5 @@
 import * as DeviceActivity from "react-native-device-activity";
+import { UIBlurEffectStyle } from "react-native-device-activity";
 import type { DeviceActivityEvent } from "react-native-device-activity";
 import { Pledge } from "../../types";
 import {
@@ -33,11 +34,10 @@ export type DailyUsage = {
   limitReached: boolean;
 };
 
-// The shield extension expects 0-255 channel values.
-const white = { red: 255, green: 255, blue: 255 };
-const orange = { red: 255, green: 89, blue: 0 };
-const ink = { red: 28, green: 20, blue: 16 };
-const inkSoft = { red: 90, green: 70, blue: 60 };
+// The shield extension expects 0-255 channel values. Same palette as the app.
+const ink = { red: 23, green: 19, blue: 15 };
+const cream = { red: 248, green: 244, blue: 236 };
+const creamMuted = { red: 190, green: 182, blue: 170 };
 
 const toThreshold = (totalMinutes: number) => ({
   hour: Math.floor(totalMinutes / 60),
@@ -51,20 +51,20 @@ const toThreshold = (totalMinutes: number) => ({
 export function shieldPayload(pledge: Pick<Pledge, "id" | "pledgeValue">): [any, any] {
   const { pledgeValue } = pledge;
   const configuration = {
-    title: "Blocked by Pledge",
-    subtitle: `You hit today's limit. Unlocking costs your ${CURRENCY_SYMBOL}${pledgeValue} pledge.`,
-    // iOS blends this with a translucent material, so orange renders as a warm
-    // peach wash. Dark text reads on it; the SF Symbol icon stays system-black
-    // (the library ignores iconTint).
-    backgroundColor: orange,
-    titleColor: ink,
-    subtitleColor: inkSoft,
+    title: "That's enough for today.",
+    subtitle: `You hit your limit. Unlocking costs your ${CURRENCY_SYMBOL}${pledgeValue} pledge.`,
+    // iOS blends the colour with the blur material; the dark material keeps
+    // it ink. The SF Symbol icon stays system-tinted (the library ignores iconTint).
+    backgroundColor: ink,
+    backgroundBlurStyle: UIBlurEffectStyle.systemMaterialDark,
+    titleColor: cream,
+    subtitleColor: creamMuted,
     iconSystemName: "lock.fill",
-    primaryButtonLabel: "Stay strong",
-    primaryButtonBackgroundColor: orange,
-    primaryButtonLabelColor: white,
+    primaryButtonLabel: "Keep my word",
+    primaryButtonBackgroundColor: cream,
+    primaryButtonLabelColor: ink,
     secondaryButtonLabel: `Unlock for ${CURRENCY_SYMBOL}${pledgeValue}`,
-    secondaryButtonLabelColor: orange,
+    secondaryButtonLabelColor: creamMuted,
   };
   // Shield extensions are not allowed to launch other apps, so the unlock
   // button posts a local notification; tapping it opens Pledge (see Home).

@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import colors from "../theme/colors";
+import { cream } from "../theme/tokens";
 
 interface ScreenTimeListProps {
   usedMinutes?: number;
@@ -26,13 +26,13 @@ const styles = StyleSheet.create({
     marginTop: 14,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "rgba(0, 0, 0, 0.08)",
+    backgroundColor: "rgba(248, 244, 236, 0.14)",
     overflow: "hidden",
   },
   fill: {
     height: "100%",
     borderRadius: 4,
-    backgroundColor: colors.orange,
+    backgroundColor: cream.base,
   },
 });
 

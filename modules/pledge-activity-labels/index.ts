@@ -93,10 +93,14 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     gap: 8,
   },
+  // The system draws the icon and name inside in the app's interface style
+  // (white text, since the app is dark), so the pill is a dark surface.
   pill: {
     height: 42,
     borderRadius: 21,
-    backgroundColor: "rgba(255, 255, 255, 0.92)",
+    backgroundColor: "rgba(248, 244, 236, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(248, 244, 236, 0.16)",
     paddingHorizontal: 14,
     justifyContent: "center",
   },

@@ -6,7 +6,7 @@ import { Platform, StyleProp, View, ViewStyle } from "react-native";
 export type ReportRange = "today" | "yesterday" | "week";
 
 type NativeProps = {
-  context: "totalActivity" | "topApps";
+  context: "totalActivity" | "topApps" | "overview";
   startMs: number;
   endMs: number;
   segment: "hourly" | "daily" | "weekly";
@@ -33,6 +33,8 @@ export const isActivityReportAvailable = () => NativeReport !== null;
 
 /** Height of one row drawn by the extension's TopAppsView. Keep in sync. */
 export const TOP_APPS_ROW_HEIGHT = 52;
+/** Space between the total and the rows in the extension's OverviewView. */
+export const OVERVIEW_GAP = 16;
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -112,6 +114,37 @@ export const TopApps: React.FC<CommonProps & { maxApps?: number }> = ({
     textColor,
     mutedColor,
     accentColor,
+    maxApps,
+    style: [{ height }, style],
+  });
+};
+
+/**
+ * The total and the top apps in one system-drawn view. Prefer this over
+ * TotalScreenTime + TopApps on the same screen: one report instance is
+ * reliable, two share an extension process and the second can come up blank.
+ */
+export const ScreenTimeOverview: React.FC<CommonProps & { fontSize?: number; maxApps?: number }> = ({
+  range = "today",
+  familyActivitySelection,
+  textColor,
+  mutedColor,
+  accentColor,
+  fontSize = 44,
+  maxApps = 3,
+  style,
+}) => {
+  const interval = useMemo(() => rangeToInterval(range), [range]);
+  const height = Math.round(fontSize * 1.25) + OVERVIEW_GAP + maxApps * TOP_APPS_ROW_HEIGHT;
+  if (!NativeReport) return React.createElement(View, { style: [{ height }, style] });
+  return React.createElement(NativeReport, {
+    context: "overview",
+    ...interval,
+    familyActivitySelection,
+    textColor,
+    mutedColor,
+    accentColor,
+    fontSize,
     maxApps,
     style: [{ height }, style],
   });

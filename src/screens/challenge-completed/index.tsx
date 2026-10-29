@@ -1,135 +1,48 @@
 import React from "react";
-import { View, Text, StyleSheet, Image, Pressable } from "react-native";
-import colors from "../../theme/colors";
-import MainHeaderLight from "../../components/headers/main-header-light";
-import AppWrapper from "../../components/layout/app-wrapper";
-import PledgeFormIcon from "../../../assets/images/icons/pledge-form";
-import { SCREEN_HEIGHT } from "../../utils/constants/dimensions";
+import { View, Text, StyleSheet } from "react-native";
+import InkScreen from "../../components/ink/ink-screen";
+import PillButton from "../../components/ink/pill-button";
+import { Dissolve, Line } from "../../components/ink/line";
+import { cream } from "../../theme/tokens";
 
 interface ChallengeCompletedProps {
   navigation: any;
-  route: {
-    params?: {
-      result?: string;
-    }
-  };
+  route: { params?: { result?: string } };
 }
 
-const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({
-  navigation,
-  route,
-}) => {
-  const result = route.params?.result || "success";
-
+/** The end of a pledge. Reached only on success; paying out returns to Home. */
+const ChallengeCompleted: React.FC<ChallengeCompletedProps> = ({ navigation, route }) => {
+  const success = (route.params?.result ?? "success") === "success";
   const handleDone = () => navigation.reset({ index: 0, routes: [{ name: "Home" }] });
 
   return (
-    <AppWrapper style={styles.wrapper}>
-      <MainHeaderLight />
-
-      <Text style={styles.headerText}>
-        Pledge outcome
-      </Text>
-
-      <View style={styles.card}>
-        <View style={styles.imageContainer}>
-          <Image
-            source={
-              result === "success"
-                ? require("../../../assets/images/challenge-completed/golden-cup.png")
-                : require("../../../assets/images/challenge-completed/failed-challenge.png")
-            }
-            style={styles.resultImage}
-          />
-          <PledgeFormIcon size={130} />
-        </View>
-
-        <Text style={styles.resultText}>
-          {result === "success" ? (
-            "Congratulations!\nYou Are a Certified Pledger!"
-          ) : (
-            <Text>
-              You Gave It a Good Try!{"\n"}
-              <Text style={styles.subText}>
-                Sometimes change is hard, but every effort counts.
-              </Text>
-            </Text>
-          )}
-        </Text>
+    <InkScreen footer={<PillButton text="Back to my pledges" onPress={handleDone} />}>
+      <View style={styles.body}>
+        <Dissolve id="done">
+          <Line text={success ? "You kept\nyour *word.*" : "Next time,\n*then.*"} />
+          <Text style={styles.text}>
+            {success
+              ? "The pledge is over and nothing was charged. The apps are yours again."
+              : "The pledge was paid. The apps are open."}
+          </Text>
+        </Dissolve>
       </View>
-
-      <View style={styles.buttonContainer}>
-        <Pressable onPress={handleDone} style={styles.button}>
-          <Text style={styles.buttonText}>Back to my pledges</Text>
-        </Pressable>
-      </View>
-    </AppWrapper>
+    </InkScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    backgroundColor: colors.orange
-  },
-  headerText: {
-    fontFamily: "InstrumentSerif-Regular",
-    color: colors.white,
-    fontSize: 20,
-    textAlign: "center",
-    marginTop: 13,
-  },
-  card: {
-    marginHorizontal: 32,
-    backgroundColor: colors.white,
-    paddingVertical: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: SCREEN_HEIGHT * 0.10,
-    borderRadius: 20,
-    paddingTop: 50,
-  },
-  imageContainer: {
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  resultImage: {
-    width: 170,
-    height: 180,
-    marginBottom: -100,
-    zIndex: 100,
-    resizeMode: 'contain'
-  },
-  resultText: {
-    fontSize: 20,
-    textAlign: "center",
-    marginTop: 40,
-    marginBottom: 20,
-    marginHorizontal: 50,
-  },
-  subText: {
-    fontSize: 15
-  },
-  buttonContainer: {
-    alignSelf: "center",
-    position: "absolute",
-    bottom: 40
-  },
-  button: {
-    backgroundColor: colors.white,
-    alignSelf: "flex-start",
-    paddingVertical: 12,
-    paddingHorizontal: 17,
-    borderRadius: 50,
-    marginTop: 45,
-  },
-  buttonText: {
-    color: colors.orange,
-    fontWeight: "500"
-  },
-  container: {
+  body: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingBottom: 24,
+  },
+  text: {
+    marginTop: 18,
+    color: cream.muted,
+    fontSize: 16,
+    lineHeight: 22,
+    maxWidth: 320,
   },
 });
 

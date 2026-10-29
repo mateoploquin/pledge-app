@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Alert, StyleSheet, ActivityIndicator } from "react-native";
-import colors from "../../../theme/colors";
-import MainButton from "../../../components/buttons/main-button";
 import { useStripe } from "@stripe/stripe-react-native";
 import { fetchPaymentSheetParams } from "../../../services/stripe-api";
 import { auth } from "../../../firebaseConfig";
 import { CURRENCY_SYMBOL, STRIPE_MERCHANT_COUNTRY } from "../../../config";
+import PillButton from "../../../components/ink/pill-button";
+import { cream } from "../../../theme/tokens";
 
 interface SetPaymentProps {
   setIsButtonDisabled: (disabled: boolean) => void;
@@ -21,6 +21,7 @@ interface SetPaymentProps {
 const describeError = (err: any) =>
   err?.response?.data?.error ?? err?.message ?? "Could not reach the server.";
 
+/** Step: the card. Opens Stripe's sheet at once; this step has no content of its own. */
 const SetPayment: React.FC<SetPaymentProps> = ({
   setIsButtonDisabled,
   paymentSetupComplete,
@@ -32,22 +33,18 @@ const SetPayment: React.FC<SetPaymentProps> = ({
 }) => {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   const initializePaymentSheet = async (): Promise<boolean> => {
     try {
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert("Sign in required", "Please log in again before adding a card.");
+        Alert.alert("Sign in required", "Please sign in again before adding a card.");
         return false;
       }
-
       const idToken = await user.getIdToken();
-      const { setupIntent, ephemeralKey, customer, publishableKey } =
-        await fetchPaymentSheetParams(idToken);
-
-      if (publishableKey) {
-        setPublishableKey(publishableKey);
-      }
+      const { setupIntent, ephemeralKey, customer, publishableKey } = await fetchPaymentSheetParams(idToken);
+      if (publishableKey) setPublishableKey(publishableKey);
 
       const { error: initError } = await initPaymentSheet({
         merchantDisplayName: "Pledge",
@@ -56,20 +53,18 @@ const SetPayment: React.FC<SetPaymentProps> = ({
         setupIntentClientSecret: setupIntent,
         allowsDelayedPaymentMethods: false,
         returnURL: "pledge://stripe-redirect",
-        applePay: {
-          merchantCountryCode: STRIPE_MERCHANT_COUNTRY,
-        },
+        applePay: { merchantCountryCode: STRIPE_MERCHANT_COUNTRY },
+        style: "alwaysDark",
       });
-
       if (initError) {
         console.error("Error initializing payment sheet:", initError);
-        Alert.alert("Payment setup failed", initError.message);
+        Alert.alert("Card setup failed", initError.message);
         return false;
       }
       return true;
     } catch (err) {
       console.error("Error initializing payment sheet:", err);
-      Alert.alert("Payment setup unavailable", describeError(err));
+      Alert.alert("Card setup unavailable", describeError(err));
       return false;
     }
   };
@@ -78,12 +73,9 @@ const SetPayment: React.FC<SetPaymentProps> = ({
     const { error } = await presentPaymentSheet();
     if (error) {
       setDismissed(true);
-      if (error.code !== "Canceled") {
-        Alert.alert(`Error code: ${error.code}`, error.message);
-      }
+      if (error.code !== "Canceled") Alert.alert(`Error code: ${error.code}`, error.message);
       return;
     }
-
     // Card saved. The wizard records the pledge and starts it.
     setPaymentSetupComplete(true);
     await onComplete?.();
@@ -94,11 +86,8 @@ const SetPayment: React.FC<SetPaymentProps> = ({
     setLoading(true);
     try {
       const initialized = await initializePaymentSheet();
-      if (initialized) {
-        await openPaymentSheet();
-      } else {
-        setDismissed(true);
-      }
+      if (initialized) await openPaymentSheet();
+      else setDismissed(true);
     } finally {
       setLoading(false);
     }
@@ -108,8 +97,6 @@ const SetPayment: React.FC<SetPaymentProps> = ({
     setIsButtonDisabled(!paymentSetupComplete);
   }, [paymentSetupComplete, setIsButtonDisabled]);
 
-  // Open the card sheet immediately; this step has no content of its own.
-  const [dismissed, setDismissed] = useState(false);
   useEffect(() => {
     if (!paymentSetupComplete) handleSetUpPayment();
   }, []);
@@ -117,20 +104,20 @@ const SetPayment: React.FC<SetPaymentProps> = ({
   return (
     <View style={styles.container}>
       {loading || paymentSetupComplete ? (
-        <>
-          <ActivityIndicator color={colors.orange} size="large" />
-          <Text style={styles.subtitle}>
-            {paymentSetupComplete ? "Starting your pledge…" : "Opening secure card setup…"}
+        <View style={styles.working}>
+          <ActivityIndicator color={cream.base} />
+          <Text style={styles.text}>
+            {paymentSetupComplete ? "Starting your pledge." : "Opening secure card setup."}
           </Text>
-        </>
+        </View>
       ) : dismissed ? (
         <>
-          <Text style={styles.title}>Put your card down</Text>
-          <Text style={styles.subtitle}>
+          <Text style={styles.text}>
             Nothing is charged now. You only pay your {CURRENCY_SYMBOL}
-            {pledgeValue} pledge if you unlock your apps, delete Pledge or turn off Screen Time access before the {durationDays} days are up.
+            {pledgeValue} pledge if you unlock your apps, delete Pledge or turn off Screen Time access
+            before the {durationDays} days are up.
           </Text>
-          <MainButton onPress={handleSetUpPayment} text="Add a card" style={styles.button} />
+          <PillButton text="Add a card" onPress={handleSetUpPayment} style={styles.button} />
         </>
       ) : null}
     </View>
@@ -139,26 +126,21 @@ const SetPayment: React.FC<SetPaymentProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    gap: 20,
+  },
+  working: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 40,
-    paddingBottom: 120,
+    gap: 12,
   },
-  title: {
-    color: colors.orange,
-    fontSize: 24,
-    textAlign: "center",
-    fontWeight: "600",
-  },
-  subtitle: {
-    marginTop: 14,
+  text: {
+    color: cream.muted,
     fontSize: 15,
-    textAlign: "center",
-    color: colors.black,
+    lineHeight: 21,
+    flexShrink: 1,
   },
   button: {
-    marginTop: 28,
+    marginTop: 4,
   },
 });
 

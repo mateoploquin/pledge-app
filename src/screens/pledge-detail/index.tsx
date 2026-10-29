@@ -1,25 +1,21 @@
-import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, AppState } from "react-native";
+import { View, Text, ScrollView, StyleSheet, AppState } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import HomeCardWrapper from "../../components/cards/home-card-wrapper";
-import colors from "../../theme/colors";
+import InkScreen from "../../components/ink/ink-screen";
+import PillButton from "../../components/ink/pill-button";
+import { Line } from "../../components/ink/line";
 import ScreenTimeList from "../../lists/screen-time-list";
 import SurrenderModal from "../../components/modals/surrender-modal";
-import HomeWrapper from "../../components/layout/home-wrapper";
 import { Pledge } from "../../types";
-import {
-  DailyUsage,
-  getTodayUsage,
-  splitMinutes,
-  stopPledgeMonitoring,
-} from "../home/home.controller";
+import { DailyUsage, getTodayUsage, splitMinutes, stopPledgeMonitoring } from "../home/home.controller";
 import { CURRENCY_SYMBOL } from "../../config";
 import { ActivityLabels } from "../../../modules/pledge-activity-labels";
 import { TopApps } from "../../../modules/pledge-activity-report";
 import { getPledge, pledgeEndsAt, removePledge } from "../../services/pledges";
 import { completePledge } from "../../services/sendPledgeData";
 import { auth } from "../../firebaseConfig";
+import { cream, ember, fonts, ink } from "../../theme/tokens";
 
 type Props = {
   navigation: any;
@@ -27,13 +23,27 @@ type Props = {
 };
 
 const NO_USAGE: DailyUsage = { usedMinutes: 0, remainingMinutes: 0, limitReached: false };
+const DAY = 1000 * 60 * 60 * 24;
 
-/** One pledge: countdown, today's consumption and the way out (paying). */
+/**
+ * "12 days *left.*", "3 hours *left.*", "Last *hour.*". Rounds up, the same
+ * way the card on Home does, so a pledge never reads 7 days there and 6 here.
+ */
+const leftLine = (ms: number) => {
+  if (ms <= 0) return "*Done.*";
+  const days = Math.ceil(ms / DAY);
+  if (days > 1) return `${days} days\n*left.*`;
+  const hours = Math.ceil(ms / (1000 * 60 * 60));
+  if (hours > 1) return `${hours} hours\n*left.*`;
+  return "Last\n*hour.*";
+};
+
+/** One pledge: time left, today's use, and the way out (paying). */
 const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
   const { id, surrenderAt } = route.params;
   const [pledge, setPledge] = useState<Pledge | null>(null);
   const [usage, setUsage] = useState<DailyUsage>(NO_USAGE);
-  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [remainingMs, setRemainingMs] = useState(0);
   const [isModalVisible, setModalVisible] = useState(false);
   const ended = useRef(false);
 
@@ -92,108 +102,74 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
 
   useEffect(() => {
     if (!pledge) return;
-    const day = 1000 * 60 * 60 * 24;
     const endTime = pledgeEndsAt(pledge);
-
     const tick = () => {
       const difference = endTime - Date.now();
+      setRemainingMs(Math.max(0, difference));
       if (difference <= 0) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         clearInterval(timer);
         endPledge("success");
-        return;
       }
-      setCountdown({
-        days: Math.floor(difference / day),
-        hours: Math.floor((difference % day) / (1000 * 60 * 60)),
-        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((difference % (1000 * 60)) / 1000),
-      });
     };
-
-    const timer = setInterval(tick, 1000);
+    const timer = setInterval(tick, 30 * 1000);
     tick();
     return () => clearInterval(timer);
   }, [pledge, endPledge]);
 
-  if (!pledge) return <HomeWrapper><View /></HomeWrapper>;
+  if (!pledge) return <InkScreen backLabel="Pledges" onBack={() => navigation.goBack()}><View /></InkScreen>;
 
   const { timeValue, pledgeValue } = pledge;
   const used = splitMinutes(usage.usedMinutes);
-  const countdownTimes = [
-    { value: countdown.days, label: "Days" },
-    { value: countdown.hours, label: "Hours" },
-    { value: countdown.minutes, label: "Minutes" },
-    { value: countdown.seconds, label: "Seconds" },
-  ];
+  const endsOn = new Date(pledgeEndsAt(pledge)).toLocaleDateString(undefined, { month: "long", day: "numeric" });
+
+  const todayLine =
+    timeValue === 0
+      ? "No allowance. The apps stay blocked for the whole pledge."
+      : usage.limitReached
+        ? "Limit reached. Blocked until midnight."
+        : `${usage.remainingMinutes} min left of ${timeValue} today.`;
 
   return (
-    <HomeWrapper>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={12}>
-        <Text style={styles.backText}>‹ My Pledges</Text>
-      </TouchableOpacity>
-      <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
-        <ActivityLabels
-          familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
-          style={styles.appsRow}
+    <InkScreen
+      backLabel="Pledges"
+      onBack={() => navigation.goBack()}
+      footer={
+        <PillButton
+          text={usage.limitReached ? "Unlock my apps" : "Give up this pledge"}
+          tone="ghost"
+          onPress={() => setModalVisible(true)}
         />
-        <View style={styles.cardContainer}>
-          <View style={styles.cardBackground}>
-            <HomeCardWrapper title={"Countdown"}>
-              <View style={styles.countdownContainer}>
-                {countdownTimes.map((item, index) => (
-                  <Fragment key={item.label}>
-                    {index > 0 && <Text>:</Text>}
-                    <View style={styles.timeItemContainer}>
-                      <Text style={styles.time}>{item.value}</Text>
-                      <Text style={styles.timeText}>{item.label}</Text>
-                    </View>
-                  </Fragment>
-                ))}
-              </View>
-              <Text style={styles.pledgeText}>
-                Pledge at stake: {CURRENCY_SYMBOL}
-                {pledgeValue}
-              </Text>
-            </HomeCardWrapper>
+      }
+    >
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Line text={leftLine(remainingMs)} />
+        <Text style={styles.sub}>
+          {CURRENCY_SYMBOL}
+          {pledgeValue} on your word until {endsOn}.
+        </Text>
 
-            <HomeCardWrapper style={styles.homeCardWrapper} title={"Daily Consumption"}>
-              <View style={styles.consumptionContainer}>
-                <Text style={styles.hoursMinutesText}>
-                  {used.hours}h {used.minutes}m
-                </Text>
-                {timeValue === 0 ? (
-                  <Text style={styles.blockedText}>
-                    No allowance: your apps stay blocked for the whole pledge.
-                  </Text>
-                ) : usage.limitReached ? (
-                  <Text style={styles.blockedText}>
-                    Limit reached. Your apps are blocked until midnight.
-                  </Text>
-                ) : (
-                  <Text style={styles.remainingText}>
-                    <Text style={styles.remainingMinutesText}>{usage.remainingMinutes}m</Text>
-                    {` left of your ${timeValue}m daily limit`}
-                  </Text>
-                )}
-                <ScreenTimeList usedMinutes={usage.usedMinutes} limitMinutes={timeValue} />
-                <TopApps
-                  range="today"
-                  maxApps={3}
-                  familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
-                  style={styles.topApps}
-                />
-              </View>
-            </HomeCardWrapper>
+        <ActivityLabels familyActivitySelection={pledge.selectionEvent?.familyActivitySelection} style={styles.appsRow} />
+
+        <View style={styles.today}>
+          <Text style={styles.kicker}>Today</Text>
+          <View style={styles.usedRow}>
+            <Text style={styles.used}>
+              {used.hours > 0 ? `${used.hours}h ${used.minutes}m` : `${used.minutes}m`}
+            </Text>
           </View>
+          <Text style={[styles.todayLine, usage.limitReached && styles.todayBlocked]}>{todayLine}</Text>
+          {timeValue > 0 && <ScreenTimeList usedMinutes={usage.usedMinutes} limitMinutes={timeValue} />}
+          <TopApps
+            range="today"
+            maxApps={3}
+            familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
+            textColor={cream.base}
+            mutedColor={cream.muted}
+            accentColor={ember}
+            style={styles.topApps}
+          />
         </View>
       </ScrollView>
-
-      <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.surrenderButton}>
-        <Text style={styles.surrenderText}>
-          {usage.limitReached ? "Unlock my apps" : "I surrender"}
-        </Text>
-      </TouchableOpacity>
 
       <SurrenderModal
         isVisible={isModalVisible}
@@ -204,112 +180,60 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
           endPledge("failure");
         }}
       />
-    </HomeWrapper>
+    </InkScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollViewContent: {
-    paddingBottom: 100,
+  scroll: {
+    paddingTop: 20,
+    paddingBottom: 24,
   },
-  backButton: {
-    marginHorizontal: 24,
-    marginTop: 6,
-    alignSelf: "flex-start",
-  },
-  backText: {
-    color: colors.white,
-    fontSize: 17,
-    fontWeight: "600",
+  sub: {
+    marginTop: 14,
+    color: cream.muted,
+    fontSize: 16,
+    lineHeight: 22,
   },
   appsRow: {
     height: 48,
-    marginHorizontal: 26,
-    marginTop: 18,
-    marginBottom: 14,
+    marginHorizontal: -28,
+    paddingHorizontal: 26,
+    marginTop: 24,
   },
-  cardContainer: {
-    borderRadius: 25,
-    overflow: "hidden",
-    marginHorizontal: 30,
+  today: {
+    marginTop: 28,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: ink.line,
   },
-  cardBackground: {
-    backgroundColor: "rgba(255, 255, 255, 0.70)",
-    padding: 10,
+  kicker: {
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    color: cream.faint,
   },
-  countdownContainer: {
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    alignItems: "center",
-    marginHorizontal: 10,
-    marginVertical: 12,
+  usedRow: {
+    marginTop: 6,
   },
-  timeItemContainer: {
-    justifyContent: "center",
-    alignItems: "center",
+  used: {
+    fontFamily: fonts.serif,
+    fontSize: 64,
+    lineHeight: 78,
+    letterSpacing: -1.5,
+    color: cream.base,
   },
-  homeCardWrapper: {
-    marginTop: 18,
+  todayLine: {
+    marginTop: 4,
+    color: cream.muted,
+    fontSize: 15,
   },
-  consumptionContainer: {
-    paddingTop: 14,
-    paddingBottom: 19,
-    paddingHorizontal: 16,
+  todayBlocked: {
+    color: ember,
   },
   topApps: {
-    marginTop: 16,
-  },
-  hoursMinutesText: {
-    fontSize: 48,
-    fontWeight: "500",
-  },
-  remainingText: {
-    fontSize: 15,
-  },
-  remainingMinutesText: {
-    fontWeight: "500",
-  },
-  blockedText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.orange,
-  },
-  pledgeText: {
-    marginTop: 2,
-    marginBottom: 12,
-    fontSize: 14,
-    textAlign: "center",
-    color: "rgba(0, 0, 0, 0.70)",
-  },
-  surrenderButton: {
-    backgroundColor: colors.white,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 30,
-    alignSelf: "center",
-    position: "absolute",
-    bottom: 40,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  surrenderText: {
-    color: colors.primaryOrange,
-    fontSize: 14,
-    fontWeight: "normal",
-    textAlign: "center",
-  },
-  timeText: {
-    fontSize: 10,
-    color: "rgba(0, 0, 0, 0.70)",
-    textTransform: "uppercase",
-    textAlign: "center",
-  },
-  time: {
-    fontSize: 36,
-    color: colors.orange,
+    marginTop: 20,
   },
 });
 

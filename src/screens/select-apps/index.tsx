@@ -5,7 +5,7 @@ import {
   DeviceActivitySelectionEvent,
   DeviceActivitySelectionView,
 } from "react-native-device-activity";
-import colors from "../../theme/colors";
+import { cream, ink } from "../../theme/tokens";
 
 export type SelectAppsViewProps = {
   navigation: NavigationProp<any>;
@@ -84,7 +84,7 @@ const SelectAppsView = ({ navigation, route }: SelectAppsViewProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "rgb(240, 240, 245)",
+    backgroundColor: ink.base,
   },
   header: {
     flexDirection: "row",
@@ -93,7 +93,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 22,
     paddingBottom: 12,
-    backgroundColor: colors.white,
+    backgroundColor: ink.base,
+    borderBottomWidth: 1,
+    borderBottomColor: ink.line,
     zIndex: 2,
   },
   headerCenter: {
@@ -102,15 +104,16 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontWeight: "600",
+    color: cream.base,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: colors.darkGray3,
+    color: cream.muted,
     marginTop: 2,
   },
   headerAction: {
     fontSize: 16,
-    color: colors.orange,
+    color: cream.base,
     minWidth: 52,
   },
   done: {
@@ -131,11 +134,11 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   fallbackText: {
-    color: colors.darkGray3,
+    color: cream.muted,
     marginBottom: 8,
   },
   fallbackAction: {
-    color: colors.orange,
+    color: cream.base,
     fontWeight: "600",
   },
   picker: {

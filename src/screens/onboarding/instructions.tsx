@@ -1,51 +1,63 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, Alert, StyleSheet } from "react-native";
-import AppWrapper from "../../components/layout/app-wrapper";
-import MainHeader from "../../components/headers/main-header";
-import MainButton from "../../components/buttons/main-button";
-import colors from "../../theme/colors";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { View, Alert, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import {
+  AuthorizationStatusType,
+} from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
+import { AuthorizationStatus, getAuthorizationStatus } from "react-native-device-activity";
 import SetPledge from "./setup/set-pledge";
 import SetTimeLimit from "./setup/set-time-limit";
 import SetDuration from "./setup/set-duration";
 import SetApps from "./setup/set-apps";
+import ScreenTimeMirror from "./setup/screen-time-mirror";
 import AcceptTerms from "./setup/accept-terms";
-import {
-  AuthorizationStatus,
-  AuthorizationStatusType,
-} from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
-import { getAuthorizationStatus } from "react-native-device-activity";
 import SetPayment from "./setup/set-up-payment";
+import InkScreen from "../../components/ink/ink-screen";
+import PillButton from "../../components/ink/pill-button";
+import { Dissolve, Line } from "../../components/ink/line";
 import { Pledge, SelectionInfo } from "../../types";
 import { startPledgeMonitoring } from "../home/home.controller";
 import { CHALLENGE_DURATION } from "../home/home.constants";
-import Animated, { FadeInRight, FadeInLeft, FadeOutLeft, FadeOutRight } from "react-native-reanimated";
 import { haptics } from "../../utils/haptics";
-import { addPledge, hasAcceptedTerms, markTermsAccepted, newPledgeId } from "../../services/pledges";
+import { addPledge, hasAcceptedTerms, loadPledges, markTermsAccepted, newPledgeId } from "../../services/pledges";
 import { sendPledgeData } from "../../services/sendPledgeData";
 import { fetchHasCard } from "../../services/stripe-api";
 import { auth } from "../../firebaseConfig";
 import { registerDevice } from "../../services/devices";
 
-type StepName = "apps" | "limit" | "duration" | "amount" | "terms" | "card";
+type StepName = "mirror" | "apps" | "limit" | "duration" | "amount" | "terms" | "card";
+
+/** The one line at the top of each step. */
+const QUESTION: Record<StepName, string> = {
+  mirror: "Your last\n*seven* days.",
+  apps: "Which apps take\nthe *most* from you?",
+  limit: "How much is\n*enough* a day?",
+  duration: "For how\n*long?*",
+  amount: "What's your\nword *worth?*",
+  terms: "The *rules.*",
+  card: "Put your card\n*down.*",
+};
 
 /**
- * Pledge creation wizard. Terms are asked once per device and the card step
- * is skipped when a card is already on file, so a second pledge takes four taps.
+ * Making a pledge: one question per screen, dissolving to the next. Terms
+ * are asked once per device and the card step is skipped when a card is
+ * already on file, so a second pledge takes four taps.
  */
 const Instructions: React.FC = () => {
   const navigation = useNavigation<any>();
 
   const [selectionEvent, setSelectionEvent] = useState<SelectionInfo>();
-  const [timeValue, setTimeValue] = useState(10);
+  const [timeValue, setTimeValue] = useState(30);
   const [durationDays, setDurationDays] = useState(CHALLENGE_DURATION);
-  const [pledgeValue, setPledgeValue] = useState(5);
+  const [pledgeValue, setPledgeValue] = useState(10);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatusType>();
 
   // Unknown until checked; while unknown we assume the step is needed.
   const [termsDone, setTermsDone] = useState(false);
   const [hasCard, setHasCard] = useState(false);
+  // The mirror step is for the first pledge only; after that Home shows the number.
+  const [firstPledge, setFirstPledge] = useState(true);
 
   const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
@@ -53,6 +65,7 @@ const Instructions: React.FC = () => {
 
   const steps = useMemo<StepName[]>(
     () => [
+      ...(firstPledge ? (["mirror"] as StepName[]) : []),
       "apps",
       "limit",
       "duration",
@@ -60,19 +73,17 @@ const Instructions: React.FC = () => {
       ...(termsDone ? [] : (["terms"] as StepName[])),
       ...(hasCard ? [] : (["card"] as StepName[])),
     ],
-    [termsDone, hasCard]
+    [firstPledge, termsDone, hasCard]
   );
-  const [index, setIndexState] = useState(0);
+  const [index, setIndex] = useState(0);
   const step = steps[Math.min(index, steps.length - 1)];
-  const direction = useRef<"forward" | "back">("forward");
-  const setIndex = (next: number) => {
-    direction.current = next >= index ? "forward" : "back";
-    setIndexState(next);
-  };
 
   useEffect(() => {
     setAuthorizationStatus(getAuthorizationStatus());
     hasAcceptedTerms().then(setTermsDone).catch(() => {});
+    loadPledges()
+      .then((list) => setFirstPledge(list.length === 0))
+      .catch(() => {});
     (async () => {
       try {
         const user = auth.currentUser;
@@ -88,7 +99,7 @@ const Instructions: React.FC = () => {
   const startPledge = useCallback(async () => {
     if (starting) return;
     if (!selectionEvent?.familyActivitySelection) {
-      Alert.alert("No apps selected", "Go back and choose the apps you want to limit.");
+      Alert.alert("No apps chosen", "Go back and choose the apps you want to limit.");
       return;
     }
     const pledge: Pledge = {
@@ -105,10 +116,7 @@ const Instructions: React.FC = () => {
       setIsButtonDisabled(true);
       const user = auth.currentUser;
       if (!user) throw new Error("You are signed out. Sign in again to start a pledge.");
-      await sendPledgeData(
-        { id: pledge.id, pledgeValue, timeValue, durationDays },
-        await user.getIdToken()
-      );
+      await sendPledgeData({ id: pledge.id, pledgeValue, timeValue, durationDays }, await user.getIdToken());
       await startPledgeMonitoring(pledge, { fresh: true });
       await addPledge(pledge);
       if (termsAccepted) await markTermsAccepted();
@@ -119,9 +127,7 @@ const Instructions: React.FC = () => {
       console.error("Could not start the pledge:", error);
       Alert.alert(
         "Could not start your pledge",
-        error?.response?.data?.error ??
-          error?.message ??
-          "Please check Screen Time permissions and try again."
+        error?.response?.data?.error ?? error?.message ?? "Please check Screen Time permissions and try again."
       );
     } finally {
       setStarting(false);
@@ -132,98 +138,111 @@ const Instructions: React.FC = () => {
   const isLast = index >= steps.length - 1;
 
   const onContinue = async () => {
-    if (isLast) {
-      await startPledge();
-    } else {
-      setIndex(index + 1);
-    }
+    if (isLast) await startPledge();
+    else setIndex(index + 1);
+  };
+
+  const onBack = () => {
+    if (index > 0) setIndex(index - 1);
+    else if (navigation.canGoBack()) navigation.goBack();
   };
 
   const continueDisabled =
     isButtonDisabled ||
+    (step === "mirror" && authorizationStatus !== AuthorizationStatus.approved) ||
     (step === "apps" && !selectionEvent?.familyActivitySelection) ||
+    (step === "amount" && pledgeValue < 1) ||
     (step === "terms" && !termsAccepted) ||
     (step === "card" && !paymentSetupComplete);
 
+  const canLeave = index > 0 || navigation.canGoBack();
+
   return (
-    <AppWrapper style={{}}>
-      {step !== "terms" && <MainHeader />}
-
-      <Animated.View
-        key={step}
-        style={styles.stepContainer}
-        entering={(direction.current === "forward" ? FadeInRight : FadeInLeft).duration(380)}
-        exiting={(direction.current === "forward" ? FadeOutLeft : FadeOutRight).duration(220)}
-      >
-        {step === "apps" ? (
-          <SetApps
-            authorizationStatus={authorizationStatus}
-            setAuthorizationStatus={setAuthorizationStatus}
-            selectionEvent={selectionEvent}
-            setSelectionEvent={setSelectionEvent}
-            onSelectionComplete={() => setIndex(1)}
-          />
-        ) : step === "limit" ? (
-          <SetTimeLimit timeValue={timeValue} setTimeValue={setTimeValue} />
-        ) : step === "duration" ? (
-          <SetDuration durationDays={durationDays} setDurationDays={setDurationDays} />
-        ) : step === "amount" ? (
-          <SetPledge pledgeValue={pledgeValue} setPledgeValue={setPledgeValue} />
-        ) : step === "terms" ? (
-          <AcceptTerms termsAccepted={termsAccepted} setTermsAccepted={setTermsAccepted} />
-        ) : step === "card" ? (
-          <SetPayment
-            setIsButtonDisabled={setIsButtonDisabled}
-            paymentSetupComplete={paymentSetupComplete}
-            setPaymentSetupComplete={setPaymentSetupComplete}
-            pledgeValue={pledgeValue}
-            durationDays={durationDays}
-            setPublishableKey={() => {}}
-            onComplete={startPledge}
-          />
-        ) : null}
-      </Animated.View>
-
-      <View style={[styles.buttonContainer, step === "card" && { display: "none" }]}>
-        <MainButton
-          onPress={onContinue}
-          text={isLast ? (starting ? "Starting…" : "Start My Pledge") : "Continue"}
-          style={styles.mainButton}
-          disabled={continueDisabled}
-        />
-        <TouchableOpacity
-          onPress={() => {
-            if (index > 0) setIndex(index - 1);
-            else if (navigation.canGoBack()) navigation.goBack();
-          }}
-        >
-          <Text style={styles.backButton}>
-            {index > 0 ? "Go Back" : navigation.canGoBack() ? "Cancel" : ""}
-          </Text>
-        </TouchableOpacity>
+    <InkScreen
+      footer={
+        step === "card" ? null : (
+          <>
+            <PillButton
+              text={isLast ? "Lock it in" : "Continue"}
+              onPress={onContinue}
+              disabled={continueDisabled}
+              busy={starting}
+            />
+            {canLeave && <PillButton text={index > 0 ? "Back" : "Cancel"} tone="quiet" onPress={onBack} />}
+          </>
+        )
+      }
+    >
+      <View style={styles.progress}>
+        {steps.map((s, i) => (
+          <View key={s} style={[styles.dot, i <= index && styles.dotOn]} />
+        ))}
       </View>
-    </AppWrapper>
+
+      <Dissolve id={step} style={styles.step}>
+        <Line text={QUESTION[step]} />
+        <View style={styles.control}>
+          {step === "mirror" ? (
+            <ScreenTimeMirror
+              authorizationStatus={authorizationStatus}
+              setAuthorizationStatus={setAuthorizationStatus}
+            />
+          ) : step === "apps" ? (
+            <SetApps
+              authorizationStatus={authorizationStatus}
+              setAuthorizationStatus={setAuthorizationStatus}
+              selectionEvent={selectionEvent}
+              setSelectionEvent={setSelectionEvent}
+              onSelectionComplete={() => setIndex(steps.indexOf("apps") + 1)}
+            />
+          ) : step === "limit" ? (
+            <SetTimeLimit timeValue={timeValue} setTimeValue={setTimeValue} />
+          ) : step === "duration" ? (
+            <SetDuration durationDays={durationDays} setDurationDays={setDurationDays} />
+          ) : step === "amount" ? (
+            <SetPledge pledgeValue={pledgeValue} setPledgeValue={setPledgeValue} />
+          ) : step === "terms" ? (
+            <AcceptTerms termsAccepted={termsAccepted} setTermsAccepted={setTermsAccepted} />
+          ) : step === "card" ? (
+            <SetPayment
+              setIsButtonDisabled={setIsButtonDisabled}
+              paymentSetupComplete={paymentSetupComplete}
+              setPaymentSetupComplete={setPaymentSetupComplete}
+              pledgeValue={pledgeValue}
+              durationDays={durationDays}
+              setPublishableKey={() => {}}
+              onComplete={startPledge}
+            />
+          ) : null}
+        </View>
+      </Dissolve>
+    </InkScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  stepContainer: {
+  progress: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 10,
+    marginBottom: 28,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(248, 244, 236, 0.22)",
+  },
+  dotOn: {
+    backgroundColor: "#F8F4EC",
+  },
+  step: {
     flex: 1,
   },
-  buttonContainer: {
-    position: "absolute",
-    bottom: 71,
-    zIndex: 100,
-    alignSelf: "center",
-  },
-  mainButton: {
-    width: 162,
-  },
-  backButton: {
-    textDecorationLine: "underline",
-    color: colors.orange,
-    textAlign: "center",
-    marginTop: 16,
+  control: {
+    flex: 1,
+    justifyContent: "center",
+    paddingVertical: 24,
   },
 });
 

@@ -20,15 +20,27 @@ import {
 interface SocialSignInButtonsProps {
   /** Called after Firebase sign-in succeeded. */
   onSignedIn: () => void;
+  /** "dark" sits the buttons on an ink ground (the opener film). */
+  tone?: "light" | "dark";
 }
 
-const SocialSignInButtons: React.FC<SocialSignInButtonsProps> = ({ onSignedIn }) => {
-  const [appleAvailable, setAppleAvailable] = useState(false);
+// Answered once per launch, so every mount after the first lays out in a
+// single frame instead of growing when the Apple button arrives.
+let appleKnown: boolean | null = null;
+const appleCheck = isAppleSignInAvailable()
+  .catch(() => false)
+  .then((ok) => (appleKnown = ok));
+
+const APPLE_SLOT = 50 + 12;
+
+const SocialSignInButtons: React.FC<SocialSignInButtonsProps> = ({ onSignedIn, tone = "light" }) => {
+  const dark = tone === "dark";
+  const [appleAvailable, setAppleAvailable] = useState<boolean | null>(appleKnown);
   const [busy, setBusy] = useState<"apple" | "google" | null>(null);
 
   useEffect(() => {
-    isAppleSignInAvailable().then(setAppleAvailable).catch(() => setAppleAvailable(false));
-  }, []);
+    if (appleAvailable === null) appleCheck.then(setAppleAvailable);
+  }, [appleAvailable]);
 
   const run = async (provider: "apple" | "google") => {
     if (busy) return;
@@ -47,17 +59,26 @@ const SocialSignInButtons: React.FC<SocialSignInButtonsProps> = ({ onSignedIn })
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.dividerRow}>
-        <View style={styles.divider} />
-        <Text style={styles.dividerText}>or</Text>
-        <View style={styles.divider} />
-      </View>
+    <View style={[styles.container, dark && styles.containerDark]}>
+      {!dark && (
+        <View style={styles.dividerRow}>
+          <View style={styles.divider} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.divider} />
+        </View>
+      )}
 
-      {appleAvailable && (
+      {appleAvailable === null ? (
+        // Hold the Apple button's room while the answer is on its way.
+        <View style={styles.appleSlot} />
+      ) : appleAvailable && (
         <AppleAuthentication.AppleAuthenticationButton
           buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+          buttonStyle={
+            dark
+              ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+              : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+          }
           cornerRadius={25}
           style={styles.appleButton}
           onPress={() => run("apple")}
@@ -65,7 +86,7 @@ const SocialSignInButtons: React.FC<SocialSignInButtonsProps> = ({ onSignedIn })
       )}
 
       <TouchableOpacity
-        style={[styles.googleButton, busy === "google" && styles.disabled]}
+        style={[styles.googleButton, dark && styles.googleButtonDark, busy === "google" && styles.disabled]}
         onPress={() => run("google")}
         disabled={busy !== null}
       >
@@ -87,6 +108,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 38,
     marginTop: 28,
   },
+  containerDark: {
+    marginHorizontal: 0,
+    marginTop: 0,
+    alignSelf: "stretch",
+  },
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -106,6 +132,9 @@ const styles = StyleSheet.create({
     height: 50,
     marginBottom: 12,
   },
+  appleSlot: {
+    height: APPLE_SLOT,
+  },
   googleButton: {
     height: 50,
     borderRadius: 25,
@@ -115,6 +144,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+  },
+  googleButtonDark: {
+    borderColor: "#F8F4EC",
+    backgroundColor: "#F8F4EC",
   },
   googleIcon: {
     marginRight: 10,

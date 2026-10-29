@@ -8,6 +8,10 @@ extension DeviceActivityReport.Context {
   static let totalActivity = Self("totalActivity")
   /// The apps that took the most time, with icon, name and duration.
   static let topApps = Self("topApps")
+  /// Total and top apps in one scene, so a screen needs one report, not two.
+  /// (Two report views on one screen share an extension process and the
+  /// second one can come up blank on a remount.)
+  static let overview = Self("overview")
 }
 
 struct AppUsage: Identifiable {
@@ -65,6 +69,35 @@ struct TopAppsReport: DeviceActivityReportScene {
 
   func makeConfiguration(representing data: DeviceActivityResults<DeviceActivityData>) async -> UsageSummary {
     await summarize(data, maxApps: ReportStyle.load().maxApps)
+  }
+}
+
+struct OverviewReport: DeviceActivityReportScene {
+  let context: DeviceActivityReport.Context = .overview
+  let content: (UsageSummary) -> OverviewView
+
+  func makeConfiguration(representing data: DeviceActivityResults<DeviceActivityData>) async -> UsageSummary {
+    await summarize(data, maxApps: ReportStyle.load().maxApps)
+  }
+}
+
+/// The big total with the top apps under it. Heights match
+/// OVERVIEW_GAP / TOP_APPS_ROW_HEIGHT in the RN component.
+struct OverviewView: View {
+  let model: UsageSummary
+  static let gap: CGFloat = 16
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: Self.gap) {
+      Text(formatDuration(model.total))
+        .font(.system(size: model.style.fontSize, weight: .bold, design: .rounded))
+        .foregroundColor(model.style.textColor)
+        .minimumScaleFactor(0.5)
+        .lineLimit(1)
+        .frame(height: model.style.fontSize * 1.25, alignment: .leading)
+      TopAppsView(model: model)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
   }
 }
 

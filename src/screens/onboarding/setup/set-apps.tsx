@@ -1,24 +1,17 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  NativeSyntheticEvent,
-  Alert,
-  Linking,
-} from "react-native";
+import { View, Text, StyleSheet, NativeSyntheticEvent, Alert, Linking } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import colors from "../../../theme/colors";
 import {
   requestAuthorization,
   getAuthorizationStatus,
   AuthorizationStatus,
   AuthorizationStatusType,
 } from "react-native-device-activity";
-import { SelectionInfo } from "../../../types";
-import AppsOnboardingGrid from "../../../lists/apps-onboarding-grid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SelectionInfo } from "../../../types";
 import { ActivityLabels } from "../../../../modules/pledge-activity-labels";
+import PillButton from "../../../components/ink/pill-button";
+import { cream } from "../../../theme/tokens";
 
 interface SetAppsProps {
   authorizationStatus: AuthorizationStatusType;
@@ -30,12 +23,14 @@ interface SetAppsProps {
 }
 
 const hasSelection = (s?: SelectionInfo) =>
-  !!s?.familyActivitySelection &&
-  s.applicationCount + s.categoryCount + s.webDomainCount > 0;
+  !!s?.familyActivitySelection && s.applicationCount + s.categoryCount + s.webDomainCount > 0;
+
+const countOf = (s?: SelectionInfo) =>
+  s ? s.applicationCount + s.categoryCount + s.webDomainCount : 0;
 
 /**
- * Step 1 of onboarding. Asks for Screen Time access as soon as the step opens,
- * then opens Apple's app picker right away, so a first-time user only taps
+ * Step: which apps. Asks for Screen Time access as soon as the step opens,
+ * then opens Apple's picker right away, so a first-time user only taps
  * "Allow" and then picks their apps.
  */
 const SetApps: React.FC<SetAppsProps> = ({
@@ -84,7 +79,7 @@ const SetApps: React.FC<SetAppsProps> = ({
   const showDeniedHelp = () =>
     Alert.alert(
       "Screen Time access needed",
-      "Pledge can only limit apps if it has Screen Time access. Enable it in Settings and come back.",
+      "Pledge can only limit apps if it has Screen Time access. Turn it on in Settings and come back.",
       [
         { text: "Open Settings", onPress: Linking.openSettings },
         { text: "Cancel", style: "cancel" },
@@ -120,58 +115,58 @@ const SetApps: React.FC<SetAppsProps> = ({
     else if (status === AuthorizationStatus.denied) showDeniedHelp();
   };
 
+  const selected = countOf(selectionEvent);
+  const label =
+    authorizationStatus === AuthorizationStatus.denied
+      ? "Turn on Screen Time access"
+      : authorizationStatus !== AuthorizationStatus.approved
+        ? "Allow Screen Time access"
+        : selected > 0
+          ? "Change apps"
+          : "Choose apps";
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        Which apps steal your <Text style={styles.orangeText}>time</Text>?
-      </Text>
-      <Text style={styles.subtitle}>
-        Pick the apps themselves, e.g. Instagram under “Social”.{"\n"}
-        A website like instagram.com only counts time in Safari, not in the app.
-      </Text>
-
-      {hasSelection(selectionEvent) && (
-        <ActivityLabels
-          familyActivitySelection={selectionEvent?.familyActivitySelection}
-          style={styles.selectedRow}
-        />
+      {hasSelection(selectionEvent) ? (
+        <>
+          <ActivityLabels
+            familyActivitySelection={selectionEvent?.familyActivitySelection}
+            style={styles.selectedRow}
+          />
+          <Text style={styles.count}>
+            {selected === 1 ? "One pick." : `${selected} picks.`}
+          </Text>
+        </>
+      ) : (
+        <Text style={styles.hint}>
+          Pick the apps themselves, like Instagram under Social. A website only counts time in Safari.
+        </Text>
       )}
-
-      <AppsOnboardingGrid
-        authorizationStatus={authorizationStatus}
-        selectionEvent={selectionEvent}
-        onPress={onButtonPress}
-        hideIcons={hasSelection(selectionEvent)}
-      />
+      <PillButton text={label} tone="ghost" onPress={onButtonPress} style={styles.button} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    marginTop: 69,
-  },
-  title: {
-    textAlign: "center",
-    fontSize: 24,
-    fontWeight: "500",
-  },
-  orangeText: {
-    color: colors.orange,
-  },
-  subtitle: {
-    marginTop: 10,
-    marginBottom: 25,
-    marginHorizontal: 36,
-    textAlign: "center",
-    fontSize: 13,
-    lineHeight: 19,
+    gap: 16,
   },
   selectedRow: {
     height: 52,
-    marginHorizontal: 30,
-    marginBottom: 6,
+    marginHorizontal: -28,
+    paddingHorizontal: 26,
+  },
+  count: {
+    color: cream.muted,
+    fontSize: 15,
+  },
+  hint: {
+    color: cream.muted,
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  button: {
+    marginTop: 4,
   },
 });
 

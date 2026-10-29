@@ -3,11 +3,10 @@ import * as ReactNativeDeviceActivity from "react-native-device-activity";
 import * as Notifications from "expo-notifications";
 import { View, Text, ScrollView, StyleSheet, AppState, Linking, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import colors from "../../theme/colors";
-import HomeHeader from "../../components/headers/home-header";
-import HomeWrapper from "../../components/layout/home-wrapper";
+import InkScreen from "../../components/ink/ink-screen";
+import PillButton from "../../components/ink/pill-button";
+import { Dissolve, Line } from "../../components/ink/line";
 import PledgeCard from "../../components/cards/pledge-card";
-import PressableScale from "../../components/buttons/pressable-scale";
 import { Pledge } from "../../types";
 import {
   DailyUsage,
@@ -26,11 +25,20 @@ import { completePledge, sendPledgeData } from "../../services/sendPledgeData";
 import { auth } from "../../firebaseConfig";
 import { enableBackgroundHeartbeat, registerDevice, sendHeartbeat } from "../../services/devices";
 import { AuthorizationStatus, getAuthorizationStatus } from "react-native-device-activity";
-import { TopApps, TotalScreenTime, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
+import { ScreenTimeOverview, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
+import { cream, ember } from "../../theme/tokens";
 
 const NO_USAGE: DailyUsage = { usedMinutes: 0, remainingMinutes: 0, limitReached: false };
 
-/** Home: every running pledge, plus a button to start another one. */
+/** The one line at the top of Home, from the state of the pledges. */
+const headline = (pledges: Pledge[], usage: Record<string, DailyUsage>) => {
+  if (pledges.length === 0) return "Nothing on the\nline *yet.*";
+  if (pledges.some((p) => usage[p.id]?.limitReached)) return "That's enough\nfor *today.*";
+  if (pledges.length === 1) return "One pledge\n*running.*";
+  return `${pledges.length} pledges\n*running.*`;
+};
+
+/** Home: every running pledge, and the way to start another. */
 const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
   const [pledges, setPledges] = useState<Pledge[] | null>(null);
   const [usage, setUsage] = useState<Record<string, DailyUsage>>({});
@@ -184,130 +192,91 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
     };
   }, [navigation]);
 
-  if (pledges === null) return <HomeWrapper><HomeHeader /></HomeWrapper>;
+  if (pledges === null) return <InkScreen><View /></InkScreen>;
 
   // The real Screen Time of the last 7 days, drawn by the system. Only once
   // Screen Time access is granted; before that the report would be blank.
-  const showReport =
-    isActivityReportAvailable() && getAuthorizationStatus() === AuthorizationStatus.approved;
+  const showReport = isActivityReportAvailable() && getAuthorizationStatus() === AuthorizationStatus.approved;
+  const atStake = pledges.reduce((sum, p) => sum + p.pledgeValue, 0);
 
   return (
-    <HomeWrapper>
-      <HomeHeader />
-      <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>My Pledges</Text>
+    <InkScreen footer={<PillButton text="New pledge" onPress={() => navigation.navigate("Instructions")} />}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Dissolve id={headline(pledges, usage)} style={styles.head}>
+          <Line text={headline(pledges, usage)} />
+          <Text style={styles.sub}>
+            {pledges.length === 0
+              ? "Pick the apps that take your time, set a limit, put money on it."
+              : `${CURRENCY_SYMBOL}${atStake} on your word.`}
+          </Text>
+        </Dissolve>
 
         {pledges.length === 0 ? (
-          <View style={styles.empty}>
-            {showReport ? (
-              <>
-                <Text style={styles.reportKicker}>Your last 7 days on this phone</Text>
-                <TotalScreenTime range="week" style={styles.reportTotal} />
-                <TopApps range="week" maxApps={3} style={styles.reportApps} />
-              </>
-            ) : (
-              <Text style={styles.emptyTitle}>No pledge running</Text>
-            )}
-            <Text style={[styles.emptyText, showReport && styles.emptyTextAfterReport]}>
-              Pick the apps that steal your time, set a daily limit and put money on it.
-            </Text>
-          </View>
+          showReport && (
+            <View style={styles.report}>
+              <Text style={styles.kicker}>Your last 7 days on this phone</Text>
+              <ScreenTimeOverview
+                range="week"
+                fontSize={44}
+                maxApps={3}
+                textColor={cream.base}
+                mutedColor={cream.muted}
+                accentColor={ember}
+                style={styles.reportApps}
+              />
+            </View>
+          )
         ) : (
-          pledges.map((p) => (
-            <PledgeCard
-              key={p.id}
-              pledge={p}
-              usage={usage[p.id] ?? NO_USAGE}
-              onPress={() => navigation.navigate("PledgeDetail", { id: p.id })}
-            />
-          ))
+          <View style={styles.list}>
+            {pledges.map((p) => (
+              <PledgeCard
+                key={p.id}
+                pledge={p}
+                usage={usage[p.id] ?? NO_USAGE}
+                onPress={() => navigation.navigate("PledgeDetail", { id: p.id })}
+              />
+            ))}
+          </View>
         )}
       </ScrollView>
-
-      <PressableScale
-        onPress={() => navigation.navigate("Instructions")}
-        style={styles.newButton}
-        scaleTo={0.95}
-        haptic="press"
-      >
-        <Text style={styles.newButtonText}>+ New pledge</Text>
-      </PressableScale>
-    </HomeWrapper>
+    </InkScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollViewContent: {
-    paddingBottom: 120,
+  scroll: {
+    paddingTop: 28,
+    paddingBottom: 24,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginHorizontal: 30,
-    color: colors.white,
-    marginTop: 20,
-    marginBottom: 17,
+  head: {
+    marginBottom: 28,
   },
-  empty: {
-    marginHorizontal: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.86)",
-    borderRadius: 22,
-    padding: 22,
-    alignItems: "center",
+  sub: {
+    marginTop: 14,
+    color: cream.muted,
+    fontSize: 16,
+    lineHeight: 22,
+    maxWidth: 320,
   },
-  emptyTitle: {
-    fontSize: 18,
+  report: {
+    gap: 6,
+  },
+  kicker: {
+    fontSize: 12,
     fontWeight: "600",
-    color: colors.black,
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
-    color: "rgba(0, 0, 0, 0.70)",
-  },
-  emptyTextAfterReport: {
-    textAlign: "left",
-    alignSelf: "stretch",
-    marginTop: 12,
-  },
-  reportKicker: {
-    alignSelf: "stretch",
-    fontSize: 13,
-    fontWeight: "600",
-    letterSpacing: 0.3,
+    letterSpacing: 0.6,
     textTransform: "uppercase",
-    color: "rgba(0, 0, 0, 0.55)",
+    color: cream.faint,
     marginBottom: 4,
   },
   reportTotal: {
     alignSelf: "stretch",
     height: 54,
-    marginBottom: 8,
   },
   reportApps: {
     alignSelf: "stretch",
   },
-  newButton: {
-    backgroundColor: colors.white,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 30,
-    alignSelf: "center",
-    position: "absolute",
-    bottom: 40,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  newButtonText: {
-    color: colors.orange,
-    fontSize: 15,
-    fontWeight: "600",
-  },
+  list: {},
 });
 
 export default HomeScreen;

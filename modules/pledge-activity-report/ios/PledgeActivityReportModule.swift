@@ -8,6 +8,9 @@ import SwiftUI
 /// requested context and filter; nothing about the numbers comes back here.
 final class PledgeActivityReportView: ExpoView {
   private var host: UIHostingController<AnyView>?
+  /// Bumped on every render: a new identity makes SwiftUI create a fresh
+  /// report view instead of reviving one the extension may have dropped.
+  private var generation = 0
 
   var context = "totalActivity"
   var startMs: Double = 0
@@ -72,8 +75,10 @@ final class PledgeActivityReportView: ExpoView {
       categories: selection?.categoryTokens ?? [],
       webDomains: selection?.webDomainTokens ?? [])
 
+    generation += 1
     let root = AnyView(
       DeviceActivityReport(DeviceActivityReport.Context(context), filter: filter)
+        .id(generation)
         .frame(maxWidth: .infinity, maxHeight: .infinity))
 
     if let host {

@@ -1,12 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import colors from "../../theme/colors";
 import PressableScale from "../buttons/pressable-scale";
 import { ActivityLabels } from "../../../modules/pledge-activity-labels";
 import { Pledge } from "../../types";
 import { DailyUsage, splitMinutes } from "../../screens/home/home.controller";
 import { CURRENCY_SYMBOL } from "../../config";
 import { pledgeEndsAt } from "../../services/pledges";
+import { cream, ember, fonts, ink, radius } from "../../theme/tokens";
 
 interface PledgeCardProps {
   pledge: Pledge;
@@ -16,6 +16,7 @@ interface PledgeCardProps {
 
 const DAY = 24 * 60 * 60 * 1000;
 
+/** "12 days left", "3h left", "Ending". */
 export const daysLeftLabel = (pledge: Pledge, now = Date.now()) => {
   const ms = Math.max(0, pledgeEndsAt(pledge) - now);
   const days = Math.ceil(ms / DAY);
@@ -27,7 +28,7 @@ export const daysLeftLabel = (pledge: Pledge, now = Date.now()) => {
   return `${days} days left`;
 };
 
-/** One pledge in the Home list: its apps, today's usage and what is at stake. */
+/** One running pledge: how long is left, its apps, where today stands. */
 const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
   const used = splitMinutes(usage.usedMinutes);
   const usedLabel = used.hours > 0 ? `${used.hours}h ${used.minutes}m` : `${used.minutes}m`;
@@ -36,19 +37,17 @@ const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
     pledge.timeValue === 0
       ? "Blocked for the whole pledge"
       : usage.limitReached
-        ? "Limit reached · blocked until midnight"
-        : `${usedLabel} of ${pledge.timeValue}m used today`;
+        ? "Limit reached. Blocked until midnight."
+        : `${usedLabel} of ${pledge.timeValue} min today`;
 
   return (
-    <PressableScale onPress={onPress} style={styles.card} scaleTo={0.98} haptic="tap">
+    <PressableScale onPress={onPress} style={styles.card} scaleTo={0.985} haptic="tap">
       <View style={styles.topRow}>
         <Text style={styles.daysLeft}>{daysLeftLabel(pledge)}</Text>
-        <View style={styles.stakePill}>
-          <Text style={styles.stakeText}>
-            {CURRENCY_SYMBOL}
-            {pledge.pledgeValue} at stake
-          </Text>
-        </View>
+        <Text style={styles.stake}>
+          {CURRENCY_SYMBOL}
+          {pledge.pledgeValue} on it
+        </Text>
       </View>
 
       <ActivityLabels
@@ -65,47 +64,41 @@ const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "rgba(255, 255, 255, 0.86)",
-    borderRadius: 22,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginHorizontal: 24,
-    marginBottom: 14,
+    backgroundColor: ink.raised,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: ink.line,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginBottom: 12,
   },
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
+    alignItems: "baseline",
+    marginBottom: 12,
   },
   daysLeft: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: colors.black,
+    fontFamily: fonts.serif,
+    fontSize: 28,
+    color: cream.base,
   },
-  stakePill: {
-    backgroundColor: colors.orange,
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  stakeText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: "600",
+  stake: {
+    fontFamily: fonts.serifItalic,
+    fontSize: 18,
+    color: cream.muted,
   },
   appsRow: {
     height: 46,
-    marginHorizontal: -4,
+    marginHorizontal: -6,
   },
   status: {
-    marginTop: 10,
+    marginTop: 12,
     fontSize: 14,
-    color: "rgba(0, 0, 0, 0.70)",
+    color: cream.muted,
   },
   statusBlocked: {
-    color: colors.orange,
-    fontWeight: "600",
+    color: ember,
   },
 });
 

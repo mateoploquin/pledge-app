@@ -2,35 +2,26 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
 import AnimatedNumber from "../../../components/text/animated-number";
-import colors from "../../../theme/colors";
 import PresetChips from "../../../components/buttons/preset-chips";
 import { haptics } from "../../../utils/haptics";
+import { cream, fonts } from "../../../theme/tokens";
+import { CURRENCY_SYMBOL } from "../../../config";
 
 interface SetPledgeProps {
   pledgeValue: number;
   setPledgeValue: (value: number) => void;
 }
 
-const SetPledge: React.FC<SetPledgeProps> = ({
-  pledgeValue,
-  setPledgeValue,
-}) => {
+/** Step: the money on the line. */
+const SetPledge: React.FC<SetPledgeProps> = ({ pledgeValue, setPledgeValue }) => {
   return (
-    <View style={styles.setPledgeContainer}>
-      <Text style={styles.title}>How Much Do You Pledge?</Text>
-
-      <View style={styles.pledgeContainer}>
-        <AnimatedNumber style={styles.xxText} value={pledgeValue} />
-        <Text style={styles.dollarSign}>$</Text>
+    <View style={styles.container}>
+      <View style={styles.valueRow}>
+        <Text style={styles.currency}>{CURRENCY_SYMBOL}</Text>
+        <AnimatedNumber style={styles.value} value={pledgeValue} />
       </View>
 
-      <SetSlider
-        min={5}
-        max={100}
-        ticks={[5, 25, 50, 75, 100]}
-        value={pledgeValue}
-        onValueChange={(value) => setPledgeValue(value)}
-      />
+      <SetSlider min={0} max={20} ticks={[0, 5, 10, 15, 20]} value={pledgeValue} onValueChange={setPledgeValue} />
 
       <PresetChips
         values={[5, 10, 20]}
@@ -39,53 +30,33 @@ const SetPledge: React.FC<SetPledgeProps> = ({
           haptics.select();
           setPledgeValue(v);
         }}
-        format={(v) => `$${v}`}
+        format={(v) => `${CURRENCY_SYMBOL}${v}`}
       />
-
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  setPledgeContainer: {
-    marginTop: 69,
+  container: {
     alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "500",
-    marginBottom: 77,
-    color: "#333",
-  },
-  pledgeContainer: {
+  valueRow: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 30,
+    alignItems: "baseline",
+    gap: 4,
+    marginBottom: 28,
   },
-  xxText: {
-    fontSize: 100,
-    color: colors.darkGray2,
-    fontWeight: "500",
+  currency: {
+    fontFamily: fonts.serifItalic,
+    fontSize: 56,
+    color: cream.muted,
   },
-  dollarSign: {
-    fontSize: 100,
-    color: colors.gray300,
-    fontWeight: "500",
-    borderBottomWidth: 3,
-    borderBottomColor: colors.darkBlue,
-  },
-  slider: {
-    width: "90%",
-    height: 40,
-  },
-  description: {
-    marginTop: 40,
-    marginHorizontal: 34,
-    textAlign: "center",
-    fontSize: 16,
-    fontFamily: "InstrumentSerif-Regular",
+  value: {
+    fontFamily: fonts.serif,
+    fontSize: 112,
+    lineHeight: 132,
+    letterSpacing: -3,
+    color: cream.base,
   },
 });
 

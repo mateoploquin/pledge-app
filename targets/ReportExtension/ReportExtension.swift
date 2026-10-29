@@ -8,5 +8,6 @@ struct ReportExtension: DeviceActivityReportExtension {
   var body: some DeviceActivityReportScene {
     TotalActivityReport { TotalActivityView(model: $0) }
     TopAppsReport { TopAppsView(model: $0) }
+    OverviewReport { OverviewView(model: $0) }
   }
 }

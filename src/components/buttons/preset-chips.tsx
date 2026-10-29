@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import colors from "../../theme/colors";
+import { cream, ink } from "../../theme/tokens";
 import PressableScale from "./pressable-scale";
 
 interface PresetChipsProps {
@@ -47,24 +47,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: colors.orangeLight,
-    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: ink.line,
   },
   chipActive: {
-    backgroundColor: colors.orange,
-    borderColor: colors.orange,
+    backgroundColor: cream.base,
+    borderColor: cream.base,
   },
   label: {
     fontSize: 15,
     fontWeight: "500",
-    color: colors.orange,
+    color: cream.base,
   },
   labelActive: {
-    color: colors.white,
+    color: ink.base,
   },
 });
 

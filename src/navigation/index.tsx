@@ -48,8 +48,11 @@ const softTiming = {
   config: { duration: 420, easing: Easing.out(Easing.cubic) },
 };
 
+const INK = "#17130F";
+
 const softFade = {
   headerShown: false,
+  cardStyle: { backgroundColor: INK },
   cardStyleInterpolator: forSoftFade,
   transitionSpec: { open: softTiming, close: softTiming },
   cardOverlayEnabled: false,
@@ -59,6 +62,7 @@ const softFade = {
 const modalOptions = {
   presentation: "modal" as const,
   headerShown: false,
+  cardStyle: { backgroundColor: INK },
   cardStyleInterpolator: CardStyleInterpolators.forModalPresentationIOS,
   cardOverlayEnabled: true,
   cardShadowEnabled: true,

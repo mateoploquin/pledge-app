@@ -3,7 +3,7 @@ import { haptics } from "../../utils/haptics";
 import { View, Text, StyleSheet, PanResponder } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
-import colors from "../../theme/colors";
+import { cream, ink } from "../../theme/tokens";
 const SLIDER_WIDTH = SCREEN_WIDTH * 0.8;
 
 interface SetSliderProps {
@@ -118,9 +118,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   track: {
-    height: 8,
-    backgroundColor: colors.darkGray,
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: "rgba(248, 244, 236, 0.18)",
+    borderRadius: 3,
     position: "relative",
   },
   hitArea: {
@@ -131,9 +131,9 @@ const styles = StyleSheet.create({
     height: 48,
   },
   fill: {
-    height: 8,
-    backgroundColor: colors.midOrange,
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: cream.base,
+    borderRadius: 3,
     position: "absolute",
     left: 0,
     top: 0,
@@ -141,15 +141,12 @@ const styles = StyleSheet.create({
   thumb: {
     width: 20,
     height: 20,
-    backgroundColor: colors.white,
+    backgroundColor: cream.base,
     borderRadius: 10,
     position: "absolute",
-    top: -6,
-    shadowColor: colors.black,
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 3,
+    top: -7,
+    borderWidth: 3,
+    borderColor: ink.base,
   },
   ticksContainer: {
     width: SLIDER_WIDTH,
@@ -165,13 +162,13 @@ const styles = StyleSheet.create({
   },
   tick: {
     width: 1,
-    height: 10,
-    backgroundColor: colors.darkestGray,
-    marginBottom: 5,
+    height: 8,
+    backgroundColor: "rgba(248, 244, 236, 0.30)",
+    marginBottom: 6,
   },
   tickLabel: {
     fontSize: 12,
-    color: colors.darkestGray,
+    color: cream.faint,
   },
 });
 

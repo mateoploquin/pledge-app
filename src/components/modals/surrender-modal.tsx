@@ -1,23 +1,17 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
-import colors from "../../theme/colors";
+import { View, Text, StyleSheet, Alert, Pressable } from "react-native";
+import Animated, { FadeIn, FadeInDown, FadeOut } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { chargePledge } from "../../services/stripe-api";
 import { sendPledgeData } from "../../services/sendPledgeData";
 import { updatePledge } from "../../services/pledges";
 import { Pledge } from "../../types";
 import { auth } from "../../firebaseConfig";
 import { CURRENCY_SYMBOL } from "../../config";
-import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
-import PressableScale from "../buttons/pressable-scale";
 import { haptics } from "../../utils/haptics";
+import PillButton from "../ink/pill-button";
+import { Line } from "../ink/line";
+import { cream, ink, radius } from "../../theme/tokens";
 
 interface SurrenderModalProps {
   isVisible: boolean;
@@ -27,13 +21,10 @@ interface SurrenderModalProps {
   onSurrender: () => void;
 }
 
-const SurrenderModal: React.FC<SurrenderModalProps> = ({
-  isVisible,
-  pledge,
-  onClose,
-  onSurrender,
-}) => {
+/** The way out: pay the pledge, unlock the apps. Rises from the bottom. */
+const SurrenderModal: React.FC<SurrenderModalProps> = ({ isVisible, pledge, onClose, onSurrender }) => {
   const [loading, setLoading] = useState(false);
+  const insets = useSafeAreaInsets();
   const { pledgeValue } = pledge;
 
   if (!isVisible) return null;
@@ -44,9 +35,7 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
     setLoading(true);
     try {
       const user = auth.currentUser;
-      if (!user) {
-        throw new Error("You are signed out. Sign in again to pay your pledge.");
-      }
+      if (!user) throw new Error("You are signed out. Sign in again to pay your pledge.");
       const idToken = await user.getIdToken();
       if (!pledge.synced) {
         // Carried over from the old build: the backend must know it before it can charge it.
@@ -68,113 +57,63 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({
       }
       onSurrender();
     } catch (error: any) {
-      const detail =
-        error?.response?.data?.error ?? error?.message ?? "Unknown error";
-      Alert.alert(
-        "We couldn't charge your pledge",
-        `Your apps stay blocked until the payment goes through.\n\n${detail}`
-      );
+      const detail = error?.response?.data?.error ?? error?.message ?? "Unknown error";
+      Alert.alert("We couldn't charge your pledge", `Your apps stay blocked until the payment goes through.\n\n${detail}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Animated.View style={styles.blurContainer} entering={FadeIn.duration(220)}>
-      <Animated.View style={styles.modalContainer} entering={ZoomIn.springify().damping(16)}>
-        <Text style={styles.modalText}>
-          Unlocking these apps means giving up this pledge and paying your{" "}
-          {CURRENCY_SYMBOL}
-          {pledgeValue} pledge. You’ve come this far, just a little more to go!
+    <Animated.View style={styles.scrim} entering={FadeIn.duration(220)} exiting={FadeOut.duration(180)}>
+      <Pressable style={StyleSheet.absoluteFill} onPress={loading ? undefined : onClose} />
+      <Animated.View
+        entering={FadeInDown.duration(360).springify().damping(18)}
+        style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}
+      >
+        <Line text="*Wait.*" size="heading" />
+        <Text style={styles.text}>
+          Unlocking now means giving up this pledge and paying the {CURRENCY_SYMBOL}
+          {pledgeValue}. You've come this far.
         </Text>
-        <Image
-          source={require("../../../assets/images/home/surrender-flag.png")}
-          style={styles.modalImage}
-        />
-        <Text style={styles.modalTitle}>
-          Wait... Are you sure you want to surrender?
-        </Text>
-        <PressableScale onPress={onClose} style={styles.modalButton} disabled={loading} haptic="press">
-          <Text style={styles.modalButtonText}>No, go back</Text>
-        </PressableScale>
-        <TouchableOpacity onPress={handleSurrender} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color={colors.orange} style={styles.spinner} />
-          ) : (
-            <Text style={styles.surrenderText}>
-              Yes, pay {CURRENCY_SYMBOL}
-              {pledgeValue} and unlock
-            </Text>
-          )}
-        </TouchableOpacity>
+        <View style={styles.actions}>
+          <PillButton text="No, keep going" onPress={onClose} disabled={loading} />
+          <PillButton
+            text={`Pay ${CURRENCY_SYMBOL}${pledgeValue} and unlock`}
+            tone="quiet"
+            onPress={handleSurrender}
+            busy={loading}
+          />
+        </View>
       </Animated.View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  blurContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
+  scrim: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(23, 19, 15, 0.72)",
   },
-  modalContainer: {
-    width: "85%",
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    paddingVertical: 24,
-    paddingHorizontal: 30,
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: colors.orange,
+  sheet: {
+    backgroundColor: ink.raised,
+    borderTopLeftRadius: radius.card,
+    borderTopRightRadius: radius.card,
+    borderWidth: 1,
+    borderColor: ink.line,
+    paddingHorizontal: 28,
+    paddingTop: 28,
+    gap: 16,
   },
-  modalText: {
+  text: {
+    color: cream.muted,
     fontSize: 16,
-    color: colors.black,
-    textAlign: "center",
-    marginBottom: 20,
-    fontFamily: "InstrumentSerif-Regular",
+    lineHeight: 22,
   },
-  modalImage: {
-    width: 180,
-    height: 180,
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "500",
-    color: colors.black,
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  modalButton: {
-    backgroundColor: colors.orange,
-    paddingVertical: 16,
-    paddingHorizontal: 60,
-    borderRadius: 25,
-    marginBottom: 10,
-  },
-  modalButtonText: {
-    color: colors.white,
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  surrenderText: {
-    marginTop: 5,
-    color: colors.orange,
-    textDecorationLine: "underline",
-    fontSize: 14,
-    marginBottom: 20,
-  },
-  spinner: {
-    marginTop: 5,
-    marginBottom: 20,
+  actions: {
+    gap: 8,
+    marginTop: 8,
   },
 });
 

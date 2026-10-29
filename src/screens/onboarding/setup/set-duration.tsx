@@ -1,9 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import colors from "../../../theme/colors";
 import PressableScale from "../../../components/buttons/pressable-scale";
-import AnimatedNumber from "../../../components/text/animated-number";
 import { haptics } from "../../../utils/haptics";
+import { cream, fonts, ink, radius } from "../../../theme/tokens";
 
 export const DURATION_OPTIONS = [7, 15, 30];
 
@@ -12,110 +11,65 @@ interface SetDurationProps {
   setDurationDays: (days: number) => void;
 }
 
-/** Wizard step: how many days the pledge runs for. */
+/** Step: how many days the pledge runs. */
 const SetDuration: React.FC<SetDurationProps> = ({ durationDays, setDurationDays }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>For How Long?</Text>
-
-      <View style={styles.valueRow}>
-        <AnimatedNumber style={styles.value} value={durationDays} />
-        <Text style={styles.unit}>days</Text>
-      </View>
-
-      <View style={styles.options}>
-        {DURATION_OPTIONS.map((d) => {
-          const active = d === durationDays;
-          return (
-            <PressableScale
-              key={d}
-              onPress={() => {
-                haptics.select();
-                setDurationDays(d);
-              }}
-              style={[styles.card, active && styles.cardActive]}
-              scaleTo={0.95}
-            >
-              <Text style={[styles.cardNumber, active && styles.cardTextActive]}>{d}</Text>
-              <Text style={[styles.cardLabel, active && styles.cardTextActive]}>days</Text>
-            </PressableScale>
-          );
-        })}
-      </View>
-
-      <Text style={styles.hint}>
-        Your limit applies every day until the pledge ends.
-      </Text>
+      {DURATION_OPTIONS.map((d) => {
+        const active = d === durationDays;
+        return (
+          <PressableScale
+            key={d}
+            onPress={() => {
+              haptics.select();
+              setDurationDays(d);
+            }}
+            style={[styles.option, active && styles.optionActive]}
+            scaleTo={0.97}
+          >
+            <Text style={[styles.number, active && styles.textActive]}>{d}</Text>
+            <Text style={[styles.label, active && styles.labelActive]}>days</Text>
+          </PressableScale>
+        );
+      })}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 69,
-    alignItems: "center",
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "500",
-    marginBottom: 77,
-    color: "#333",
-  },
-  valueRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    marginBottom: 40,
-  },
-  value: {
-    fontSize: 100,
-    color: colors.darkGray2,
-    fontWeight: "500",
-  },
-  unit: {
-    fontSize: 28,
-    color: colors.gray300,
-    fontWeight: "500",
-    marginLeft: 8,
-    marginBottom: 22,
-  },
-  options: {
-    flexDirection: "row",
     gap: 12,
   },
-  card: {
-    width: 96,
-    paddingVertical: 16,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderColor: colors.orangeLight,
-    backgroundColor: colors.white,
-    alignItems: "center",
+  option: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 10,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: ink.line,
   },
-  cardActive: {
-    backgroundColor: colors.orange,
-    borderColor: colors.orange,
+  optionActive: {
+    backgroundColor: cream.base,
+    borderColor: cream.base,
   },
-  cardNumber: {
-    fontSize: 28,
-    fontWeight: "600",
-    color: colors.orange,
+  number: {
+    fontFamily: fonts.serif,
+    fontSize: 44,
+    lineHeight: 54,
+    color: cream.base,
   },
-  cardLabel: {
-    fontSize: 13,
-    color: colors.orange,
-    marginTop: 2,
+  label: {
+    fontFamily: fonts.serifItalic,
+    fontSize: 22,
+    color: cream.muted,
   },
-  cardTextActive: {
-    color: colors.white,
+  textActive: {
+    color: ink.base,
   },
-  hint: {
-    marginTop: 36,
-    marginHorizontal: 34,
-    textAlign: "center",
-    fontSize: 14,
-    lineHeight: 20,
-    color: "rgba(0, 0, 0, 0.6)",
+  labelActive: {
+    color: "rgba(23, 19, 15, 0.65)",
   },
 });
 

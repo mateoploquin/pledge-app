@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, Linking, Alert } from "react-native";
-import colors from "../../../theme/colors";
+import * as WebBrowser from "expo-web-browser";
 import { API_URL } from "../../../config";
 import { haptics } from "../../../utils/haptics";
+import { cream, ink } from "../../../theme/tokens";
 
 interface AcceptTermsProps {
   termsAccepted: boolean;
@@ -11,165 +12,134 @@ interface AcceptTermsProps {
 
 const rules = [
   {
-    id: 1,
-    title: "No Deleting the App 📲",
-    description: "Deleting the app means you lose the challenge.",
+    title: "Nothing is charged now.",
+    description: "You only pay if you give up. Keep your word and no charge is due.",
   },
   {
-    id: 2,
-    title: "Keep Tracking On ⏲️",
-    description:
-      "Deleting Pledge or turning off its Screen Time access while a pledge runs forfeits it, and your pledge is charged.",
+    title: "Unlocking costs the pledge.",
+    description: "Once you hit your limit the apps stay blocked until midnight. Unlocking early pays the pledge.",
   },
   {
-    id: 3,
-    title: "No Upfront Charge 💳",
-    description: "You only pay if you lose. Win the challenge, and no charge is due.",
+    title: "Deleting the app forfeits it.",
+    description: "Deleting Pledge, or turning off its Screen Time access while a pledge runs, pays the pledge.",
   },
   {
-    id: 4,
-    title: "Your Pledge Does Good 💙",
-    description:
-      "If you don’t succeed, your pledge goes to Make-A-Wish, minus a small fee that supports the app.",
+    title: "Your pledge does good.",
+    description: "A forfeited pledge goes to Make-A-Wish, minus a small fee that keeps the app running.",
   },
 ];
 
 const openLegal = async (doc: "terms" | "privacy") => {
   haptics.tap();
   const url = `${API_URL}/${doc}`;
-  if (__DEV__) console.log("[legal] opening", url);
   try {
-    await Linking.openURL(url);
+    // In-app Safari sheet, tinted to the ink palette. Falls back to the
+    // system handler if the sheet can't be presented.
+    await WebBrowser.openBrowserAsync(url, {
+      presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+      toolbarColor: ink.base,
+      controlsColor: cream.base,
+      dismissButtonStyle: "close",
+    });
   } catch (e) {
-    console.warn("[legal] openURL failed:", e);
-    Alert.alert("Could not open page", `${url}\n\n${(e as any)?.message ?? ""}`);
+    console.warn("[legal] in-app browser failed, trying openURL:", e);
+    try {
+      await Linking.openURL(url);
+    } catch (e2) {
+      console.warn("[legal] openURL failed:", e2);
+      Alert.alert("Could not open page", url);
+    }
   }
 };
 
-const AcceptTerms: React.FC<AcceptTermsProps> = ({
-  termsAccepted,
-  setTermsAccepted,
-}) => {
+/** Step: the rules, read once per device. */
+const AcceptTerms: React.FC<AcceptTermsProps> = ({ termsAccepted, setTermsAccepted }) => {
   return (
-    <ScrollView>
-      <Text style={styles.title}>Challenge Rules 🏆</Text>
-
-      <View style={styles.rulesContainer}>
-        {rules.map((rule) => (
-          <View key={rule.id} style={styles.ruleRow}>
-            <Text style={styles.ruleNumber}>{rule.id}.</Text>
-            <Text style={styles.ruleText}>
-              <Text style={styles.boldText}>{rule.title}:</Text> {rule.description}
-            </Text>
-          </View>
-        ))}
-        <Text style={styles.footerText}>
-          By starting the challenge, you agree to these rules. Let’s do this! 🎯
-        </Text>
-      </View>
-
-      <View style={styles.agreementContainer}>
-        <Pressable
-          onPress={() => setTermsAccepted(!termsAccepted)}
-          style={[
-            styles.checkbox,
-            termsAccepted && { backgroundColor: colors.orange },
-          ]}
-        >
-          {termsAccepted && <Text style={styles.checkmark}>✓</Text>}
-        </Pressable>
-        <View style={styles.agreementTextBlock}>
-          <Text style={styles.agreementText}>I agree to the</Text>
-          <View style={styles.linksRow}>
-            <Pressable onPress={() => openLegal("terms")} hitSlop={10}>
-              <Text style={styles.linkText}>Terms and Conditions</Text>
-            </Pressable>
-            <Text style={styles.agreementText}> and </Text>
-            <Pressable onPress={() => openLegal("privacy")} hitSlop={10}>
-              <Text style={styles.linkText}>Privacy Policy</Text>
-            </Pressable>
-          </View>
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      {rules.map((rule) => (
+        <View key={rule.title} style={styles.rule}>
+          <Text style={styles.ruleTitle}>{rule.title}</Text>
+          <Text style={styles.ruleText}>{rule.description}</Text>
         </View>
-      </View>
-      <View style={{ height: 100 }} />
+      ))}
+
+      <Pressable
+        onPress={() => {
+          haptics.select();
+          setTermsAccepted(!termsAccepted);
+        }}
+        style={styles.agree}
+      >
+        <View style={[styles.check, termsAccepted && styles.checkOn]}>
+          {termsAccepted && <Text style={styles.checkMark}>✓</Text>}
+        </View>
+        <Text style={styles.agreeText}>
+          I agree to the{" "}
+          <Text style={styles.link} onPress={() => openLegal("terms")}>
+            Terms
+          </Text>{" "}
+          and{" "}
+          <Text style={styles.link} onPress={() => openLegal("privacy")}>
+            Privacy Policy
+          </Text>
+          .
+        </Text>
+      </Pressable>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  title: {
-    marginHorizontal: 21,
-    color: colors.orange,
-    marginTop: 40,
-    fontSize: 30,
-    fontWeight: "700",
-    textAlign: "center",
+  content: {
+    gap: 18,
+    paddingBottom: 24,
   },
-  rulesContainer: {
-    marginHorizontal: 40,
-    marginTop: 40,
+  rule: {
+    gap: 4,
   },
-  ruleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginTop: 20,
-  },
-  ruleNumber: {
-    fontSize: 20,
+  ruleTitle: {
+    color: cream.base,
+    fontSize: 17,
     fontWeight: "600",
   },
   ruleText: {
-    marginLeft: 4,
-    fontSize: 20,
+    color: cream.muted,
+    fontSize: 15,
+    lineHeight: 21,
   },
-  boldText: {
-    fontWeight: "600",
-  },
-  highlightText: {
-    color: colors.blue,
-  },
-  footerText: {
-    marginTop: 15,
-    fontSize: 20,
-  },
-  agreementContainer: {
+  agree: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 21,
-    marginTop: 27,
+    gap: 12,
+    marginTop: 8,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 5,
+  check: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.orange,
+    borderColor: ink.line,
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
   },
-  checkmark: {
-    color: colors.white,
-    fontSize: 12,
-    textAlign: "center",
-    lineHeight: 20,
+  checkOn: {
+    backgroundColor: cream.base,
+    borderColor: cream.base,
   },
-  agreementText: {
-    fontWeight: "400",
+  checkMark: {
+    color: ink.base,
+    fontSize: 14,
+    fontWeight: "700",
   },
-  agreementTextBlock: {
+  agreeText: {
     flex: 1,
-    marginLeft: 7,
+    color: cream.muted,
+    fontSize: 15,
+    lineHeight: 21,
   },
-  linksRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    marginTop: 2,
-  },
-  linkText: {
+  link: {
+    color: cream.base,
     textDecorationLine: "underline",
-    color: colors.orange,
-    fontWeight: "500",
   },
 });
 
