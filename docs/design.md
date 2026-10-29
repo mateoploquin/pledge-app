@@ -68,9 +68,11 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
   it, it must not replace it).
 - `PressableScale` wraps every tappable: shrinks to 0.97 (0.98 for quiet)
   and dims 12 % while held, springs back, haptic on press-in.
-- `Dissolve` (`line.tsx`): keyed wrapper that fades the old content out in
-  160 ms and the new in over 450 ms after that delay, so two sets of
-  controls are never on screen together.
+- `Dissolve` (`line.tsx`): wrapper keyed by `id`. Content is visible from
+  the first frame; a change of `id` fades the old content out in 160 ms,
+  swaps, then fades the new in over 450 ms, so two sets of controls are
+  never on screen together. One wrapper per slot with a changing `id`, not
+  one per state that mounts and unmounts (mount is a cut).
 - `SetSlider`: ember track and thumb, evenly spaced tick labels passed
   explicitly, animated jump when a preset chip is tapped, selection haptic
   on each value change, thumb must not drift from the value.
@@ -88,8 +90,9 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
 - Haptics (`src/utils/haptics.ts`): `tap` light for ordinary taps, `press`
   medium for the primary pill, `select` while dragging a slider, `success`
   on lock-in, `warning` before surrender, `error` on failures.
-- Reduce Motion is respected by Reanimated automatically; test that
-  content still appears when it is on.
+- Reduce Motion: `Dissolve` cuts instead of fading; `PressableScale` and
+  the surrender modal go through Reanimated, which respects it on its own.
+  Test that content still appears when it is on.
 
 ## Copy voice
 

@@ -10,7 +10,9 @@ Apple lets us do, how to build, and the traps already walked into.
 - Node 20 (`/opt/homebrew/opt/node@20/bin`), Xcode 26.6 (SDK 26.5),
   CocoaPods 1.16, `patch-package` on postinstall.
 - Navigation: `@react-navigation/stack` with a custom crossfade.
-- Animation: `react-native-reanimated` 3.10. Video: `expo-av`.
+- Animation: `react-native-reanimated` 3.10 for pressables and the
+  surrender modal; `Dissolve` and screen transitions use React Native's
+  own `Animated` on the native driver. Video: `expo-av`.
 - Screen Time: `react-native-device-activity` 0.4.13 (its config plugin
   generates three extension targets) plus two local Expo modules and one
   hand-written extension target.
@@ -204,15 +206,22 @@ runs; agents are not allowed to run deletions.
 
 ## Known issues and gotchas
 
-- **Blank first step on a TestFlight device (open, 29 Oct 2026).** A tester
-  on build 20 saw dots and buttons but no question or content on the first
-  pledge step. The content lives in `Dissolve` (`Animated.View` with
-  `entering={FadeIn}`); if its entering animation starts but never
-  progresses the view stays at opacity 0. Not reproduced on the owner's
-  phone yet (a Release build was installed to check). Gather from the
-  tester: build number, iOS version, Reduce Motion on/off. If it is the
-  animation, the fix is to not rely on `entering` for the first mount
-  (render visible, animate only on step change) or to upgrade Reanimated.
+- **Blank first pledge step on TestFlight (build 20, fixed in source
+  29 Oct 2026, ships with the next build).** Several testers saw the dots
+  and the Continue/Cancel pill but no question or content on the first
+  pledge step (one report: iPhone 17 Pro, iOS 26.6.2, dark ground uniform,
+  so nothing was drawn over it). The step content lived in `Dissolve`, a
+  Reanimated `Animated.View` with `entering={FadeIn.delay(160)}`: the
+  entering animation applied opacity 0 and never progressed, so the view
+  stayed invisible. Not reproduced on the owner's phone (iOS 26.6.1) and
+  the same wrapper worked on the opener for those testers, so the trigger
+  is specific to that screen (it asks for Screen Time access the moment it
+  mounts, and `steps` can change right after mount). `Dissolve` now
+  renders visible and animates only on `id` change, with React Native's
+  `Animated` on the native driver, the same machinery as the screen
+  transitions, which did complete on the affected phones. Never again
+  gate first paint on a layout animation. The surrender modal still uses
+  Reanimated `entering`; if it ever comes up blank, do the same there.
 - `PressableScale` sets `opacity` in its animated style, which overrides a
   caller's opacity; it now multiplies by the flattened style's opacity so
   disabled buttons dim. Keep that when touching it.

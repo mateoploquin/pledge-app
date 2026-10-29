@@ -115,8 +115,11 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
             room lives on this inner view. Everything sits well clear of the
             home indicator: a tap on the last link must never be a swipe out. */}
         <View style={[styles.inner, { marginBottom: Math.max(insets.bottom, 20) + 40, marginTop: insets.top + 12 }]}>
+        {/* One wrapper for the three states, so a change of state is a
+            dissolve between them rather than a swap. */}
+        <Dissolve id={state} style={styles.block}>
         {state === "film" && (
-          <Dissolve id="film" style={styles.block}>
+          <>
             <View style={styles.lineSlot}>
               <Dissolve id={`stanza-${index}`} style={StyleSheet.absoluteFill}>
                 <Line text={STANZAS[index]} style={styles.lineAtBottom} />
@@ -130,11 +133,11 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
                 <Text style={styles.secondaryText}>I already have an account</Text>
               </PressableScale>
             </View>
-          </Dissolve>
+          </>
         )}
 
         {(state === "signup" || state === "login") && (
-          <Dissolve id={state} style={styles.block}>
+          <>
             <Line text={state === "signup" ? "Put your word\non it." : "Welcome\n*back.*"} />
             <View style={styles.actions}>
               <SocialSignInButtons tone="dark" onSignedIn={signedIn} />
@@ -151,11 +154,11 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
                 </Text>
               </PressableScale>
             </View>
-          </Dissolve>
+          </>
         )}
 
         {state === "email" && (
-          <Dissolve id="email" style={styles.block}>
+          <>
             <Line text={mode === "signup" ? "A few\n*details.*" : "Welcome\n*back.*"} style={styles.heading} />
             <View style={styles.form}>
               {mode === "signup" && (
@@ -209,8 +212,9 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
                 <Text style={styles.secondaryText}>Back</Text>
               </PressableScale>
             </View>
-          </Dissolve>
+          </>
         )}
+        </Dissolve>
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -228,8 +232,8 @@ const styles = StyleSheet.create({
   inner: {
     flex: 1,
   },
-  // Each block is pinned to the bottom on its own, so the outgoing and the
-  // incoming one never share a column and nothing shifts during a dissolve.
+  // Pinned to the bottom, so the words and controls sit on the same spot in
+  // every state and nothing shifts during a dissolve.
   block: {
     position: "absolute",
     left: 28,
