@@ -73,6 +73,12 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
   swaps, then fades the new in over 450 ms, so two sets of controls are
   never on screen together. One wrapper per slot with a changing `id`, not
   one per state that mounts and unmounts (mount is a cut).
+- Big number with a small word (the amount's currency sign, "min a day",
+  "days"): one `Text` run with the small word nested, never two texts in a
+  flex row with `alignItems: "baseline"`. iOS aligns flex items by their
+  bottom edge, not the glyph baseline, so the small word sits low. The
+  currency sign goes before the number, no space, as everywhere else
+  ("€10 on your word").
 - `SetSlider`: ember track and thumb, evenly spaced tick labels passed
   explicitly, animated jump when a preset chip is tapped, selection haptic
   on each value change, thumb must not drift from the value.

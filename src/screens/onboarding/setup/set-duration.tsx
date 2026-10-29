@@ -27,8 +27,11 @@ const SetDuration: React.FC<SetDurationProps> = ({ durationDays, setDurationDays
             style={[styles.option, active && styles.optionActive]}
             scaleTo={0.97}
           >
-            <Text style={[styles.number, active && styles.textActive]}>{d}</Text>
-            <Text style={[styles.label, active && styles.labelActive]}>days</Text>
+            {/* One text run, so "days" sits on the number's baseline (see set-pledge). */}
+            <Text style={[styles.number, active && styles.textActive]}>
+              {d}
+              <Text style={[styles.label, active && styles.labelActive]}> days</Text>
+            </Text>
           </PressableScale>
         );
       })}
@@ -41,9 +44,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   option: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 10,
     paddingVertical: 18,
     paddingHorizontal: 24,
     borderRadius: radius.card,

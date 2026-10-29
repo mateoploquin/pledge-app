@@ -16,10 +16,12 @@ interface SetPledgeProps {
 const SetPledge: React.FC<SetPledgeProps> = ({ pledgeValue, setPledgeValue }) => {
   return (
     <View style={styles.container}>
-      <View style={styles.valueRow}>
+      {/* One text run, so the sign sits on the number's baseline. Flex
+          baseline alignment does not reach a Text's real baseline on iOS. */}
+      <Text style={styles.value}>
         <Text style={styles.currency}>{CURRENCY_SYMBOL}</Text>
-        <AnimatedNumber style={styles.value} value={pledgeValue} />
-      </View>
+        <AnimatedNumber value={pledgeValue} />
+      </Text>
 
       <SetSlider min={0} max={20} ticks={[0, 5, 10, 15, 20]} value={pledgeValue} onValueChange={setPledgeValue} />
 
@@ -40,23 +42,19 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
   },
-  valueRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 4,
-    marginBottom: 28,
-  },
-  currency: {
-    fontFamily: fonts.serifItalic,
-    fontSize: 56,
-    color: cream.muted,
-  },
   value: {
     fontFamily: fonts.serif,
     fontSize: 112,
     lineHeight: 132,
     letterSpacing: -3,
     color: cream.base,
+    marginBottom: 28,
+  },
+  currency: {
+    fontFamily: fonts.serifItalic,
+    fontSize: 56,
+    letterSpacing: 2,
+    color: cream.muted,
   },
 });
 
