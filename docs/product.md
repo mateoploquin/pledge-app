@@ -68,7 +68,7 @@ monitoring, removes the pledge. There is no failure screen afterwards.
 ### Shield (drawn by iOS from `shieldPayload` in `home.controller.ts`)
 
 Title "That's enough for today." Subtitle names the pledge amount. Primary
-"Keep my word" closes the shield. Secondary "Unlock for €N" posts a
+"Keep my word" closes the shield. Secondary "Unlock for $N" posts a
 time-sensitive local notification; tapping it opens Pledge on the surrender
 modal for that pledge. (Shield extensions cannot open apps directly.)
 
@@ -98,7 +98,7 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 | Day boundary | midnight, device local time | Screen Time schedule |
 | Pledge end | start + N × 24 h exactly (DST-safe) | `pledgeEndsAt` |
 | Usage tick | every 5 min | `TICK_MINUTES` |
-| Currency | € in the app, `eur` on the backend | `src/config.ts`, `PLEDGE_CURRENCY` |
+| Currency | $ in the app, `usd` on the backend | `src/config.ts`, `PLEDGE_CURRENCY` |
 | Test card | 4242 4242 4242 4242 (sandbox Stripe keys are live on Vercel now) | |
 
 ## Decisions taken (don't reopen)
@@ -116,10 +116,11 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 - The mirror and top-apps panels are display-only (Apple sandbox); the
   numbers never reach JS or the backend, and this cannot be worked around.
 - The report extension ships in store builds (Apple approved it).
+- Currency is US dollars everywhere: `$` in the app, `usd` on the backend,
+  "US dollars" in the terms (29 Oct 2026).
 
 ## Open decisions (ask the owner, don't guess)
 
-- Currency for launch: € (now) or $ (owner lives in the US).
 - Charity wording: "Make-A-Wish" is a placeholder; no agreement exists.
 - Shield look: an animation is impossible; options offered were solid ink
   with a cream "p" icon, ember accent, or a still from the montage. No pick.

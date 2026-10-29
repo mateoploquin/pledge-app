@@ -43,9 +43,9 @@ Demo account:
 How to test in under two minutes:
 1. Sign in, allow Screen Time access, see the 7-day summary, Continue.
 2. Pick one or two apps in the picker, set a limit of 0 minutes (full
-   block), 7 days, €5, accept the rules, add the card.
+   block), 7 days, $5, accept the rules, add the card.
 3. Open one of the chosen apps: the Pledge shield appears.
-4. Tap "Unlock for €5" on the shield, then confirm in Pledge: the pledge
+4. Tap "Unlock for $5" on the shield, then confirm in Pledge: the pledge
    ends and the card is charged. Or tap "Keep my word" and the app stays
    blocked.
 
@@ -53,7 +53,6 @@ How to test in under two minutes:
 
 - [ ] Live Stripe keys on Vercel production (currently sandbox).
 - [ ] Charity wording confirmed in the rules step and the terms page.
-- [ ] Currency decided (eur or usd) in src/config.ts and backend PLEDGE_CURRENCY.
 - [ ] App Privacy questionnaire: collects email, name, payment info via
       Stripe, device token for push. No tracking.
 - [ ] Screenshots from the real device: opener, mirror step, apps step,

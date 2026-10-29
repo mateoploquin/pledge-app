@@ -13,7 +13,7 @@ export function stripe(): Stripe {
   return client;
 }
 
-export const CURRENCY = (process.env.PLEDGE_CURRENCY ?? "eur").toLowerCase();
+export const CURRENCY = (process.env.PLEDGE_CURRENCY ?? "usd").toLowerCase();
 
 // Must match what the installed @stripe/stripe-react-native expects.
 export const EPHEMERAL_KEY_API_VERSION =

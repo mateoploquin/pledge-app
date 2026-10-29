@@ -10,4 +10,4 @@ export const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE
 
 export const STRIPE_MERCHANT_ID = "merchant.pledge.applepay";
 export const STRIPE_MERCHANT_COUNTRY = "ES";
-export const CURRENCY_SYMBOL = "€";
+export const CURRENCY_SYMBOL = "$";

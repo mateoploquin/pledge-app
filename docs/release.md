@@ -71,8 +71,9 @@ and that the built app has `Extensions/ReportExtension.appex`.
 
 - [ ] Live Stripe keys on Vercel production (sandbox keys are there now so
       testers can use card 4242 4242 4242 4242).
-- [ ] Currency decided (eur or usd): `CURRENCY_SYMBOL` in `src/config.ts`
-      and `PLEDGE_CURRENCY` on the backend.
+- [x] Currency: US dollars (decided 29 Oct 2026). `CURRENCY_SYMBOL` in
+      `src/config.ts`, `PLEDGE_CURRENCY` defaults to `usd` on the backend,
+      the terms say "US dollars". Needs a backend deploy and a new build.
 - [ ] Charity wording in the rules step and in `backend/src/legal.ts`.
       Current text names Make-A-Wish; reword to "Pledge donates its net
       proceeds from forfeited pledges to charity" unless an agreement exists.

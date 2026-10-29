@@ -14,7 +14,7 @@ const items: CarouselItem[] = [
     image: require("../../../assets/images/onboarding/instructions/instruction-2.png"),
     title: "Make a Pledge",
     subtitle:
-      "Turn intention into action! Pledge €10–€100 and stay committed—financial incentives make you 3x more likely to reach your goal! ",
+      "Turn intention into action! Pledge $10–$100 and stay committed—financial incentives make you 3x more likely to reach your goal! ",
   },
   {
     image: require("../../../assets/images/onboarding/instructions/instruction-3.png"),

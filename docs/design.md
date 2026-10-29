@@ -78,7 +78,7 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
   flex row with `alignItems: "baseline"`. iOS aligns flex items by their
   bottom edge, not the glyph baseline, so the small word sits low. The
   currency sign goes before the number, no space, as everywhere else
-  ("€10 on your word").
+  ("$10 on your word").
 - `SetSlider`: ember track and thumb, evenly spaced tick labels passed
   explicitly, animated jump when a preset chip is tapped, selection haptic
   on each value change, thumb must not drift from the value.
@@ -107,7 +107,7 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
 - Questions, not instructions, on pledge steps. No hint text under controls.
 - "Pledge", "your word", "keep your word", "give up". Never "challenge",
   "penalty", "fine", "fee" (except the charity line), "fail".
-- Plain money: "Unlock for €5", "What's your word worth?"
+- Plain money: "Unlock for $5", "What's your word worth?"
 - Errors: say what happened and what to do, in one sentence each.
 
 ## Film and imagery

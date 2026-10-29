@@ -144,7 +144,7 @@ active/surrendered/completed/forfeited, amounts, `endsAt`,
 Env (see `backend/.env.example`): `STRIPE_SECRET_KEY`,
 `STRIPE_PUBLISHABLE_KEY` (sandbox keys on Vercel right now; live keys
 must go back before launch), `FIREBASE_SERVICE_ACCOUNT` (JSON or base64),
-`PLEDGE_CURRENCY=eur`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY_P8`
+`PLEDGE_CURRENCY=usd`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY_P8`
 (base64), `APNS_BUNDLE_ID`, `CRON_SECRET`. All set in Vercel production as
 Sensitive. Local dev: `backend/.env` (gitignored), `npm run dev` on :3000.
 
