@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, PressableProps, StyleProp, ViewStyle } from "react-native";
+import { Pressable, PressableProps, StyleProp, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -35,10 +35,12 @@ const PressableScale: React.FC<PressableScaleProps> = ({
   ...rest
 }) => {
   const pressed = useSharedValue(0);
+  // Keep any opacity the caller set (a disabled button's dim) under the press dim.
+  const baseOpacity = (StyleSheet.flatten(style) as ViewStyle | undefined)?.opacity ?? 1;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * (1 - scaleTo) }],
-    opacity: 1 - pressed.value * 0.12,
+    opacity: baseOpacity * (1 - pressed.value * 0.12),
   }));
 
   return (
