@@ -6,13 +6,14 @@ store build differs from the dev build.
 
 ## Current status (29 October 2026)
 
-**Build 19 (1.1.0) is on TestFlight**, submitted 29 October 2026 with all
-five targets, Screen Time panels included. Build 18, submitted earlier the
-same day, is the same app without the report extension. Both appear under
-https://appstoreconnect.apple.com/apps/6738790677/testflight/ios once
-Apple finishes processing. Add testers there (Internal Testing for the
-team, External Testing with a public link for others; external needs a
-short Beta App Review on the first build).
+**Build 20 (1.1.0) is on TestFlight**, processed by Apple on 29 October
+2026 with all five targets, Screen Time panels included. Build 19 was
+rejected at processing (ITMS-91179, see the ExtensionKit section). Build 18
+is the same app without the report extension. Builds appear under
+https://appstoreconnect.apple.com/apps/6738790677/testflight/ios. Add
+testers there (Internal Testing for the team, External Testing with a
+public link for others; external needs a short Beta App Review on the
+first build).
 
 **Report extension approved.** Apple granted Family Controls
 (Distribution) for `com.pledgecompany.pledge.ReportExtension` on
