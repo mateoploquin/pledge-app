@@ -9,5 +9,5 @@ export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_URL).repl
 export const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
 
 export const STRIPE_MERCHANT_ID = "merchant.pledge.applepay";
-export const STRIPE_MERCHANT_COUNTRY = "ES";
+export const STRIPE_MERCHANT_COUNTRY = "US";
 export const CURRENCY_SYMBOL = "$";
