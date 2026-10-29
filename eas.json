@@ -7,7 +7,7 @@
     "base": {
       "ios": {
         "cocoapods": "1.16.2",
-        "image": "latest"
+        "image": "macos-tahoe-26.5-xcode-26.6"
       }
     },
     "development": {

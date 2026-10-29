@@ -50,6 +50,11 @@ store build differs from the dev build.
   auto-increments in `app.json`; commit that change.
 - Submit to TestFlight: `npx eas submit --platform ios --latest`. The App
   Store Connect app id (6738790677) is in `eas.json`.
+- The build image is pinned in `eas.json` to Xcode 26.6, the same as the
+  Macs we build on. Expo's `latest` image is Xcode 27, which rejects the
+  sub-15.0 deployment targets that many of our pods still declare, and the
+  archive fails with hundreds of "deployment target is set to 13.4" errors.
+  Move the pin only together with raising the pods' deployment targets.
 - `.easignore` governs what is uploaded. EAS does not use `.gitignore`.
   Never add secrets to the upload; `backend/` and every `.env*` are excluded.
 
