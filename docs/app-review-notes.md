@@ -23,7 +23,10 @@ Why the app uses Family Controls / Screen Time:
   screen and offer "Keep my word" or "Unlock", which opens the app.
 - DeviceActivityReport extension: to show the user their own last 7 days
   of screen time on the first run. This runs in Apple's sandbox; no usage
-  data leaves the device.
+  data leaves the device. NOTE: builds made before Apple approves Family
+  Controls (Distribution) for this extension (request 3D9M9QX3QF) do not
+  include it, and the Screen Time panels are hidden. Drop this bullet from
+  the notes for those builds. See docs/release.md.
 
 Payments: the saved card is handled by Stripe. The charge is a penalty the
 user agreed to when starting the pledge, not a purchase of digital content
@@ -41,7 +44,8 @@ Demo account:
   unlock.)
 
 How to test in under two minutes:
-1. Sign in, allow Screen Time access, see the 7-day summary, Continue.
+1. Sign in, allow Screen Time access (the 7-day summary appears only in
+   builds that include the report extension), Continue.
 2. Pick one or two apps in the picker, set a limit of 0 minutes (full
    block), 7 days, €5, accept the rules, add the card.
 3. Open one of the chosen apps: the Pledge shield appears.

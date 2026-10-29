@@ -103,6 +103,14 @@ public class PledgeActivityReportModule: Module {
   public func definition() -> ModuleDefinition {
     Name("PledgeActivityReport")
 
+    /// True when the ReportExtension is inside this build. Store builds can
+    /// ship without it while Apple reviews its Family Controls approval; the
+    /// app then hides every Screen Time panel instead of drawing a blank.
+    Function("isExtensionBundled") { () -> Bool in
+      guard let plugins = Bundle.main.builtInPlugInsPath else { return false }
+      return FileManager.default.fileExists(atPath: plugins + "/ReportExtension.appex")
+    }
+
     View(PledgeActivityReportView.self) {
       Prop("context") { (view: PledgeActivityReportView, value: String?) in
         view.context = value ?? "totalActivity"

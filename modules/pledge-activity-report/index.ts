@@ -1,4 +1,4 @@
-import { requireNativeViewManager } from "expo-modules-core";
+import { requireNativeModule, requireNativeViewManager } from "expo-modules-core";
 import React, { useMemo } from "react";
 import { Platform, StyleProp, View, ViewStyle } from "react-native";
 
@@ -20,16 +20,22 @@ type NativeProps = {
 };
 
 let NativeReport: React.ComponentType<NativeProps> | null = null;
+let extensionBundled = false;
 if (Platform.OS === "ios") {
   try {
     NativeReport = requireNativeViewManager("PledgeActivityReport");
+    extensionBundled = requireNativeModule("PledgeActivityReport").isExtensionBundled();
   } catch {
     NativeReport = null;
   }
 }
 
-/** False on builds without the ReportExtension (older dev clients). */
-export const isActivityReportAvailable = () => NativeReport !== null;
+/**
+ * False on builds without the ReportExtension: older dev clients, and store
+ * builds made while Apple reviews the extension's Family Controls approval
+ * (see docs/release.md). Every Screen Time panel is hidden then.
+ */
+export const isActivityReportAvailable = () => NativeReport !== null && extensionBundled;
 
 /** Height of one row drawn by the extension's TopAppsView. Keep in sync. */
 export const TOP_APPS_ROW_HEIGHT = 52;

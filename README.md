@@ -13,9 +13,14 @@ To run the app in the simulator, use:
 npx expo run:[ios or android]
 ```
 
-## Export to Transporter for TestFlight
+## TestFlight and the App Store
 
-To export it to Transporter and get it on TestFlight, you need to use `EAS`:
+Store builds are made with EAS. See `docs/release.md` for the full
+procedure, what is excluded from store builds right now and why (the
+report extension is waiting on an Apple approval), and the pre-launch
+checklist. `docs/app-review-notes.md` holds the notes for App Review.
+
 ```sh
-eas build --platform [ios or android] --profile development
+npx eas build --platform ios --profile production
+npx eas submit --platform ios --latest
 ```

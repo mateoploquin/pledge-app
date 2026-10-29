@@ -25,7 +25,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://pledge-backend-weld.vercel.app"
+        "EXPO_PUBLIC_API_URL": "https://pledge-backend-weld.vercel.app",
+        "PLEDGE_WITHOUT_REPORT": "1"
       }
     },
     "production": {
@@ -35,7 +36,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://pledge-backend-weld.vercel.app"
+        "EXPO_PUBLIC_API_URL": "https://pledge-backend-weld.vercel.app",
+        "PLEDGE_WITHOUT_REPORT": "1"
       },
       "autoIncrement": true
     }

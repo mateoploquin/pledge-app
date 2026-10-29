@@ -10,6 +10,7 @@ import SetTimeLimit from "./setup/set-time-limit";
 import SetDuration from "./setup/set-duration";
 import SetApps from "./setup/set-apps";
 import ScreenTimeMirror from "./setup/screen-time-mirror";
+import { isActivityReportAvailable } from "../../../modules/pledge-activity-report";
 import AcceptTerms from "./setup/accept-terms";
 import SetPayment from "./setup/set-up-payment";
 import InkScreen from "../../components/ink/ink-screen";
@@ -65,7 +66,7 @@ const Instructions: React.FC = () => {
 
   const steps = useMemo<StepName[]>(
     () => [
-      ...(firstPledge ? (["mirror"] as StepName[]) : []),
+      ...(firstPledge && isActivityReportAvailable() ? (["mirror"] as StepName[]) : []),
       "apps",
       "limit",
       "duration",

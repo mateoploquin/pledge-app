@@ -11,7 +11,7 @@ import { Pledge } from "../../types";
 import { DailyUsage, getTodayUsage, splitMinutes, stopPledgeMonitoring } from "../home/home.controller";
 import { CURRENCY_SYMBOL } from "../../config";
 import { ActivityLabels } from "../../../modules/pledge-activity-labels";
-import { TopApps } from "../../../modules/pledge-activity-report";
+import { TopApps, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
 import { getPledge, pledgeEndsAt, removePledge } from "../../services/pledges";
 import { completePledge } from "../../services/sendPledgeData";
 import { auth } from "../../firebaseConfig";
@@ -159,15 +159,17 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
           </View>
           <Text style={[styles.todayLine, usage.limitReached && styles.todayBlocked]}>{todayLine}</Text>
           {timeValue > 0 && <ScreenTimeList usedMinutes={usage.usedMinutes} limitMinutes={timeValue} />}
-          <TopApps
-            range="today"
-            maxApps={3}
-            familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
-            textColor={cream.base}
-            mutedColor={cream.muted}
-            accentColor={ember}
-            style={styles.topApps}
-          />
+          {isActivityReportAvailable() && (
+            <TopApps
+              range="today"
+              maxApps={3}
+              familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
+              textColor={cream.base}
+              mutedColor={cream.muted}
+              accentColor={ember}
+              style={styles.topApps}
+            />
+          )}
         </View>
       </ScrollView>
 
