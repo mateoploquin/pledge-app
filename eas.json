@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 7.8.4"
+    "version": ">= 7.8.4",
+    "appVersionSource": "local"
   },
   "build": {
     "base": {
@@ -22,6 +23,9 @@
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://pledge-backend-weld.vercel.app"
       }
     },
     "production": {
@@ -29,7 +33,11 @@
       "distribution": "store",
       "ios": {
         "resourceClass": "m-medium"
-      }
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://pledge-backend-weld.vercel.app"
+      },
+      "autoIncrement": true
     }
   },
   "submit": {
