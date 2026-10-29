@@ -5,6 +5,7 @@ import {
   AuthorizationStatusType,
 } from "react-native-device-activity/build/ReactNativeDeviceActivity.types";
 import { AuthorizationStatus, getAuthorizationStatus } from "react-native-device-activity";
+import TheDeal from "./setup/the-deal";
 import SetPledge from "./setup/set-pledge";
 import SetTimeLimit from "./setup/set-time-limit";
 import SetDuration from "./setup/set-duration";
@@ -26,10 +27,11 @@ import { fetchHasCard } from "../../services/stripe-api";
 import { auth } from "../../firebaseConfig";
 import { registerDevice } from "../../services/devices";
 
-type StepName = "mirror" | "apps" | "limit" | "duration" | "amount" | "terms" | "card";
+type StepName = "deal" | "mirror" | "apps" | "limit" | "duration" | "amount" | "terms" | "card";
 
 /** The one line at the top of each step. */
 const QUESTION: Record<StepName, string> = {
+  deal: "Here's the\n*deal.*",
   mirror: "Your last\n*seven* days.",
   apps: "Which apps take\nthe *most* from you?",
   limit: "How much is\n*enough* a day?",
@@ -40,7 +42,8 @@ const QUESTION: Record<StepName, string> = {
 };
 
 /**
- * Making a pledge: one question per screen, dissolving to the next. Terms
+ * Making a pledge: one question per screen, dissolving to the next. The
+ * first pledge opens with the deal in six lines and the 7-day mirror. Terms
  * are asked once per device and the card step is skipped when a card is
  * already on file, so a second pledge takes four taps.
  */
@@ -57,7 +60,8 @@ const Instructions: React.FC = () => {
   // Unknown until checked; while unknown we assume the step is needed.
   const [termsDone, setTermsDone] = useState(false);
   const [hasCard, setHasCard] = useState(false);
-  // The mirror step is for the first pledge only; after that Home shows the number.
+  // The deal and the mirror are for the first pledge only; after that the
+  // user knows the deal and Home shows the number.
   const [firstPledge, setFirstPledge] = useState(true);
 
   const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
@@ -66,6 +70,7 @@ const Instructions: React.FC = () => {
 
   const steps = useMemo<StepName[]>(
     () => [
+      ...(firstPledge ? (["deal"] as StepName[]) : []),
       ...(firstPledge && isActivityReportAvailable() ? (["mirror"] as StepName[]) : []),
       "apps",
       "limit",
@@ -183,7 +188,9 @@ const Instructions: React.FC = () => {
       <Dissolve id={step} style={styles.step}>
         <Line text={QUESTION[step]} />
         <View style={styles.control}>
-          {step === "mirror" ? (
+          {step === "deal" ? (
+            <TheDeal />
+          ) : step === "mirror" ? (
             <ScreenTimeMirror
               authorizationStatus={authorizationStatus}
               setAuthorizationStatus={setAuthorizationStatus}

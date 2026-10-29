@@ -39,6 +39,7 @@ pinned at the bottom, content dissolving between steps. Steps, in order:
 
 | Step | Question | Control | Continue is enabled when |
 | --- | --- | --- | --- |
+| deal (first pledge only) | Here's the *deal.* | six lines: pick apps, set a daily limit, put money on it; go over and they lock until midnight, unlock early and you pay, keep your word and it costs nothing | always |
 | mirror (first pledge only, and only when the report extension is bundled) | Your last *seven* days. | Asks Screen Time access immediately, then the system-drawn 7-day total and top 3 apps | Screen Time access approved |
 | apps | Which apps take the *most* from you? | Opens Apple's app picker right away; shows the chosen app icons after | at least one app, category or site chosen |
 | limit | How much is *enough* a day? | slider 0–120 min with ticks 0/30/60/90/120, presets 30/60/90; 0 means blocked all day | always |
@@ -105,8 +106,10 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 
 - Opener film is the owner's own montage (`assets/video/montage.mp4`),
   stitched into a seamless loop. Not the earlier generated clip, not stock.
-- No explainer carousel, no slide-to-unlock splash, no separate payment
-  page, no progress bar on Home, no failure screen after surrender, no hint
+- The deal is said once, in six lines, as the first step of the first
+  pledge (added 29 Oct 2026 after testers said they did not know what they
+  were signing up for). Still no explainer carousel, no slide-to-unlock
+  splash, no separate payment page, no progress bar on Home, no failure screen after surrender, no hint
   texts under controls.
 - The whole app is in the ink/cream/serif style (see `docs/design.md`).
 - Amount slider ticks are 0, 5, 10, 15, 20, evenly spaced; presets 5/10/20.
