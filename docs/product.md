@@ -21,7 +21,7 @@ minus a small fee (wording still open, see decisions).
 
 ### Opener (`src/screens/onboarding/onboarding.tsx`)
 
-One screen, three states on the same looping film:
+One screen, four states on the same looping film:
 
 1. **film**: the montage loops full-bleed under a dark shade. Serif lines
    dissolve one at a time. One cream pill: "I'm new here"; a quiet link:
@@ -29,8 +29,16 @@ One screen, three states on the same looping film:
 2. **signup / login**: Sign in with Apple, Google, or email, on the film.
    Switching between the two is a dissolve, never a layout jump.
 3. **email**: name (signup only), email, password.
+4. **deal** (first time in, when no pledge is stored on the device): the
+   deal told in six beats that play on their own, 3.4 s each, one serif
+   line and one small figure per beat (`deal-beats.tsx`): the apps appear,
+   an ember ring fills to the limit, $10 counts up, the ring runs over and
+   the shield appears, the $10 dims to "charged", then counts back to $0
+   "kept". A tap anywhere skips to the next beat. After the last beat the
+   first question comes up on its own.
 
-Signed in with pledges → Home. Signed in without → Instructions.
+Signed in with pledges → Instructions straight away (Home when the app
+launches already signed in). Signed in without → the deal, then Instructions.
 
 ### Making a pledge (`src/screens/onboarding/instructions.tsx`)
 
@@ -39,7 +47,6 @@ pinned at the bottom, content dissolving between steps. Steps, in order:
 
 | Step | Question | Control | Continue is enabled when |
 | --- | --- | --- | --- |
-| deal (first pledge only) | Here's the *deal.* | six lines: pick apps, set a daily limit, put money on it; go over and they lock until midnight, unlock early and you pay, keep your word and it costs nothing | always |
 | mirror (first pledge only, and only when the report extension is bundled) | Your last *seven* days. | Asks Screen Time access immediately, then the system-drawn 7-day total and top 3 apps | Screen Time access approved |
 | apps | Which apps take the *most* from you? | Opens Apple's app picker right away; shows the chosen app icons after | at least one app, category or site chosen |
 | limit | How much is *enough* a day? | slider 0–120 min with ticks 0/30/60/90/120, presets 30/60/90; 0 means blocked all day | always |
@@ -106,10 +113,10 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 
 - Opener film is the owner's own montage (`assets/video/montage.mp4`),
   stitched into a seamless loop. Not the earlier generated clip, not stock.
-- The deal is said once, in six lines, as the first step of the first
-  pledge (added 29 Oct 2026 after testers said they did not know what they
-  were signing up for). Still no explainer carousel, no slide-to-unlock
-  splash, no separate payment page, no progress bar on Home, no failure screen after surrender, no hint
+- The deal is told once, on the film after sign-in, as six beats that play
+  on their own (29 Oct 2026, after testers said they did not know what they
+  were signing up for). Not as a step, not as a carousel to swipe. Still no
+  slide-to-unlock splash, no separate payment page, no progress bar on Home, no failure screen after surrender, no hint
   texts under controls.
 - The whole app is in the ink/cream/serif style (see `docs/design.md`).
 - Amount slider ticks are 0, 5, 10, 15, 20, evenly spaced; presets 5/10/20.

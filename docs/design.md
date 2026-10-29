@@ -91,6 +91,9 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
   ease-out crossfade with a 12 pt lift; the screen underneath dims to 60 %.
   Modals (app picker, share sheet) use the native iOS sheet.
 - Within a screen: `Dissolve` only. No slides.
+- The deal beats (`deal-beats.tsx`) use React Native's `Animated` and only
+  fade, fill or count. Figures are drawn in ink, cream and ember: raised
+  ink pills, an ember ring, the serif amount, a miniature of the shield.
 - Film: `expo-av` Video, looping, muted, cover; the montage is pre-stitched
   with a 0.5 s crossfade at the seam so the loop has no cut.
 - Haptics (`src/utils/haptics.ts`): `tap` light for ordinary taps, `press`
