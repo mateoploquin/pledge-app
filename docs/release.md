@@ -6,11 +6,11 @@ store build differs from the dev build.
 
 ## Current status (29 October 2026)
 
-**Build 21 (1.1.0) is building on EAS** (29 October 2026, evening). It
-carries: the blank first pledge step fix, currency sign and units on the
+**Build 21 (1.1.0) is submitted to TestFlight** (uploaded 29 October 2026
+at 16:50, EAS build 1fca3bb1, processing by Apple pending). It carries: the blank first pledge step fix, currency sign and units on the
 number's baseline, US dollars and US merchant country, and the deal told
-on the film after sign-in in six beats. Record it here once TestFlight has
-processed it. **Build 20 (1.1.0) is on TestFlight**, processed by Apple on
+on the film after sign-in in six beats. Confirm here once TestFlight shows
+it processed. **Build 20 (1.1.0) is on TestFlight**, processed by Apple on
 29 October 2026 with all five targets, Screen Time panels included. Build 19 was
 rejected at processing (ITMS-91179, see the ExtensionKit section). Build 18
 is the same app without the report extension. Builds appear under
