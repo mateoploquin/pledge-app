@@ -10,7 +10,7 @@ index 1a7fe0a..5c9de15 100644
  export declare const SHOULD_USE_APP_GROUPS_BY_DEFAULT: Record<ExtensionType, boolean>;
  export declare function getTargetInfoPlistForType(type: ExtensionType): string;
 diff --git a/node_modules/@kingstinct/expo-apple-targets/build/target.js b/node_modules/@kingstinct/expo-apple-targets/build/target.js
-index f1809af..f68c21b 100644
+index f1809af..153b1ef 100644
 --- a/node_modules/@kingstinct/expo-apple-targets/build/target.js
 +++ b/node_modules/@kingstinct/expo-apple-targets/build/target.js
 @@ -26,6 +26,7 @@ exports.KNOWN_EXTENSION_POINT_IDENTIFIERS = {
@@ -29,7 +29,32 @@ index f1809af..f68c21b 100644
  };
  // TODO: Maybe we can replace `NSExtensionPrincipalClass` with the `@main` annotation that newer extensions use?
  function getTargetInfoPlistForType(type) {
-@@ -337,6 +339,7 @@ function needsEmbeddedSwift(type) {
+@@ -90,6 +92,16 @@ function getTargetInfoPlistForType(type) {
+             },
+         });
+     }
++    else if (type === "device-activity-report") {
++        // DeviceActivityReport extensions are ExtensionKit extensions: they live
++        // in Extensions/ and App Store Connect rejects them as NSExtensions
++        // (ITMS-91179).
++        return plist_1.default.build({
++            EXAppExtensionAttributes: {
++                EXExtensionPointIdentifier: "com.apple.deviceactivityui.report-extension",
++            },
++        });
++    }
+     else if (type === "clip") {
+         return plist_1.default.build({
+             CFBundleName: "$(PRODUCT_NAME)",
+@@ -317,6 +329,7 @@ function productTypeForType(type) {
+         case "watch":
+             return "com.apple.product-type.application";
+         case "app-intent":
++        case "device-activity-report":
+             return "com.apple.product-type.extensionkit-extension";
+         default:
+             return "com.apple.product-type.app-extension";
+@@ -337,6 +350,7 @@ function needsEmbeddedSwift(type) {
          "device-activity-monitor",
          "shield-action",
          "shield-configuration",
@@ -37,7 +62,7 @@ index f1809af..f68c21b 100644
      ].includes(type);
  }
  exports.needsEmbeddedSwift = needsEmbeddedSwift;
-@@ -375,6 +378,9 @@ function getFrameworksForType(type) {
+@@ -375,6 +389,9 @@ function getFrameworksForType(type) {
      else if (type === "shield-configuration") {
          return [];
      }
@@ -47,3 +72,28 @@ index f1809af..f68c21b 100644
      else if (type === "action") {
          return [
          // "UniformTypeIdentifiers"
+@@ -395,6 +412,11 @@ function isNativeTargetOfType(target, type) {
+             "com.apple.product-type.application.on-demand-install-capable") {
+         return true;
+     }
++    if (target.props.productType === "com.apple.product-type.extensionkit-extension") {
++        const exPlist = target.getDefaultConfiguration().getInfoPlist();
++        const exPoint = exPlist.EXAppExtensionAttributes && exPlist.EXAppExtensionAttributes.EXExtensionPointIdentifier;
++        return !!exPoint && exports.KNOWN_EXTENSION_POINT_IDENTIFIERS[exPoint] === type;
++    }
+     if (target.props.productType !== "com.apple.product-type.app-extension") {
+         return false;
+     }
+diff --git a/node_modules/@kingstinct/expo-apple-targets/build/withXcodeChanges.js b/node_modules/@kingstinct/expo-apple-targets/build/withXcodeChanges.js
+index 95989d5..300e802 100644
+--- a/node_modules/@kingstinct/expo-apple-targets/build/withXcodeChanges.js
++++ b/node_modules/@kingstinct/expo-apple-targets/build/withXcodeChanges.js
+@@ -796,7 +796,7 @@ async function applyXcodeChanges(config, project, props) {
+                     ? "wrapper.extensionkit-extension"
+                     : "wrapper.app-extension",
+                 includeInIndex: 0,
+-                path: productName + (isExtension ? ".appex" : ".app"),
++                path: productName + (isExtension || isExtensionKit ? ".appex" : ".app"),
+                 sourceTree: "BUILT_PRODUCTS_DIR",
+             }),
+             settings: {

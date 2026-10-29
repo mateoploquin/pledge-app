@@ -107,8 +107,12 @@ public class PledgeActivityReportModule: Module {
     /// ship without it while Apple reviews its Family Controls approval; the
     /// app then hides every Screen Time panel instead of drawing a blank.
     Function("isExtensionBundled") { () -> Bool in
-      guard let plugins = Bundle.main.builtInPlugInsPath else { return false }
-      return FileManager.default.fileExists(atPath: plugins + "/ReportExtension.appex")
+      // ExtensionKit extensions live in Extensions/; older builds put it in PlugIns/.
+      let candidates = [
+        Bundle.main.bundleURL.appendingPathComponent("Extensions/ReportExtension.appex").path,
+        Bundle.main.bundleURL.appendingPathComponent("PlugIns/ReportExtension.appex").path,
+      ]
+      return candidates.contains { FileManager.default.fileExists(atPath: $0) }
     }
 
     View(PledgeActivityReportView.self) {

@@ -30,6 +30,20 @@ without the extension again, re-add the `.easignore` line and set
 reads that flag to drop the target from the list EAS expects credentials
 for.
 
+## The report extension is an ExtensionKit extension
+
+Apple's DeviceActivityReport extension point is ExtensionKit-based: the
+bundle must sit in `Pledge.app/Extensions/` with an
+`EXAppExtensionAttributes` Info.plist key, not in `PlugIns/` with
+`NSExtension`. App Store Connect rejects the other form at upload with
+ITMS-91179 (build 19 hit this), while dev builds happen to run it either
+way. `patches/@kingstinct+expo-apple-targets+0.1.19.patch` teaches the
+target generator the `device-activity-report` type: ExtensionKit product
+type, `EXAppExtensionAttributes` plist, "Embed ExtensionKit Extensions"
+phase, and `targets/ReportExtension/Info.plist` uses the EX key. If the
+generator package is ever upgraded, re-check that the patch still applies
+and that the built app has `Extensions/ReportExtension.appex`.
+
 ## Build and submit
 
 - Credentials live on EAS (distribution certificate and one provisioning
