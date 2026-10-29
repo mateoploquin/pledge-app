@@ -1,26 +1,31 @@
-cd pledge-app
-## Prerequisites
+# Pledge
 
-You need to use at least `nvm` > 18:
+Pick apps, set a daily limit, choose 7/15/30 days, put a card down. Keep your
+word and nothing is charged.
+
+Start with `CLAUDE.md` (map for agents and humans), then `docs/`:
+
+- `docs/product.md`: what the app does, screen by screen, decisions and open questions
+- `docs/design.md`: look, motion, copy voice, tokens
+- `docs/architecture.md`: stack, native targets, backend, Apple limits, dev loop, gotchas
+- `docs/release.md`: TestFlight / App Store procedure and status
+- `docs/app-review-notes.md`: notes for App Review
+
+## Run on the phone
+
 ```sh
-nvm use 18
+export PATH="/opt/homebrew/opt/node@20/bin:$PATH"
+npm install                      # runs patch-package
+npx expo prebuild --platform ios --no-install && (cd ios && pod install)
+npx expo start --dev-client --tunnel
 ```
 
-## Run the App in the Simulator
+Then build and install with xcodebuild/devicectl as in `docs/architecture.md`.
+Screen Time does not work in the simulator.
 
-To run the app in the simulator, use:
-```sh
-npx expo run:[ios or android]
-```
-
-## TestFlight and the App Store
-
-Store builds are made with EAS. See `docs/release.md` for the full
-procedure, what is excluded from store builds right now and why (the
-report extension is waiting on an Apple approval), and the pre-launch
-checklist. `docs/app-review-notes.md` holds the notes for App Review.
+## Store builds
 
 ```sh
-npx eas build --platform ios --profile production
+npx eas build --platform ios --profile production --non-interactive
 npx eas submit --platform ios --latest
 ```
