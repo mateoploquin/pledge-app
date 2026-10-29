@@ -6,6 +6,12 @@ store build differs from the dev build.
 
 ## Current status (29 October 2026)
 
+**Build 18 (1.1.0) is on TestFlight**, submitted 29 October 2026 without
+the report extension. Submission fd93d328 on EAS; the build appears under
+https://appstoreconnect.apple.com/apps/6738790677/testflight/ios once
+Apple finishes processing. Add testers there (Internal Testing for the
+team, External Testing for others; external needs a short Beta App Review).
+
 **Store builds ship without the report extension for now.**
 
 - The `ReportExtension` target draws the user's own Screen Time: the
