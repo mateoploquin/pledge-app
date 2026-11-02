@@ -6,8 +6,9 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
-import * as AppleAuthentication from "expo-apple-authentication";
 import { AntDesign } from "@expo/vector-icons";
 import colors from "../../theme/colors";
 import {
@@ -72,33 +73,28 @@ const SocialSignInButtons: React.FC<SocialSignInButtonsProps> = ({ onSignedIn, t
         // Hold the Apple button's room while the answer is on its way.
         <View style={styles.appleSlot} />
       ) : appleAvailable && (
-        <AppleAuthentication.AppleAuthenticationButton
-          buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-          buttonStyle={
-            dark
-              ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
-              : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-          }
-          cornerRadius={25}
-          style={styles.appleButton}
+        // Drawn by hand rather than with Apple's native button so it matches
+        // Google's: same pill, type and English label whatever the phone's
+        // language.
+        <ProviderButton
+          icon="apple1"
+          label="Continue with Apple"
+          dark={dark}
+          busy={busy === "apple"}
+          disabled={busy !== null}
           onPress={() => run("apple")}
+          style={styles.appleButton}
         />
       )}
 
-      <TouchableOpacity
-        style={[styles.googleButton, dark && styles.googleButtonDark, busy === "google" && styles.disabled]}
-        onPress={() => run("google")}
+      <ProviderButton
+        icon="google"
+        label="Continue with Google"
+        dark={dark}
+        busy={busy === "google"}
         disabled={busy !== null}
-      >
-        {busy === "google" ? (
-          <ActivityIndicator color={colors.black} />
-        ) : (
-          <>
-            <AntDesign name="google" size={18} color={colors.black} style={styles.googleIcon} />
-            <Text style={styles.googleText}>Continue with Google</Text>
-          </>
-        )}
-      </TouchableOpacity>
+        onPress={() => run("google")}
+      />
     </View>
   );
 };
@@ -129,13 +125,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   appleButton: {
-    height: 50,
     marginBottom: 12,
   },
   appleSlot: {
     height: APPLE_SLOT,
   },
-  googleButton: {
+  button: {
     height: 50,
     borderRadius: 25,
     borderWidth: 1,
@@ -145,14 +140,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  googleButtonDark: {
+  buttonDark: {
     borderColor: "#F8F4EC",
     backgroundColor: "#F8F4EC",
   },
-  googleIcon: {
+  icon: {
     marginRight: 10,
   },
-  googleText: {
+  label: {
     fontSize: 16,
     fontWeight: "500",
     color: colors.black,
@@ -161,5 +156,30 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 });
+
+const ProviderButton: React.FC<{
+  icon: "apple1" | "google";
+  label: string;
+  dark: boolean;
+  busy: boolean;
+  disabled: boolean;
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+}> = ({ icon, label, dark, busy, disabled, onPress, style }) => (
+  <TouchableOpacity
+    style={[styles.button, dark && styles.buttonDark, busy && styles.disabled, style]}
+    onPress={onPress}
+    disabled={disabled}
+  >
+    {busy ? (
+      <ActivityIndicator color={colors.black} />
+    ) : (
+      <>
+        <AntDesign name={icon} size={18} color={colors.black} style={styles.icon} />
+        <Text style={styles.label}>{label}</Text>
+      </>
+    )}
+  </TouchableOpacity>
+);
 
 export default SocialSignInButtons;

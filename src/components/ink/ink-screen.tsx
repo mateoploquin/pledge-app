@@ -1,8 +1,9 @@
 import React from "react";
 import { StatusBar, StyleSheet, Text, View, StyleProp, ViewStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PressableScale from "../buttons/pressable-scale";
-import { cream, ink } from "../../theme/tokens";
+import { cream, glow, ink } from "../../theme/tokens";
 
 interface InkScreenProps {
   children: React.ReactNode;
@@ -14,12 +15,13 @@ interface InkScreenProps {
   footer?: React.ReactNode;
 }
 
-/** The dark ground every screen stands on. */
+/** The dark ground every screen stands on, lit warm from the top. */
 const InkScreen: React.FC<InkScreenProps> = ({ children, backLabel, onBack, style, footer }) => {
   const insets = useSafeAreaInsets();
   return (
     <View style={styles.ground}>
       <StatusBar barStyle="light-content" />
+      <LinearGradient pointerEvents="none" colors={glow.colors} locations={glow.locations} style={styles.glow} />
       <View style={[styles.body, { paddingTop: insets.top + 8 }, style]}>
         {onBack ? (
           <PressableScale onPress={onBack} style={styles.back} haptic="tap" hitSlop={12}>
@@ -41,6 +43,13 @@ const styles = StyleSheet.create({
   ground: {
     flex: 1,
     backgroundColor: ink.base,
+  },
+  glow: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "65%",
   },
   body: {
     flex: 1,

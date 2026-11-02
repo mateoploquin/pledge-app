@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Pressable, PressableProps, StyleProp, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -36,18 +36,25 @@ const PressableScale: React.FC<PressableScaleProps> = ({
 }) => {
   const pressed = useSharedValue(0);
   // Keep any opacity the caller set (a disabled button's dim) under the press dim.
-  const baseOpacity = (StyleSheet.flatten(style) as ViewStyle | undefined)?.opacity ?? 1;
+  // It goes through a shared value: a plain number captured by the animated
+  // style was not reapplied when it changed, so a re-enabled button stayed dim.
+  const { opacity: callerOpacity, ...restStyle } = (StyleSheet.flatten(style) ?? {}) as ViewStyle;
+  const baseOpacity = typeof callerOpacity === "number" ? callerOpacity : 1;
+  const base = useSharedValue(baseOpacity);
+  useEffect(() => {
+    base.value = withTiming(baseOpacity, { duration: 160 });
+  }, [base, baseOpacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * (1 - scaleTo) }],
-    opacity: baseOpacity * (1 - pressed.value * 0.12),
+    opacity: base.value * (1 - pressed.value * 0.12),
   }));
 
   return (
     <AnimatedPressable
       {...rest}
       disabled={disabled}
-      style={[style, animatedStyle]}
+      style={[restStyle, animatedStyle]}
       onPressIn={(e) => {
         pressed.value = withTiming(1, { duration: 90 });
         if (!disabled && haptic !== "none") haptics[haptic]();

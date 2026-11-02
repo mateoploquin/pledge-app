@@ -96,10 +96,29 @@ run it.
 5. Surrender: `POST /stripe/charge {pledgeId}` → backend charges the saved
    payment method off-session → app stops monitoring and removes the
    pledge. Completion: `POST /pledge/:id/complete`.
+6. Paid break: `POST /stripe/break {pledgeId, day}` → backend reserves one
+   of the day's 3 slots in a transaction on the pledge doc (`breaks.{day}`),
+   charges $1 off-session (idempotency key per slot), gives the slot back
+   if the card fails. The app then unblocks the selection and starts
+   `Break{id}`: non-repeating, from 10 min ago to 5 min from now (Screen
+   Time refuses schedules under 15 min; a window that already started
+   begins at once), with `blockSelection` on `intervalDidEnd`, so the apps
+   lock again on the clock with Pledge closed. Skipped when the end falls
+   after midnight. `isOnBreak` (started < 5 min ago) keeps
+   `reassertBlocks` from re-blocking a pledge mid-break.
 
 Several pledges run side by side; every name is derived from the 10-char
 id and ids must be fixed length (the library clears events by prefix).
 Names must not contain underscores.
+
+Blocks are not per pledge: the library keeps one blocklist for the whole
+device, and unblocking a selection subtracts its apps from it. Two
+pledges that share an app would unblock each other, so after a pledge
+ends (surrender, completion, forfeit) `reassertBlocks` re-blocks every
+remaining pledge already over its limit today, and Home does the same on
+every load. Gap: at midnight each pledge's extension unblocks its own
+selection; a 0-minute pledge sharing apps with another may come out
+unblocked until Pledge is next opened.
 
 ## Deletion and revocation detection
 
@@ -179,6 +198,14 @@ Deploy: the owner runs `cd backend && vercel --prod --yes`. Agents cannot.
 - Two DeviceActivityReport views share one extension process; rendering
   two at once made one blank. Hence one `overview` context per screen and
   a fresh identity (`generation`) on every render.
+- The extension takes parameters only through the App Group. The
+  `recovered` context (Home's time back) reads `pledgeReport.recovered.anchorMs`
+  and `pledgeReport.recovered.selection` (the union of the pledges'
+  selections, JSON-encoded by `PledgeActivityReportView`), queries the whole
+  iPhone with no app filter and matches tokens itself, so one query gives
+  both the pledged apps and the phone's total. Report views start in their
+  final state and only reset for the animation in `onAppear`: a view that
+  never animates must still show its numbers.
 
 ## Dev loop
 

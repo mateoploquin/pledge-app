@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
-import { View, Text, ScrollView, StyleSheet, AppState } from "react-native";
+import { View, Text, ScrollView, StyleSheet, AppState, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import InkScreen from "../../components/ink/ink-screen";
 import PillButton from "../../components/ink/pill-button";
@@ -8,11 +8,26 @@ import { Line } from "../../components/ink/line";
 import ScreenTimeList from "../../lists/screen-time-list";
 import SurrenderModal from "../../components/modals/surrender-modal";
 import { Pledge } from "../../types";
-import { DailyUsage, getTodayUsage, splitMinutes, stopPledgeMonitoring } from "../home/home.controller";
+import {
+  DailyUsage,
+  breaksLeftToday,
+  getTodayUsage,
+  breakEndsAt,
+  isOnBreak,
+  localDay,
+  reassertBlocks,
+  splitMinutes,
+  startBreak,
+  stopPledgeMonitoring,
+} from "../home/home.controller";
+import { BREAK_MINUTES, BREAK_PRICE, BREAKS_PER_DAY } from "../home/home.constants";
+import { chargeBreak } from "../../services/stripe-api";
+import { syncedIdToken } from "../../services/sendPledgeData";
+import { haptics } from "../../utils/haptics";
 import { CURRENCY_SYMBOL } from "../../config";
 import { ActivityLabels } from "../../../modules/pledge-activity-labels";
 import { TopApps, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
-import { getPledge, pledgeEndsAt, removePledge } from "../../services/pledges";
+import { getPledge, pledgeEndsAt, removePledge, updatePledge } from "../../services/pledges";
 import { completePledge } from "../../services/sendPledgeData";
 import { auth } from "../../firebaseConfig";
 import { cream, ember, fonts, ink } from "../../theme/tokens";
@@ -45,6 +60,7 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
   const [usage, setUsage] = useState<DailyUsage>(NO_USAGE);
   const [remainingMs, setRemainingMs] = useState(0);
   const [isModalVisible, setModalVisible] = useState(false);
+  const [buyingBreak, setBuyingBreak] = useState(false);
   const ended = useRef(false);
 
   const refreshUsage = useCallback((p: Pledge | null) => {
@@ -63,6 +79,16 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
       });
     }, [id, navigation, refreshUsage])
   );
+
+  // Redraw when a break runs out, so the screen stops saying "On a break".
+  const breakStartedAt = pledge?.breakStartedAt;
+  useEffect(() => {
+    if (!breakStartedAt) return;
+    const left = breakEndsAt(breakStartedAt) - Date.now();
+    if (left <= 0) return;
+    const t = setTimeout(() => setPledge((p) => (p ? { ...p } : p)), left + 1000);
+    return () => clearTimeout(t);
+  }, [breakStartedAt]);
 
   // Opened from the shield notification: go straight to the pay dialog.
   useEffect(() => {
@@ -85,7 +111,8 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
       if (ended.current) return;
       ended.current = true;
       stopPledgeMonitoring(id);
-      await removePledge(id);
+      // Apps this pledge shares with another one over its limit stay blocked.
+      reassertBlocks(await removePledge(id));
       if (result === "success") {
         auth.currentUser
           ?.getIdToken()
@@ -122,8 +149,44 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
   const used = splitMinutes(usage.usedMinutes);
   const endsOn = new Date(pledgeEndsAt(pledge)).toLocaleDateString(undefined, { month: "long", day: "numeric" });
 
-  const todayLine =
-    timeValue === 0
+  const onBreak = isOnBreak(pledge);
+  const blocked = usage.limitReached && !onBreak;
+  const breaksLeft = breaksLeftToday(pledge);
+
+  /** $1 for 5 minutes with the apps open; the pledge keeps running. */
+  const takeBreak = async () => {
+    if (buyingBreak) return;
+    haptics.press();
+    setBuyingBreak(true);
+    try {
+      const day = localDay();
+      const result = await chargeBreak(await syncedIdToken(pledge), pledge.id, day);
+      if (result.status !== "succeeded" && result.status !== "processing") {
+        throw new Error(`Payment ${result.status ?? "failed"}`);
+      }
+      const startedAt = new Date();
+      const list = await updatePledge(pledge.id, {
+        breakStartedAt: startedAt.toISOString(),
+        breaksDay: day,
+        breaksToday: result.breaksToday ?? BREAKS_PER_DAY - breaksLeft + 1,
+      });
+      const updated = list.find((p) => p.id === pledge.id) ?? pledge;
+      setPledge(updated);
+      try {
+        await startBreak(updated, startedAt);
+      } catch (e: any) {
+        Alert.alert("Paid, but the apps didn't unlock", `Open Pledge again in a moment.\n\n${e?.message ?? ""}`);
+      }
+    } catch (error: any) {
+      const detail = error?.response?.data?.error ?? error?.message ?? "Unknown error";
+      Alert.alert("We couldn't start your break", `Your apps stay blocked.\n\n${detail}`);
+    } finally {
+      setBuyingBreak(false);
+    }
+  };
+  const todayLine = onBreak
+    ? `On a break. The apps lock again at ${new Date(breakEndsAt(pledge.breakStartedAt!)).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`
+    : timeValue === 0
       ? "No allowance. The apps stay blocked for the whole pledge."
       : usage.limitReached
         ? "Limit reached. Blocked until midnight."
@@ -134,11 +197,21 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
       backLabel="Pledges"
       onBack={() => navigation.goBack()}
       footer={
-        <PillButton
-          text={usage.limitReached ? "Unlock my apps" : "Give up this pledge"}
-          tone="ghost"
-          onPress={() => setModalVisible(true)}
-        />
+        <>
+          {blocked && breaksLeft > 0 && (
+            <PillButton
+              text={`${BREAK_MINUTES} minutes for ${CURRENCY_SYMBOL}${BREAK_PRICE}`}
+              onPress={takeBreak}
+              busy={buyingBreak}
+            />
+          )}
+          <PillButton
+            text={blocked ? "Unlock my apps" : "Give up this pledge"}
+            tone={blocked && breaksLeft > 0 ? "quiet" : "ghost"}
+            onPress={() => setModalVisible(true)}
+            disabled={buyingBreak}
+          />
+        </>
       }
     >
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -157,7 +230,7 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
               {used.hours > 0 ? `${used.hours}h ${used.minutes}m` : `${used.minutes}m`}
             </Text>
           </View>
-          <Text style={[styles.todayLine, usage.limitReached && styles.todayBlocked]}>{todayLine}</Text>
+          <Text style={[styles.todayLine, blocked && styles.todayBlocked]}>{todayLine}</Text>
           {timeValue > 0 && <ScreenTimeList usedMinutes={usage.usedMinutes} limitMinutes={timeValue} />}
           {isActivityReportAvailable() && (
             <TopApps

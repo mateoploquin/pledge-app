@@ -6,7 +6,7 @@ import { Platform, StyleProp, View, ViewStyle } from "react-native";
 export type ReportRange = "today" | "yesterday" | "week";
 
 type NativeProps = {
-  context: "totalActivity" | "topApps" | "overview";
+  context: "totalActivity" | "topApps" | "overview" | "socialCut" | "recovered";
   startMs: number;
   endMs: number;
   segment: "hourly" | "daily" | "weekly";
@@ -16,6 +16,8 @@ type NativeProps = {
   accentColor?: string;
   fontSize?: number;
   maxApps?: number;
+  anchorMs?: number;
+  familyActivitySelections?: string[];
   style?: StyleProp<ViewStyle>;
 };
 
@@ -152,6 +154,72 @@ export const ScreenTimeOverview: React.FC<CommonProps & { fontSize?: number; max
     accentColor,
     fontSize,
     maxApps,
+    style: [{ height }, style],
+  });
+};
+
+/** Height the extension's SocialCutView lays out in. */
+export const SOCIAL_CUT_HEIGHT = 400;
+
+/**
+ * Last week's bars with the social media part of each day breaking off,
+ * then "14h back." Plays once when it appears. All apps, every device.
+ */
+export const SocialCut: React.FC<Omit<CommonProps, "range" | "familyActivitySelection">> = ({
+  textColor,
+  mutedColor,
+  accentColor,
+  style,
+}) => {
+  const interval = useMemo(() => rangeToInterval("week"), []);
+  const height = SOCIAL_CUT_HEIGHT;
+  if (!NativeReport) return React.createElement(View, { style: [{ height }, style] });
+  return React.createElement(NativeReport, {
+    context: "socialCut",
+    ...interval,
+    textColor,
+    mutedColor,
+    accentColor,
+    style: [{ height }, style],
+  });
+};
+
+/** Height the extension's RecoveredView lays out in. */
+export const RECOVERED_HEIGHT = 230;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Daily use of the pledged apps before Pledge vs since, and the hours that
+ * came back, drawn by the system. The window runs from 7 days before the
+ * start day of the first pledge to now; the extension does the comparing
+ * (method in docs/product.md, "Time back").
+ */
+export const TimeRecovered: React.FC<{
+  /** ISO start of every running pledge; the earliest anchors the comparison. */
+  startedAt: string[];
+  /** Base64 FamilyActivitySelection of every running pledge. */
+  selections: string[];
+  textColor?: string;
+  mutedColor?: string;
+  accentColor?: string;
+  style?: StyleProp<ViewStyle>;
+}> = ({ startedAt, selections, textColor, mutedColor, accentColor, style }) => {
+  const anchorMs = useMemo(() => Math.min(...startedAt.map((s) => new Date(s).getTime())), [startedAt]);
+  const interval = useMemo(
+    () => ({ startMs: startOfDay(anchorMs) - 7 * DAY_MS, endMs: Date.now(), segment: "daily" as const }),
+    [anchorMs]
+  );
+  const height = RECOVERED_HEIGHT;
+  if (!NativeReport) return React.createElement(View, { style: [{ height }, style] });
+  return React.createElement(NativeReport, {
+    context: "recovered",
+    ...interval,
+    anchorMs,
+    familyActivitySelections: selections,
+    textColor,
+    mutedColor,
+    accentColor,
     style: [{ height }, style],
   });
 };

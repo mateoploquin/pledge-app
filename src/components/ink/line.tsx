@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, StyleSheet, Text, TextStyle, StyleProp } from "react-native";
-import { fonts, motion, type } from "../../theme/tokens";
+import { ember, fonts, motion, type } from "../../theme/tokens";
 
 interface LineProps {
   /** `*word*` sets that word in italic. */
@@ -10,7 +10,7 @@ interface LineProps {
   style?: StyleProp<TextStyle>;
 }
 
-/** The serif line: one thought, one italic word. */
+/** The serif line: one thought, one italic word, in ember. */
 export const Line: React.FC<LineProps> = ({ text, size = "display", style }) => {
   const parts = text.split(/(\*[^*]+\*)/g).filter(Boolean);
   return (
@@ -92,5 +92,6 @@ export const Dissolve: React.FC<DissolveProps> = ({ id, children, style }) => {
 const styles = StyleSheet.create({
   italic: {
     fontFamily: fonts.serifItalic,
+    color: ember,
   },
 });

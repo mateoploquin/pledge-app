@@ -4,6 +4,11 @@ export const TICK_EVENT_PREFIX = "tick";
 export const LIMIT_EVENT_NAME = "limitReached";
 export const TICK_MINUTES = 5;
 
+/** A paid break: this many minutes on the clock, for this many dollars, this many times a day per pledge. */
+export const BREAK_MINUTES = 5;
+export const BREAK_PRICE = 1;
+export const BREAKS_PER_DAY = 3;
+
 /** Default pledge length in days. */
 export const CHALLENGE_DURATION = 30;
 
@@ -12,6 +17,8 @@ export const pledgeNames = (id: string) => ({
   activityName: `Pledge${id}`,
   selectionId: `sel${id}`,
   shieldId: `shield${id}`,
+  /** A one-off schedule whose end blocks again after a paid break. */
+  breakActivityName: `Break${id}`,
 });
 
 /** Schedule name used by the single-pledge version of the app. */

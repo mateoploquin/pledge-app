@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import type { DecodedIdToken } from "firebase-admin/auth";
-import { db, pledgesRef, upsertUser, type PledgeRecord, type UserRecord } from "./firebase.js";
+import { db, FieldValue, pledgesRef, upsertUser, type PledgeRecord, type UserRecord } from "./firebase.js";
 
 let client: Stripe | undefined;
 
@@ -153,6 +153,90 @@ export async function chargePledge(
   }
 
   return { status: intent.status, paymentIntentId: intent.id, amount, currency: CURRENCY };
+}
+
+export const BREAK_AMOUNT_CENTS = 100;
+export const BREAKS_PER_DAY = 3;
+
+/**
+ * Charges one paid 5-minute break on a pledge that stays active. A slot for
+ * the day is reserved first, so two taps can never buy a fourth break, and is
+ * given back if the card does not go through.
+ */
+export async function chargeBreak(user: UserRecord, pledgeId: string, day: string): Promise<ChargeOutcome & { breaksToday: number }> {
+  if (!user.stripeCustomerId) {
+    throw Object.assign(new Error("No payment method on file"), { status: 400 });
+  }
+  const paymentMethod = await latestPaymentMethod(user.stripeCustomerId);
+  if (!paymentMethod) {
+    throw Object.assign(new Error("No saved card found"), { status: 400 });
+  }
+
+  const ref = pledgesRef(user.uid).doc(pledgeId);
+  const slot = await db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const pledge = snap.data() as PledgeRecord | undefined;
+    if (!pledge) throw Object.assign(new Error("No such pledge"), { status: 404 });
+    if (pledge.status !== "active") throw Object.assign(new Error("This pledge is no longer running"), { status: 400 });
+    const used = pledge.breaks?.[day] ?? 0;
+    if (used >= BREAKS_PER_DAY) {
+      throw Object.assign(new Error(`No breaks left today (${BREAKS_PER_DAY} a day)`), { status: 429 });
+    }
+    tx.set(ref, { breaks: { [day]: used + 1 } }, { merge: true });
+    return used + 1;
+  });
+
+  const giveBack = () =>
+    ref.set({ breaks: { [day]: FieldValue.increment(-1) } }, { merge: true }).catch(() => {});
+
+  let intent: Stripe.PaymentIntent;
+  try {
+    intent = await stripe().paymentIntents.create(
+      {
+        amount: BREAK_AMOUNT_CENTS,
+        currency: CURRENCY,
+        customer: user.stripeCustomerId,
+        payment_method: paymentMethod,
+        off_session: true,
+        confirm: true,
+        description: "Pledge: 5-minute break",
+        metadata: { firebaseUid: user.uid, pledgeId, outcome: "break", day, slot: String(slot) },
+      },
+      { idempotencyKey: `break-${user.uid}-${pledgeId}-${day}-${slot}` }
+    );
+  } catch (err) {
+    if (err instanceof Stripe.errors.StripeCardError && err.payment_intent) {
+      intent = err.payment_intent as Stripe.PaymentIntent;
+    } else {
+      await giveBack();
+      throw err;
+    }
+  }
+
+  await db()
+    .collection("users")
+    .doc(user.uid)
+    .collection("charges")
+    .doc(intent.id)
+    .set({
+      status: intent.status,
+      amount: BREAK_AMOUNT_CENTS,
+      currency: CURRENCY,
+      pledgeId,
+      kind: "break",
+      day,
+      createdAt: new Date().toISOString(),
+    });
+
+  const paid = intent.status === "succeeded" || intent.status === "processing";
+  if (!paid) await giveBack();
+  return {
+    status: intent.status,
+    paymentIntentId: intent.id,
+    amount: BREAK_AMOUNT_CENTS,
+    currency: CURRENCY,
+    breaksToday: paid ? slot : slot - 1,
+  };
 }
 
 /** Whether the customer has any saved card. */

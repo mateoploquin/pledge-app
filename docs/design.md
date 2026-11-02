@@ -7,9 +7,13 @@ matches it; nothing goes back to the old orange/cream card style.
 
 ## The feel in one paragraph
 
-A dark room, one thought at a time. Film loops quietly under a shade. Words
-are set in a serif with one italic word carrying the weight. There is one
-cream button on a screen and at most one ember accent. Transitions dissolve;
+A dark room in golden-hour light, one thought at a time. Film loops quietly
+under a shade; every other screen glows warm from the top, the sun of the
+welcome film, fading into ink. Words are set in a serif with one italic word,
+in ember, carrying the weight. There is one cream button on a screen; ember
+is the warm accent, used where a number or a state matters (owner asked for
+more colour, 31 Oct 2026, and picked "golden-hour light" over per-state
+colours, a colour per pledge, or coloured grounds). Transitions dissolve;
 nothing slides, bounces or shoves. Taps tick with a light haptic. It should
 feel like a wellness app made by people with taste, not a productivity tool
 or a finance app. The owner rejected a formal brand brief as "slop": don't
@@ -20,12 +24,15 @@ write manifestos, make screens.
 | token | value | use |
 | --- | --- | --- |
 | `ink.base` | #17130F | every page ground, splash, launch screen, icon background |
-| `ink.raised` | #221C16 | cards, sheets, chips |
+| `ink.raised` | #2A1F17 | cards, sheets, chips (warmed for the light) |
 | `ink.line` | cream at 16 % | hairlines, ghost button borders |
+| `ink.edge` | amber at 24 % | the warm border of a pledge card |
 | `cream.base` | #F8F4EC | display text, the primary pill, active dots |
 | `cream.muted` | cream at 72 % | secondary text, quiet buttons |
 | `cream.faint` | cream at 45 % | placeholders, disabled text |
-| `ember` | #FF8A5B | the one accent: slider thumb/track fill, the report's bars, top-app highlight |
+| `ember` | #FF8A5B | the warm accent: the italic word of every `Line`, a card's "$10 on it", blocked status, slider thumb/track fill, the report's bars, top-app highlight |
+| `amber` | #FFB36B | the sun: a lighter step of ember, top of the glow |
+| `glow` | amber 34 % → ember 12 % → clear | `InkScreen` and the deal: from the top, 65 % of the screen tall |
 | `radius.pill` / `radius.card` | 30 / 22 | buttons / cards |
 | `shade` | 3-stop ink gradient 10 → 35 → 88 % | laid over film so words read on any frame |
 | `motion.dissolveMs` / `motion.outMs` | 450 / 160 | fade-through timings |
@@ -57,7 +64,9 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
 - Nothing sits on the home indicator. Secondary links get 12/16 padding.
 - The opener's content block is absolutely pinned to the bottom (left/right
   28) so switching states never changes the buttons' position; the Apple
-  button's slot (62 pt) is reserved before its availability is known.
+  button's slot (62 pt) is reserved before its availability is known. The
+  Apple and Google buttons are one hand-drawn pill (`ProviderButton`), not
+  Apple's native button, so they match and always read in English.
 - Horizontal lists of chosen apps scroll; they never wrap into a wall.
 
 ## Components (`src/components/ink/`, `src/components/buttons/`)
@@ -89,7 +98,9 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
 
 - Screen to screen: `forSoftFade` in `src/navigation/index.tsx`, a 420 ms
   ease-out crossfade with a 12 pt lift; the screen underneath dims to 60 %.
-  Modals (app picker, share sheet) use the native iOS sheet.
+  Modals (app picker, share sheet) use the native iOS sheet. The surrender
+  card floats 12 pt in from the edges with all four corners at `radius.card`,
+  in an RN `Modal` so its scrim dims the whole screen, footer included.
 - Within a screen: `Dissolve` only. No slides.
 - The deal beats (`deal-beats.tsx`) use React Native's `Animated` and only
   fade, fill or count. Figures are drawn in ink, cream and ember: raised
@@ -116,8 +127,13 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
 ## Film and imagery
 
 - Opener film: `assets/video/montage.mp4`, the owner's own 20 s montage,
-  3.9 MB, looped seamlessly. It is the only film. The earlier generated
-  clip was retired; don't propose stock or generated footage.
+  3.9 MB, looped seamlessly. Plays under the stanzas and sign-in.
+- Welcome film: `assets/video/still-in-traffic.mp4` (8 s, 720×1280, audio
+  stripped, a woman in the sun on a New York street), chosen by the owner.
+  It plays once under the welcome's second line, never under the deal's
+  beats: the owner dropped it there (30 Oct 2026) as too much noise and
+  brought it back for the welcome only (31 Oct 2026). Don't propose other
+  footage; the owner picks the film.
 - Splash and launch screen: solid ink. iOS caches launch screens; after
   changing it the phone may need a reinstall and a reboot.
 - App icon: ink background, cream mark (`assets/icon.png`).

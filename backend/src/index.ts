@@ -4,7 +4,7 @@ import type { DecodedIdToken } from "firebase-admin/auth";
 import { devicesRef, getPledge, getUser, pledgesRef, upsertUser, verifyIdToken } from "./firebase.js";
 import { checkDevices, forfeitActivePledges } from "./forfeit.js";
 import { apnsConfigured } from "./apns.js";
-import { chargePledge, createPaymentSheetParams, ensureCustomer, hasPaymentMethod } from "./stripe.js";
+import { chargeBreak, chargePledge, createPaymentSheetParams, ensureCustomer, hasPaymentMethod } from "./stripe.js";
 import { privacyHtml, termsHtml } from "./legal.js";
 
 type Env = { Variables: { user: DecodedIdToken } };
@@ -66,6 +66,10 @@ app.use("/stripe/payment-sheet", async (c, next) => {
   await next();
 });
 app.use("/stripe/charge", async (c, next) => {
+  c.set("user", await verifyIdToken(c.req.header("authorization")));
+  await next();
+});
+app.use("/stripe/break", async (c, next) => {
   c.set("user", await verifyIdToken(c.req.header("authorization")));
   await next();
 });
@@ -223,6 +227,29 @@ app.post("/stripe/charge", async (c) => {
   const pledge = await getPledge(uid, body.pledgeId);
   if (!pledge) return c.json({ error: "No such pledge" }, 404);
   const outcome = await chargePledge(user, pledge);
+  const httpStatus = outcome.status === "succeeded" || outcome.status === "processing" ? 200 : 402;
+  return c.json(outcome, httpStatus);
+});
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * A paid 5-minute break: $1, up to three a day per pledge, the pledge keeps
+ * running. `day` is the phone's local date, so "a day" matches what the user
+ * sees; it must be within a day of the server's clock.
+ */
+app.post("/stripe/break", async (c) => {
+  const uid = c.get("user").uid;
+  const body = await c.req.json().catch(() => ({}));
+  const user = await getUser(uid);
+  if (!user) return c.json({ error: "Unknown user" }, 404);
+  if (typeof body.pledgeId !== "string") return c.json({ error: "pledgeId is required" }, 400);
+  const day = typeof body.day === "string" ? body.day : "";
+  const dayMs = Date.parse(`${day}T12:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(dayMs) || Math.abs(dayMs - Date.now()) > 1.5 * DAY_MS) {
+    return c.json({ error: "day must be today's date as YYYY-MM-DD" }, 400);
+  }
+  const outcome = await chargeBreak(user, body.pledgeId, day);
   const httpStatus = outcome.status === "succeeded" || outcome.status === "processing" ? 200 : 402;
   return c.json(outcome, httpStatus);
 });

@@ -1,5 +1,8 @@
 import axios from "axios";
 import { API_URL } from "../config";
+import { auth } from "../firebaseConfig";
+import { Pledge } from "../types";
+import { updatePledge } from "./pledges";
 
 interface PledgeData {
   id: string;
@@ -24,4 +27,26 @@ export async function completePledge(id: string, idToken: string) {
     headers: authHeaders(idToken),
   });
   return response.data;
+}
+
+/** An ID token, after making sure the backend knows this pledge (needed to charge it). */
+export async function syncedIdToken(pledge: Pledge): Promise<string> {
+  const user = auth.currentUser;
+  if (!user) throw new Error("You are signed out. Sign in again to pay.");
+  const idToken = await user.getIdToken();
+  if (!pledge.synced) {
+    // Carried over from the old build: the backend must know it before it can charge it.
+    await sendPledgeData(
+      {
+        id: pledge.id,
+        pledgeValue: pledge.pledgeValue,
+        timeValue: pledge.timeValue,
+        durationDays: pledge.durationDays,
+        startedAt: pledge.startedAt,
+      },
+      idToken
+    );
+    await updatePledge(pledge.id, { synced: true });
+  }
+  return idToken;
 }

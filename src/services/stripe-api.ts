@@ -49,6 +49,20 @@ export async function chargePledge(idToken: string, pledgeId: string): Promise<C
   return data;
 }
 
+/** Charges $1 for a 5-minute break on a pledge that keeps running. `day` is the local date. */
+export async function chargeBreak(
+  idToken: string,
+  pledgeId: string,
+  day: string
+): Promise<ChargeResult & { breaksToday?: number }> {
+  const { data } = await axios.post<ChargeResult & { breaksToday?: number }>(
+    `${STRIPE_URL}/break`,
+    { pledgeId, day },
+    { headers: authHeaders(idToken) }
+  );
+  return data;
+}
+
 /** Whether the user already has a card on file, so the card step can be skipped. */
 export async function fetchHasCard(idToken: string): Promise<boolean> {
   const { data } = await axios.get<{ hasCard: boolean }>(`${STRIPE_URL}/payment-method`, {

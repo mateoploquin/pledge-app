@@ -1,15 +1,18 @@
 /**
- * The look of the app, in one place: dark ink grounds, cream serif words,
- * ember for the one thing that matters on a screen, soft pills for buttons.
+ * The look of the app, in one place: dark ink grounds lit by golden-hour
+ * light at the top, cream serif words with the italic word in ember, soft
+ * pills for buttons.
  * New screens pull from here; older screens are being moved over.
  */
 export const ink = {
   /** Page ground. */
   base: "#17130F",
-  /** Raised surfaces on the ground (cards, sheets). */
-  raised: "#221C16",
+  /** Raised surfaces on the ground (cards, sheets), warmed by the light. */
+  raised: "#2A1F17",
   /** Hairlines on the ground. */
   line: "rgba(248, 244, 236, 0.16)",
+  /** The warm edge of a card in the light. */
+  edge: "rgba(255, 179, 107, 0.24)",
 };
 
 export const cream = {
@@ -20,8 +23,20 @@ export const cream = {
   faint: "rgba(248, 244, 236, 0.45)",
 };
 
-/** Action colour. One per screen, at most. */
+/** The warm accent: the italic word, numbers that matter, active states. */
 export const ember = "#FF8A5B";
+
+/** The sun of the welcome film, a lighter step of ember. */
+export const amber = "#FFB36B";
+
+/**
+ * Golden hour: the warm light of the welcome film glowing down from the top
+ * of every screen and fading into the ink by about two thirds of the way.
+ */
+export const glow = {
+  colors: ["rgba(255, 166, 92, 0.34)", "rgba(255, 138, 91, 0.12)", "rgba(23, 19, 15, 0)"] as const,
+  locations: [0, 0.38, 1] as const,
+};
 
 export const fonts = {
   serif: "InstrumentSerif-Regular",

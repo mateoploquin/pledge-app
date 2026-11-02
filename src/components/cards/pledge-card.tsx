@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import PressableScale from "../buttons/pressable-scale";
 import { ActivityLabels } from "../../../modules/pledge-activity-labels";
 import { Pledge } from "../../types";
-import { DailyUsage, splitMinutes } from "../../screens/home/home.controller";
+import { DailyUsage, isOnBreak, splitMinutes } from "../../screens/home/home.controller";
 import { CURRENCY_SYMBOL } from "../../config";
 import { pledgeEndsAt } from "../../services/pledges";
 import { cream, ember, fonts, ink, radius } from "../../theme/tokens";
@@ -33,8 +33,10 @@ const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
   const used = splitMinutes(usage.usedMinutes);
   const usedLabel = used.hours > 0 ? `${used.hours}h ${used.minutes}m` : `${used.minutes}m`;
 
-  const status =
-    pledge.timeValue === 0
+  const onBreak = isOnBreak(pledge);
+  const status = onBreak
+    ? "On a 5-minute break"
+    : pledge.timeValue === 0
       ? "Blocked for the whole pledge"
       : usage.limitReached
         ? "Limit reached. Blocked until midnight."
@@ -57,7 +59,7 @@ const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
         fontSize={14}
       />
 
-      <Text style={[styles.status, usage.limitReached && styles.statusBlocked]}>{status}</Text>
+      <Text style={[styles.status, usage.limitReached && !onBreak && styles.statusBlocked]}>{status}</Text>
     </PressableScale>
   );
 };
@@ -67,7 +69,7 @@ const styles = StyleSheet.create({
     backgroundColor: ink.raised,
     borderRadius: radius.card,
     borderWidth: 1,
-    borderColor: ink.line,
+    borderColor: ink.edge,
     paddingVertical: 16,
     paddingHorizontal: 18,
     marginBottom: 12,
@@ -86,7 +88,7 @@ const styles = StyleSheet.create({
   stake: {
     fontFamily: fonts.serifItalic,
     fontSize: 18,
-    color: cream.muted,
+    color: ember,
   },
   appsRow: {
     height: 46,

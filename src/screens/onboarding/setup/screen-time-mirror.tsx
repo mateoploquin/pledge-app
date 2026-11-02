@@ -6,7 +6,7 @@ import {
   AuthorizationStatus,
   AuthorizationStatusType,
 } from "react-native-device-activity";
-import { ScreenTimeOverview, isActivityReportAvailable } from "../../../../modules/pledge-activity-report";
+import { SocialCut, isActivityReportAvailable } from "../../../../modules/pledge-activity-report";
 import PillButton from "../../../components/ink/pill-button";
 import { cream, ember } from "../../../theme/tokens";
 
@@ -17,8 +17,9 @@ interface ScreenTimeMirrorProps {
 
 /**
  * Step: the mirror. Asks for Screen Time access the moment it opens, then
- * shows the last seven days on this phone, drawn by the system. The user
- * sees the real number before being asked to put money against it.
+ * plays the user's last seven days, drawn by the system: the social media
+ * part of each day breaks off and adds up to the hours a week Pledge gives
+ * back. The user sees their real numbers before being asked for anything.
  */
 const ScreenTimeMirror: React.FC<ScreenTimeMirrorProps> = ({ authorizationStatus, setAuthorizationStatus }) => {
   const [isRequesting, setIsRequesting] = useState(false);
@@ -77,10 +78,7 @@ const ScreenTimeMirror: React.FC<ScreenTimeMirrorProps> = ({ authorizationStatus
 
   return (
     <View style={styles.container}>
-      <ScreenTimeOverview
-        range="week"
-        fontSize={44}
-        maxApps={3}
+      <SocialCut
         textColor={cream.base}
         mutedColor={cream.muted}
         accentColor={ember}

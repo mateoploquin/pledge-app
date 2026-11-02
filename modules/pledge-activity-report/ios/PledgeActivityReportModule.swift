@@ -23,6 +23,9 @@ final class PledgeActivityReportView: ExpoView {
   var accentColor: String?
   var fontSize: Double = 0
   var maxApps: Int = 0
+  /// "recovered" only: the first pledge's start, and every pledge's selection.
+  var anchorMs: Double = 0
+  var selections: [FamilyActivitySelection] = []
 
   private static let appGroup =
     Bundle.main.object(forInfoDictionaryKey: "REACT_NATIVE_DEVICE_ACTIVITY_APP_GROUP") as? String
@@ -40,6 +43,24 @@ final class PledgeActivityReportView: ExpoView {
     selection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data)
   }
 
+  func setSelections(_ list: [String]?) {
+    selections = (list ?? []).compactMap { b64 in
+      guard let data = Data(base64Encoded: b64) else { return nil }
+      return try? JSONDecoder().decode(FamilyActivitySelection.self, from: data)
+    }
+  }
+
+  /// All running pledges' apps, categories and sites, each counted once.
+  private func unionOfSelections() -> FamilyActivitySelection {
+    var union = FamilyActivitySelection()
+    for s in selections {
+      union.applicationTokens.formUnion(s.applicationTokens)
+      union.categoryTokens.formUnion(s.categoryTokens)
+      union.webDomainTokens.formUnion(s.webDomainTokens)
+    }
+    return union
+  }
+
   /// Style goes through the shared App Group because the extension cannot
   /// receive parameters any other way.
   private func publishStyle() {
@@ -49,6 +70,10 @@ final class PledgeActivityReportView: ExpoView {
     d.set(accentColor, forKey: "pledgeReport.accentColor")
     d.set(fontSize, forKey: "pledgeReport.fontSize")
     d.set(maxApps, forKey: "pledgeReport.maxApps")
+    if context == "recovered" {
+      d.set(anchorMs, forKey: "pledgeReport.recovered.anchorMs")
+      d.set(try? JSONEncoder().encode(unionOfSelections()), forKey: "pledgeReport.recovered.selection")
+    }
   }
 
   func render() {
@@ -67,13 +92,18 @@ final class PledgeActivityReportView: ExpoView {
     default: segmentInterval = .daily(during: interval)
     }
 
-    let filter = DeviceActivityFilter(
-      segment: segmentInterval,
-      users: .all,
-      devices: .init([.iPhone, .iPad]),
-      applications: selection?.applicationTokens ?? [],
-      categories: selection?.categoryTokens ?? [],
-      webDomains: selection?.webDomainTokens ?? [])
+    // "recovered" reads everything on this iPhone and picks the pledged apps
+    // out itself, so it can show the phone's total next to them; blocks only
+    // apply on this phone, so an iPad's use would not be Pledge's doing.
+    let filter = context == "recovered"
+      ? DeviceActivityFilter(segment: segmentInterval, users: .all, devices: .init([.iPhone]))
+      : DeviceActivityFilter(
+        segment: segmentInterval,
+        users: .all,
+        devices: .init([.iPhone, .iPad]),
+        applications: selection?.applicationTokens ?? [],
+        categories: selection?.categoryTokens ?? [],
+        webDomains: selection?.webDomainTokens ?? [])
 
     generation += 1
     let root = AnyView(
@@ -145,6 +175,12 @@ public class PledgeActivityReportModule: Module {
       }
       Prop("maxApps") { (view: PledgeActivityReportView, value: Int?) in
         view.maxApps = value ?? 0
+      }
+      Prop("anchorMs") { (view: PledgeActivityReportView, value: Double?) in
+        view.anchorMs = value ?? 0
+      }
+      Prop("familyActivitySelections") { (view: PledgeActivityReportView, value: [String]?) in
+        view.setSelections(value)
       }
       OnViewDidUpdateProps { (view: PledgeActivityReportView) in
         view.render()

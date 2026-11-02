@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useRef, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as ReactNativeDeviceActivity from "react-native-device-activity";
 import * as Notifications from "expo-notifications";
 import { View, Text, ScrollView, StyleSheet, AppState, Linking, Alert } from "react-native";
@@ -12,6 +12,7 @@ import {
   DailyUsage,
   UNLOCK_ACTION,
   configureShield,
+  reassertBlocks,
   getTodayUsage,
   isPledgeMonitoring,
   startPledgeMonitoring,
@@ -25,7 +26,7 @@ import { completePledge, sendPledgeData } from "../../services/sendPledgeData";
 import { auth } from "../../firebaseConfig";
 import { enableBackgroundHeartbeat, registerDevice, sendHeartbeat } from "../../services/devices";
 import { AuthorizationStatus, getAuthorizationStatus } from "react-native-device-activity";
-import { ScreenTimeOverview, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
+import { ScreenTimeOverview, TimeRecovered, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
 import { cream, ember } from "../../theme/tokens";
 
 const NO_USAGE: DailyUsage = { usedMinutes: 0, remainingMinutes: 0, limitReached: false };
@@ -43,6 +44,12 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
   const [pledges, setPledges] = useState<Pledge[] | null>(null);
   const [usage, setUsage] = useState<Record<string, DailyUsage>>({});
   const pledgesRef = useRef<Pledge[]>([]);
+  // Stable inputs for the time-back panel, so a usage refresh doesn't redraw it.
+  const startedAt = useMemo(() => (pledges ?? []).map((p) => p.startedAt), [pledges]);
+  const selections = useMemo(
+    () => (pledges ?? []).map((p) => p.selectionEvent?.familyActivitySelection).filter((s): s is string => !!s),
+    [pledges]
+  );
   const finishing = useRef(new Set<string>());
 
   const refreshUsage = useCallback(() => {
@@ -58,6 +65,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
       finishing.current.add(pledge.id);
       stopPledgeMonitoring(pledge.id);
       const list = await removePledge(pledge.id);
+      reassertBlocks(list);
       pledgesRef.current = list;
       setPledges(list);
       auth.currentUser
@@ -77,6 +85,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
     for (const p of forfeited) stopPledgeMonitoring(p.id);
     let list = pledgesRef.current;
     for (const p of forfeited) list = await removePledge(p.id);
+    reassertBlocks(list);
     pledgesRef.current = list;
     setPledges(list);
     Alert.alert(
@@ -113,6 +122,9 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
         console.error("Could not (re)start monitoring:", e);
       }
     }
+    // Heals a block lifted by another pledge ending, or by another pledge's
+    // daily reset at midnight when the two share apps.
+    reassertBlocks(list.filter((p) => !pledgeIsOver(p)));
     refreshUsage();
 
     // Pledges carried over from the single-pledge build were never recorded
@@ -135,13 +147,13 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
     if (list.length > 0) {
       registerDevice();
       enableBackgroundHeartbeat();
-      heartbeat();
+      heartbeat().catch((e) => console.warn("Heartbeat failed:", e));
     }
   }, [finishPledge, refreshUsage, heartbeat]);
 
   useFocusEffect(
     useCallback(() => {
-      load();
+      load().catch((e) => console.warn("Home could not load pledges:", e));
       // Catch pledges ending while this screen is open.
       const timer = setInterval(() => {
         for (const p of pledgesRef.current) if (pledgeIsOver(p)) finishPledge(p);
@@ -155,7 +167,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
     const appState = AppState.addEventListener("change", (state) => {
       if (state === "active") {
         refreshUsage();
-        if (pledgesRef.current.length > 0) heartbeat();
+        if (pledgesRef.current.length > 0) heartbeat().catch((e) => console.warn("Heartbeat failed:", e));
       }
     });
     return () => {
@@ -182,8 +194,12 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
       openSurrender(id);
     };
 
-    Linking.getInitialURL().then(fromUrl);
-    Notifications.getLastNotificationResponseAsync().then(fromResponse);
+    Linking.getInitialURL()
+      .then(fromUrl)
+      .catch((e) => console.warn("Could not read the opening link:", e));
+    Notifications.getLastNotificationResponseAsync()
+      .then(fromResponse)
+      .catch((e) => console.warn("Could not read the last notification:", e));
     const linkSub = Linking.addEventListener("url", ({ url }) => fromUrl(url));
     const notifSub = Notifications.addNotificationResponseReceivedListener(fromResponse);
     return () => {
@@ -200,7 +216,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
   const atStake = pledges.reduce((sum, p) => sum + p.pledgeValue, 0);
 
   return (
-    <InkScreen footer={<PillButton text="New pledge" onPress={() => navigation.navigate("Instructions")} />}>
+    <InkScreen footer={<PillButton text="New pledge" onPress={() => navigation.navigate("Register")} /* TEMP-TEST: walk through sign-in + deal */ />}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Dissolve id={headline(pledges, usage)} style={styles.head}>
           <Line text={headline(pledges, usage)} />
@@ -236,6 +252,17 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
                 onPress={() => navigation.navigate("PledgeDetail", { id: p.id })}
               />
             ))}
+            {/* Before vs since, drawn by the system; the one report on this screen. */}
+            {showReport && selections.length > 0 && (
+              <TimeRecovered
+                startedAt={startedAt}
+                selections={selections}
+                textColor={cream.base}
+                mutedColor={cream.muted}
+                accentColor={ember}
+                style={styles.recovered}
+              />
+            )}
           </View>
         )}
       </ScrollView>
@@ -277,6 +304,10 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
   },
   list: {},
+  recovered: {
+    alignSelf: "stretch",
+    marginTop: 36,
+  },
 });
 
 export default HomeScreen;

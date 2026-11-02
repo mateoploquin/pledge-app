@@ -6,8 +6,9 @@ import { cream, ember, fonts, ink, radius } from "../../theme/tokens";
 import { CURRENCY_SYMBOL } from "../../config";
 
 /**
- * The deal, told over the film after sign-in: six beats, each one line and
- * one small figure that moves on its own. Nothing to tap; a tap skips to
+ * The deal, told after sign-in, after the welcome (see onboarding.tsx): four
+ * beats of how, each one line and one small figure that moves on its
+ * own. Nothing to tap; a tap skips to
  * the next beat. Figures are drawn in the app's own ink and ember and only
  * ever fade, fill or count. Nothing slides.
  */
@@ -90,8 +91,6 @@ const Ring: React.FC<{ from: number; to: number; duration: number; label: string
   );
 };
 
-/** Beat 2: the limit. */
-const Limit: React.FC = () => <Ring from={0} to={0.5} duration={1100} label="30" />;
 
 /** A big serif amount, counting when `value` changes. */
 const Money: React.FC<{ value: number; dim?: Animated.Value }> = ({ value, dim }) => (
@@ -101,23 +100,30 @@ const Money: React.FC<{ value: number; dim?: Animated.Value }> = ({ value, dim }
   </Animated.Text>
 );
 
-/** Beat 3: the money, counting up from nothing. */
-const Stake: React.FC = () => {
+/** Beat 2: the ring fills to the limit, then the money counts up beside it. */
+const LimitAndStake: React.FC = () => {
   const [value, setValue] = useState(0);
   useEffect(() => {
-    const t = setTimeout(() => setValue(10), SETTLE_MS);
+    const t = setTimeout(() => setValue(10), SETTLE_MS + 1000);
     return () => clearTimeout(t);
   }, []);
-  return <Money value={value} />;
+  return (
+    <View style={styles.pair}>
+      <Ring from={0} to={1} duration={1100} label="30" />
+      <Fade delay={SETTLE_MS + 900}>
+        <Money value={value} />
+      </Fade>
+    </View>
+  );
 };
 
-/** Beat 4: the ring runs over, then the shield. */
+/** Beat 3: the same limit runs out, then the shield. */
 const Lock: React.FC = () => {
   const ringOpacity = useRun(1, 0, 320, SETTLE_MS + 1000);
   const shieldOpacity = useRun(0, 1, 480, SETTLE_MS + 1150);
   return (
     <View style={styles.stack}>
-      <Ring from={0.5} to={1} duration={900} label="60" style={{ opacity: ringOpacity }} />
+      <Ring from={0.5} to={1} duration={900} label="30" style={{ opacity: ringOpacity }} />
       <Animated.View style={[styles.shield, { opacity: shieldOpacity }]}>
         <Text style={styles.shieldTitle}>That's enough for today.</Text>
         <View style={styles.shieldPill}>
@@ -129,7 +135,7 @@ const Lock: React.FC = () => {
   );
 };
 
-/** Beat 5: the money goes. */
+/** Beat 4: the money goes. */
 const Pay: React.FC = () => {
   const dim = useRun(1, 0.4, 600, SETTLE_MS + 500);
   return (
@@ -142,23 +148,6 @@ const Pay: React.FC = () => {
   );
 };
 
-/** Beat 6: the money stays, counting back to nothing. */
-const Nothing: React.FC = () => {
-  const [value, setValue] = useState(10);
-  useEffect(() => {
-    const t = setTimeout(() => setValue(0), SETTLE_MS);
-    return () => clearTimeout(t);
-  }, []);
-  return (
-    <View style={styles.column}>
-      <Money value={value} />
-      <Fade delay={SETTLE_MS + 1000}>
-        <Text style={styles.note}>kept</Text>
-      </Fade>
-    </View>
-  );
-};
-
 export interface DealBeat {
   /** `*word*` sets that word in italic. */
   line: string;
@@ -166,12 +155,10 @@ export interface DealBeat {
 }
 
 export const DEAL_BEATS: DealBeat[] = [
-  { line: "Pick the apps\nthat take your *time.*", Figure: Apps },
-  { line: "Set how much\nis *enough* a day.", Figure: Limit },
-  { line: "Put *money*\non it.", Figure: Stake },
-  { line: "Go over, and they *lock*\nuntil midnight.", Figure: Lock },
-  { line: "Unlock early,\nand you *pay.*", Figure: Pay },
-  { line: "Keep your word,\nand it costs *nothing.*", Figure: Nothing },
+  { line: "Pick your *apps.*", Figure: Apps },
+  { line: "Set a limit.\nPut *money* on it.", Figure: LimitAndStake },
+  { line: "Hit it, and they *lock.*", Figure: Lock },
+  { line: "Unlock early?\nYou *lose* it.", Figure: Pay },
 ];
 
 const styles = StyleSheet.create({
@@ -211,6 +198,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.serifItalic,
     fontSize: 16,
     color: cream.muted,
+  },
+  pair: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 28,
   },
   stack: {
     width: 260,

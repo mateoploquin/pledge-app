@@ -30,12 +30,26 @@ One screen, four states on the same looping film:
    Switching between the two is a dissolve, never a layout jump.
 3. **email**: name (signup only), email, password.
 4. **deal** (first time in, when no pledge is stored on the device): the
-   deal told in six beats that play on their own, 3.4 s each, one serif
-   line and one small figure per beat (`deal-beats.tsx`): the apps appear,
-   an ember ring fills to the limit, $10 counts up, the ring runs over and
-   the shield appears, the $10 dims to "charged", then counts back to $0
-   "kept". A tap anywhere skips to the next beat. After the last beat the
-   first question comes up on its own.
+   welcome, then the deal. **Welcome** (`onboarding.tsx`, state
+   `welcome`, about 10 s), strictly in order: "Welcome to Pledge." alone
+   on plain ink for 1.5 s, no animation; the New York film
+   (`still-in-traffic.mp4`, a woman in the sun on a busy street, played
+   once, its full 8 s) fades in behind it (900 ms) and plays 2.5 s with only
+   the title; then "It helps you use your phone *less.*" fades in under it;
+   when the film ends everything darkens (700 ms), the film is dropped, and
+   the dark lifts onto the first beat only after the welcome's words have
+   dissolved out (else they flash back). **Deal**: four beats that play on
+   their own, 3.4 s each (about 14 s), on plain ink, centred on the screen
+   (the welcome stays at the bottom), one serif line and one
+   small figure per beat (`deal-beats.tsx`): "Pick your apps." (the apps
+   appear); "Set a limit. Put money on it." (an ember ring fills to 30 min,
+   $10 counts up beside it); "Hit it, and they lock." (the 30 min ring runs
+   out and the shield appears); "Unlock early? You lose it." (the $10 dims
+   to "charged"). One example, same numbers throughout. After the last beat
+   the screen darkens to ink (700 ms) and the first question comes up on
+   its own. A tap skips to the next beat (during the welcome, straight to
+   its darkening). "Cancel" on the first question goes back, still signed
+   in, and plays the welcome and the deal again.
 
 Signed in with pledges → Instructions straight away (Home when the app
 launches already signed in). Signed in without → the deal, then Instructions.
@@ -48,7 +62,7 @@ pinned at the bottom, content dissolving between steps. Steps, in order:
 | Step | Question | Control | Continue is enabled when |
 | --- | --- | --- | --- |
 | mirror (first pledge only, and only when the report extension is bundled) | Your last *seven* days. | Asks Screen Time access immediately, then the system-drawn 7-day total and top 3 apps | Screen Time access approved |
-| apps | Which apps take the *most* from you? | Opens Apple's app picker right away; shows the chosen app icons after | at least one app, category or site chosen |
+| apps | Which apps take the *most* from you? | "Choose apps" opens Apple's picker (never on its own, owner 31 Oct 2026); shows the chosen app icons after | at least one app, category or site chosen |
 | limit | How much is *enough* a day? | slider 0–120 min with ticks 0/30/60/90/120, presets 30/60/90; 0 means blocked all day | always |
 | duration | For how *long?* | 7 / 15 / 30 days | always |
 | amount | What's your word *worth?* | slider 0–20 with ticks 0/5/10/15/20, presets 5/10/20 | amount ≥ 1 |
@@ -66,12 +80,48 @@ against the limit, days left (rounded up). Empty state shows the 7-day
 mirror. A "+" starts another pledge. Heartbeat to the backend on every
 foreground; forfeited pledges reported back are removed.
 
+**Time back** (under the cards, `TimeRecovered` → `targets/ReportExtension/Recovered.swift`).
+Plays once: a "Before" bar and a "Now" bar (daily use of the pledged
+apps), the gap turns ember and a copy lifts off, then "**11h** *back.*",
+"Since Oct 30, on the apps you pledged." and a small line "All screen
+time: 4h 20m → 3h 50m a day". Method (owner's picks, 31 Oct 2026):
+
+- Apps: every running pledge's apps, categories and sites, counted once
+  (a pledged category counts whole). Total = everything on the phone,
+  shown so time that moved to other apps is visible.
+- Device: this iPhone only; blocks only apply here.
+- Anchor: the start of the first running pledge. Pledges started later
+  are counted from that same anchor (simplification).
+- Before: average daily use over the 7 days before the anchor's day,
+  counting only days with any recorded use. Under 3 such days: "Not
+  enough Screen Time from before your pledge to compare yet."
+- Now: average over full days after the start day, up to yesterday. The
+  start day mixes before and after; today is not over.
+- Back = (before − now) × full days, never below zero ("Not less than
+  before yet." when it is).
+- Day one (no full day yet): only "Before Pledge: Xh Ym a day on these
+  apps. Your first full day counts from tomorrow."
+- The numbers never reach JS (Apple's sandbox); the extension computes and
+  draws them. How far back iOS serves history is unverified; 7 days plus a
+  30-day pledge means a window of up to ~38 days.
+
 ### Pledge detail (`src/screens/pledge-detail/index.tsx`)
 
 Countdown ("N days left", same rounding as the card), today's usage, top
 apps for this selection (when the report extension is bundled), and
 "Give up" which opens the surrender modal. Surrender charges the card, stops
 monitoring, removes the pledge. There is no failure screen afterwards.
+
+While the apps are blocked, the detail screen's footer offers "5 minutes
+for $1" (cream pill, no count shown; "Unlock my apps" drops to quiet text
+below): a paid break. Not in the surrender modal; that stays about giving
+up (owner, 31 Oct 2026). The card is charged $1 (`POST /stripe/break`), the
+pledge keeps running, and the apps unlock for 5 minutes on the clock, used
+or not (owner changed this from "5 minutes of use", 31 Oct 2026). Up to 3 a
+day per pledge, counted on the phone's local date and enforced by the
+backend. The detail screen reads "On a break. The apps lock again at
+14:05." and the Home card "On a 5-minute break". A break that would end
+after midnight is not re-blocked: the midnight reset unblocks anyway.
 
 ### Shield (drawn by iOS from `shieldPayload` in `home.controller.ts`)
 
@@ -106,6 +156,7 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 | Day boundary | midnight, device local time | Screen Time schedule |
 | Pledge end | start + N × 24 h exactly (DST-safe) | `pledgeEndsAt` |
 | Usage tick | every 5 min | `TICK_MINUTES` |
+| Paid break | $1 for 5 min on the clock, 3 a day per pledge | `BREAK_*` in `home.constants.ts`, backend `BREAK_AMOUNT_CENTS`, `BREAKS_PER_DAY` |
 | Currency | $ in the app, `usd` on the backend | `src/config.ts`, `PLEDGE_CURRENCY` |
 | Test card | 4242 4242 4242 4242 (sandbox Stripe keys are live on Vercel now) | |
 
@@ -113,9 +164,12 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 
 - Opener film is the owner's own montage (`assets/video/montage.mp4`),
   stitched into a seamless loop. Not the earlier generated clip, not stock.
-- The deal is told once, on the film after sign-in, as six beats that play
+- The deal is told once, on plain ink after sign-in, as four beats that play
   on their own (29 Oct 2026, after testers said they did not know what they
-  were signing up for). Not as a step, not as a carousel to swipe. Still no
+  were signing up for; cut from six to four short lines on 30 Oct 2026; the
+  film behind the beats was dropped the same day as too much noise). Before
+  it, a welcome on the New York film says what Pledge is for, so the how
+  has a why (owner, 31 Oct 2026; at least 8 s). Not as a step, not as a carousel to swipe. Still no
   slide-to-unlock splash, no separate payment page, no progress bar on Home, no failure screen after surrender, no hint
   texts under controls.
 - The whole app is in the ink/cream/serif style (see `docs/design.md`).
@@ -132,6 +186,14 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 ## Open decisions (ask the owner, don't guess)
 
 - Charity wording: "Make-A-Wish" is a placeholder; no agreement exists.
+- Paid breaks (30 Oct 2026): the owner chose Stripe and the wording
+  "Donate $1 for 5 minutes", then changed the label to "5 minutes for $1"
+  (31 Oct 2026), after being told the risks: App Review may see
+  paying for more app time as a digital purchase that needs In-App Purchase,
+  calling it a donation would contradict `docs/app-review-notes.md`, and
+  Apple only lets nonprofits take donations outside IAP (the label no
+  longer says "donate"). Not yet in the
+  terms (`backend/src/legal.ts`) or the rules step. Revisit before App Review.
 - Shield look: an animation is impossible; options offered were solid ink
   with a cream "p" icon, ember accent, or a still from the montage. No pick.
 - Voice coach: planned (LiveKit full-duplex talker + Claude as the thinker,
@@ -150,4 +212,6 @@ Legal pages are served by the backend at `/terms` and `/privacy`
   fade-through wrapper's entering animation, or a device setting (Reduce
   Motion). See `docs/architecture.md` → Known issues.
 - Disabled buttons looked enabled (press animation overrode the dim).
-  Fixed in `pressable-scale.tsx`, uncommitted at time of writing.
+  Fixed in `pressable-scale.tsx`. That fix then left a re-enabled
+  Continue looking dim on the limit and duration steps (still tappable);
+  the dim now runs through a shared value so it always updates (30 Oct 2026).

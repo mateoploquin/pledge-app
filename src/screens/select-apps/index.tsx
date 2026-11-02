@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { NativeSyntheticEvent, Text, View, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  KeyboardAvoidingView,
+  NativeSyntheticEvent,
+  Text,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import { NavigationProp, RouteProp } from "@react-navigation/native";
 import {
   DeviceActivitySelectionEvent,
@@ -71,12 +78,16 @@ const SelectAppsView = ({ navigation, route }: SelectAppsViewProps) => {
         </TouchableOpacity>
       </View>
 
-      <DeviceActivitySelectionView
-        key={pickerKey}
-        familyActivitySelection={selection?.familyActivitySelection}
-        onSelectionChange={onSelectionChange}
-        style={styles.picker}
-      />
+      {/* Apple's picker doesn't make room for its own keyboard, so its search
+          bar (pinned to the bottom on iOS 26) would sit under it. */}
+      <KeyboardAvoidingView behavior="padding" style={styles.picker}>
+        <DeviceActivitySelectionView
+          key={pickerKey}
+          familyActivitySelection={selection?.familyActivitySelection}
+          onSelectionChange={onSelectionChange}
+          style={styles.fill}
+        />
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -144,6 +155,9 @@ const styles = StyleSheet.create({
   picker: {
     flex: 1,
     zIndex: 1,
+  },
+  fill: {
+    flex: 1,
   },
 });
 

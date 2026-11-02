@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -10,9 +10,12 @@ import {
   Alert,
   ActivityIndicator,
   Pressable,
+  Animated as RNAnimated,
+  useWindowDimensions,
 } from "react-native";
 import { ResizeMode, Video } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -23,7 +26,7 @@ import { auth } from "../../firebaseConfig";
 import { signUp } from "../../services/auth";
 import { loadPledges } from "../../services/pledges";
 import { BEAT_MS, DEAL_BEATS } from "./deal-beats";
-import { cream, ink, radius, shade, type } from "../../theme/tokens";
+import { cream, glow, ink, motion, radius, shade, type } from "../../theme/tokens";
 
 /**
  * Lines shown over the film, one at a time. `*word*` sets that word in
@@ -37,9 +40,19 @@ const STANZAS = [
   "This is *Pledge.*",
 ];
 const STANZA_MS = 3200;
+/** After the last beat of the deal, the screen darkens for this long before the first question. */
+const DARKEN_MS = 700;
+/**
+ * The welcome, in order: the title alone on ink, then the film fades in under
+ * it and plays a while with only the title, then the second line, then dark.
+ * The film plays its whole 8 s.
+ */
+const WELCOME_TITLE_MS = 1500;
+const WELCOME_SECOND_LINE_MS = 2500;
+const WELCOME_FILM_MS = 8000;
 
-/** Where the user is on the film: watching, choosing a way in, typing, or hearing the deal. */
-export type OpenerState = "film" | "signup" | "login" | "email" | "deal";
+/** Where the user is: watching, choosing a way in, typing, being welcomed, or hearing the deal. */
+export type OpenerState = "film" | "signup" | "login" | "email" | "welcome" | "deal";
 
 interface OpenerProps {
   /** Start on the film, or straight on a way in (used by the Login/Register routes). */
@@ -48,18 +61,34 @@ interface OpenerProps {
 
 /**
  * The way into Pledge: the opener film looping full-bleed, the manifesto
- * fading through over it, then sign-in on the same frame, then the deal
- * told in six beats that play on their own. Nothing leaves the film until
- * the user knows what they are signing up for.
+ * fading through over it, then sign-in on the same frame, then the welcome
+ * ("Welcome to Pledge." alone on ink, then the New York film under "It helps
+ * you use your phone less."), a darkening, then the deal on plain ink in four
+ * beats, then the screen darkens. Nothing moves on until the user knows what
+ * they are signing up for.
  */
 const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
   const navigation = useNavigation<NavigationProp<any>>();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  // The room between the inner margins, so the deal can sit in its middle.
+  const innerHeight = windowHeight - (insets.top + 12) - (Math.max(insets.bottom, 20) + 40);
   const [state, setState] = useState<OpenerState>(initial);
   // Which way the email form behaves: creating an account or signing in.
   const [mode, setMode] = useState<"signup" | "login">(initial === "login" ? "login" : "signup");
   const [index, setIndex] = useState(0);
   const [beat, setBeat] = useState(0);
+  const [darkening, setDarkening] = useState(false);
+  // The welcome: whether its film is playing, a run counter to replay it, and its fades.
+  const [welcomeFilm, setWelcomeFilm] = useState(false);
+  const [welcomeRun, setWelcomeRun] = useState(0);
+  const filmOpacity = useRef(new RNAnimated.Value(0)).current;
+  const secondLineOpacity = useRef(new RNAnimated.Value(0)).current;
+  const welcomeDark = useRef(new RNAnimated.Value(0)).current;
+  const welcomeEnding = useRef(false);
+  // Read by the focus listener, which outlives any one render.
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -71,6 +100,51 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
     const t = setTimeout(() => setIndex((i) => i + 1), STANZA_MS);
     return () => clearTimeout(t);
   }, [index, state]);
+
+  /** The welcome plays on its own: title, then film and second line, then dark into the deal. */
+  useEffect(() => {
+    if (state !== "welcome") return;
+    welcomeEnding.current = false;
+    setWelcomeFilm(false);
+    filmOpacity.setValue(0);
+    secondLineOpacity.setValue(0);
+    welcomeDark.setValue(0);
+    const toFilm = setTimeout(() => {
+      setWelcomeFilm(true);
+      RNAnimated.parallel([
+        RNAnimated.timing(filmOpacity, { toValue: 1, duration: 900, useNativeDriver: true }),
+        RNAnimated.timing(secondLineOpacity, {
+          toValue: 1,
+          duration: 700,
+          delay: WELCOME_SECOND_LINE_MS,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, WELCOME_TITLE_MS);
+    const toDeal = setTimeout(endWelcome, WELCOME_TITLE_MS + WELCOME_FILM_MS);
+    return () => {
+      clearTimeout(toFilm);
+      clearTimeout(toDeal);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, welcomeRun]);
+
+  /** Darkens over the welcome, drops its film, and lifts the dark onto the first beat. */
+  const endWelcome = () => {
+    if (welcomeEnding.current) return;
+    welcomeEnding.current = true;
+    RNAnimated.timing(welcomeDark, { toValue: 1, duration: DARKEN_MS, useNativeDriver: true }).start(() => {
+      setWelcomeFilm(false);
+      setBeat(0);
+      setState("deal");
+      // Lift the dark only once the welcome's words have dissolved out, or
+      // they show again for a moment before the first beat.
+      setTimeout(
+        () => RNAnimated.timing(welcomeDark, { toValue: 0, duration: 450, useNativeDriver: true }).start(),
+        motion.outMs + 60
+      );
+    });
+  };
 
   /** Each beat of the deal holds, then the next; after the last, the first question. */
   useEffect(() => {
@@ -85,20 +159,34 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
       setBeat(beat + 1);
       return;
     }
-    // Back to the way in underneath, so a Cancel on the first step lands there.
-    setState(mode);
-    navigation.navigate("Instructions");
+    if (darkening) return;
+    setDarkening(true);
+    setTimeout(() => navigation.navigate("Instructions"), DARKEN_MS);
   };
+
+  // The dark stays up until the next screen has covered this one. A Cancel on
+  // the first step comes back here still signed in: lift the dark and tell the
+  // deal again from the welcome, rather than landing on sign-in.
+  useEffect(
+    () =>
+      navigation.addListener("focus", () => {
+        setDarkening(false);
+        if (stateRef.current === "deal" || stateRef.current === "welcome") {
+          setWelcomeRun((n) => n + 1);
+          setState("welcome");
+        }
+      }),
+    [navigation]
+  );
 
   /** First time in: the deal, then the first pledge. With pledges already: straight on. */
   const signedIn = async () => {
     const pledges = await loadPledges().catch(() => []);
-    if (pledges.length > 0) {
+    if (false && pledges.length > 0) { // TEMP-TEST: always play the deal
       navigation.navigate("Instructions");
       return;
     }
-    setBeat(0);
-    setState("deal");
+    setState("welcome");
   };
 
   const submitEmail = async () => {
@@ -140,15 +228,37 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
         isLooping
         isMuted
       />
+      {/* The welcome and the deal are told on plain ink, faded in over the opener's film. */}
+      {(state === "welcome" || state === "deal") && (
+        <Animated.View entering={FadeIn.duration(900)} style={[StyleSheet.absoluteFill, styles.dark]} />
+      )}
+      {/* The deal's beats stand in the same golden-hour light as every screen. */}
+      {state === "deal" && (
+        <LinearGradient pointerEvents="none" colors={glow.colors} locations={glow.locations} style={styles.glow} />
+      )}
+      {/* The welcome's film: a woman in the sun on a New York street, played once. */}
+      {state === "welcome" && (
+        <RNAnimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: filmOpacity }]}>
+          <Video
+            source={require("../../../assets/video/still-in-traffic.mp4")}
+            style={StyleSheet.absoluteFill}
+            resizeMode={ResizeMode.COVER}
+            shouldPlay={welcomeFilm}
+            isMuted
+          />
+        </RNAnimated.View>
+      )}
       <LinearGradient colors={shade.colors} locations={shade.locations} style={StyleSheet.absoluteFill} />
-      {/* While the deal plays, a tap anywhere skips to the next beat. */}
-      {state === "deal" && <Pressable onPress={nextBeat} style={StyleSheet.absoluteFill} />}
+      {/* While the welcome or the deal plays, a tap anywhere skips ahead. */}
+      {(state === "welcome" || state === "deal") && (
+        <Pressable onPress={state === "welcome" ? endWelcome : nextBeat} style={StyleSheet.absoluteFill} />
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.content}
         // Let taps through to the skip layer while the deal plays.
-        pointerEvents={state === "deal" ? "none" : "auto"}
+        pointerEvents={state === "deal" || state === "welcome" ? "none" : "auto"}
       >
         {/* KeyboardAvoidingView owns its own paddingBottom, so the safe-area
             room lives on this inner view. Everything sits well clear of the
@@ -157,8 +267,17 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
         {/* One wrapper for the three states, so a change of state is a
             dissolve between them rather than a swap. */}
         <Dissolve id={state} style={styles.block}>
-        {state === "deal" && (
+        {state === "welcome" && (
           <View pointerEvents="none" style={styles.dealSlot}>
+            <Line text="Welcome to Pledge." />
+            <RNAnimated.View style={{ opacity: secondLineOpacity }}>
+              <Line text={"It helps you use your\nphone *less.*"} />
+            </RNAnimated.View>
+          </View>
+        )}
+        {state === "deal" && (
+          // Centred on the screen, unlike the other states pinned to the bottom.
+          <View pointerEvents="none" style={[styles.dealCentre, { height: innerHeight }]}>
             <Dissolve id={`beat-${beat}`} style={styles.beat}>
               <View style={styles.figure}>{React.createElement(DEAL_BEATS[beat].Figure)}</View>
               <Line text={DEAL_BEATS[beat].line} />
@@ -265,11 +384,25 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
         </Dissolve>
         </View>
       </KeyboardAvoidingView>
+      <RNAnimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.dark, { opacity: welcomeDark }]} />
+      {darkening && (
+        <Animated.View entering={FadeIn.duration(DARKEN_MS)} pointerEvents="none" style={[StyleSheet.absoluteFill, styles.dark]} />
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  dark: {
+    backgroundColor: ink.base,
+  },
+  glow: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "65%",
+  },
   container: {
     flex: 1,
     backgroundColor: ink.base,
@@ -299,7 +432,13 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     paddingBottom: 36,
   },
+  dealCentre: {
+    justifyContent: "center",
+  },
+  // A fixed box (figure + two lines), so beats of one or two lines don't
+  // shift up and down as they follow each other.
   beat: {
+    height: 300,
     justifyContent: "flex-end",
   },
   figure: {

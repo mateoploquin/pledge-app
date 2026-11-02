@@ -75,6 +75,8 @@ export type PledgeRecord = {
   forfeitReason?: ForfeitReason;
   /** Set when a forfeit charge was attempted but did not succeed. */
   chargeError?: string;
+  /** Paid 5-minute breaks, counted per local day of the phone (YYYY-MM-DD). */
+  breaks?: Record<string, number>;
 };
 
 export type DeviceRecord = {

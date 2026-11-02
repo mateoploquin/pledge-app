@@ -4,7 +4,30 @@ How a build gets from this repo to TestFlight and the App Store, and where
 things stand. Keep this file current; it is the one place that says why a
 store build differs from the dev build.
 
-## Current status (29 October 2026)
+## Current status (31 October 2026)
+
+**Build 24 (1.1.0) is submitted to TestFlight** (uploaded 31 October 2026,
+EAS build 5c2115bf). Same app as build 23, but the first store build that
+carries the local Swift modules (`.easignore` fix): app icons on cards and
+the pledge page, the Screen Time panels and time back. Checked in the .ipa.
+
+**Build 23 (1.1.0) is submitted to TestFlight** (uploaded 31 October 2026,
+EAS build 7ac75b8c, processing by Apple pending). On top of build 22: the
+welcome on the New York film before the deal, deal beats centred, the
+app picker only on tap, paid 5-minute breaks ("5 minutes for $1", Stripe,
+backend deployed 31 Oct), time back on Home (`recovered` report), the
+golden-hour palette, an empty-week line in the mirror's SocialCut, and
+caught async errors on Home. Still ships the `TEMP-TEST` overrides (deal
+and mirror on every sign-in, Home's "New pledge" walks through sign-in).
+
+**Build 22 (1.1.0) is submitted to TestFlight** (uploaded 30 October 2026,
+EAS build e7d7f85d, processing by Apple pending). It carries: the deal cut
+to a welcome plus four short beats on plain ink (no deal film), darkening
+at the end, Cancel on the first step replaying the deal while signed in,
+the re-enabled Continue no longer looking dim, and `reassertBlocks` so
+ending one pledge no longer unblocks another's shared apps. Still ships the
+`TEMP-TEST` overrides (deal and mirror on every sign-in). Confirm here once
+TestFlight shows it processed.
 
 **Build 21 (1.1.0) is submitted to TestFlight** (uploaded 29 October 2026
 at 16:50, EAS build 1fca3bb1, processing by Apple pending). It carries: the blank first pledge step fix, currency sign and units on the
@@ -70,6 +93,12 @@ and that the built app has `Extensions/ReportExtension.appex`.
   the deployment-target hook is already in place for it.
 - `.easignore` governs what is uploaded. EAS does not use `.gitignore`.
   Never add secrets to the upload; `backend/` and every `.env*` are excluded.
+  Anchor folder rules to the root (`/ios/`, not `ios/`): an unanchored
+  `ios/` also strips `modules/*/ios`, and the build then ships without the
+  local Swift modules (app icons, Screen Time panels, time back). Builds
+  20 to 23 shipped like that; fixed 31 Oct 2026. Check with
+  `npx eas build:inspect --stage archive --profile production --platform ios --output <dir>`
+  that `modules/*/ios` has its `.swift` files.
 
 ## Before the App Store (not needed for TestFlight)
 
@@ -81,6 +110,9 @@ and that the built app has `Extensions/ReportExtension.appex`.
 - [ ] Charity wording in the rules step and in `backend/src/legal.ts`.
       Current text names Make-A-Wish; reword to "Pledge donates its net
       proceeds from forfeited pledges to charity" unless an agreement exists.
+- [ ] Paid breaks: decide IAP vs Stripe for "5 minutes for $1" (see
+      `docs/product.md`, open decisions), add breaks to the terms and the
+      rules step, and update `docs/app-review-notes.md`.
 - [ ] App Privacy questionnaire in App Store Connect.
 - [ ] Screenshots from a real device.
 - [ ] Google OAuth consent screen verified.

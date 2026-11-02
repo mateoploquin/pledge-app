@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { View, Text, StyleSheet, NativeSyntheticEvent, Alert, Linking } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -29,9 +29,8 @@ const countOf = (s?: SelectionInfo) =>
   s ? s.applicationCount + s.categoryCount + s.webDomainCount : 0;
 
 /**
- * Step: which apps. Asks for Screen Time access as soon as the step opens,
- * then opens Apple's picker right away, so a first-time user only taps
- * "Allow" and then picks their apps.
+ * Step: which apps. Nothing opens on its own: "Choose apps" opens Apple's
+ * picker (asking for Screen Time access first if it is still needed).
  */
 const SetApps: React.FC<SetAppsProps> = ({
   authorizationStatus,
@@ -42,7 +41,6 @@ const SetApps: React.FC<SetAppsProps> = ({
 }) => {
   const navigation = useNavigation<any>();
   const [isRequesting, setIsRequesting] = useState(false);
-  const autoOpened = useRef(false);
 
   const onSelectionChange = useCallback(
     (event: NativeSyntheticEvent<SelectionInfo>) => {
@@ -85,21 +83,6 @@ const SetApps: React.FC<SetAppsProps> = ({
         { text: "Cancel", style: "cancel" },
       ]
     );
-
-  // First visit: ask for access, then go straight into the picker.
-  useEffect(() => {
-    if (autoOpened.current || hasSelection(selectionEvent)) return;
-    autoOpened.current = true;
-    (async () => {
-      let status = authorizationStatus;
-      if (status === AuthorizationStatus.notDetermined) {
-        status = await requestAccess();
-      }
-      if (status === AuthorizationStatus.approved) {
-        openPicker();
-      }
-    })();
-  }, []);
 
   const onButtonPress = async () => {
     if (authorizationStatus === AuthorizationStatus.approved) {

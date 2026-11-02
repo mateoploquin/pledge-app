@@ -3,6 +3,8 @@ import { UIBlurEffectStyle } from "react-native-device-activity";
 import type { DeviceActivityEvent } from "react-native-device-activity";
 import { Pledge } from "../../types";
 import {
+  BREAK_MINUTES,
+  BREAKS_PER_DAY,
   LEGACY_ACTIVITY_NAME,
   LIMIT_EVENT_NAME,
   TICK_EVENT_PREFIX,
@@ -216,10 +218,11 @@ export function isPledgeMonitoring(id: string): boolean {
 
 /** Stops this pledge's schedule, forgets its events and lifts its block only. */
 export function stopPledgeMonitoring(id: string) {
-  const { activityName, selectionId } = pledgeNames(id);
+  const { activityName, selectionId, breakActivityName } = pledgeNames(id);
   try {
-    DeviceActivity.stopMonitoring([activityName]);
+    DeviceActivity.stopMonitoring([activityName, breakActivityName]);
     DeviceActivity.cleanUpAfterActivity(activityName);
+    DeviceActivity.cleanUpAfterActivity(breakActivityName);
   } finally {
     try {
       DeviceActivity.unblockSelection({ activitySelectionId: selectionId }, "pledgeEnded");
@@ -229,6 +232,81 @@ export function stopPledgeMonitoring(id: string) {
     DeviceActivity.userDefaultsRemove(`shieldConfigurationForSelection_${selectionId}`);
     DeviceActivity.userDefaultsRemove(`shieldActionsForSelection_${selectionId}`);
   }
+}
+
+/**
+ * Blocks again every pledge already over its limit today. The device keeps one
+ * blocklist for all pledges, so lifting one pledge's block also lifts any app
+ * it shares with another; call this after ending a pledge, with the rest.
+ */
+export function reassertBlocks(pledges: Pledge[]) {
+  for (const p of pledges) {
+    try {
+      if (!getTodayUsage(p.id, p.timeValue).limitReached || isOnBreak(p)) continue;
+      DeviceActivity.blockSelection({ activitySelectionId: pledgeNames(p.id).selectionId }, "reassert");
+    } catch (e) {
+      console.warn("Could not re-block pledge:", p.id, e);
+    }
+  }
+}
+
+/** The phone's local date as YYYY-MM-DD; breaks are counted per local day. */
+export function localDay(d = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function breaksLeftToday(p: Pledge): number {
+  const taken = p.breaksDay === localDay() ? p.breaksToday ?? 0 : 0;
+  return Math.max(0, BREAKS_PER_DAY - taken);
+}
+
+/** When a break started at `startedAt` locks the apps again. */
+export const breakEndsAt = (startedAt: string) => new Date(startedAt).getTime() + BREAK_MINUTES * 60 * 1000;
+
+/** A paid break whose 5 minutes are not over yet. */
+export function isOnBreak(p: Pledge, now = Date.now()): boolean {
+  return !!p.breakStartedAt && now < breakEndsAt(p.breakStartedAt);
+}
+
+/** Schedules may not be shorter than this, so a break's schedule is padded into the past. */
+const MIN_SCHEDULE_MINUTES = 15;
+
+const clock = (d: Date) => ({ hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds() });
+
+/**
+ * Lifts this pledge's block for BREAK_MINUTES on the clock. Screen Time will
+ * not schedule anything shorter than 15 minutes, so the break's schedule
+ * starts 10 minutes in the past and ends BREAK_MINUTES from now: iOS starts
+ * it at once (now is inside it) and when it ends the monitor extension blocks
+ * the apps again, even with Pledge closed.
+ */
+export async function startBreak(pledge: Pledge, startedAt = new Date()) {
+  const { breakActivityName, selectionId, shieldId } = pledgeNames(pledge.id);
+  const end = new Date(breakEndsAt(startedAt.toISOString()));
+  const start = new Date(end.getTime() - MIN_SCHEDULE_MINUTES * 60 * 1000);
+
+  try {
+    DeviceActivity.stopMonitoring([breakActivityName]);
+  } catch {}
+  DeviceActivity.cleanUpAfterActivity(breakActivityName);
+
+  // A break running past midnight needs no re-block: the daily reset unblocks
+  // the apps at midnight anyway, and blocking after it would cut into the new
+  // day's allowance.
+  if (localDay(end) === localDay(startedAt)) {
+    DeviceActivity.configureActions({
+      activityName: breakActivityName,
+      callbackName: "intervalDidEnd",
+      actions: [{ type: "blockSelection", familyActivitySelectionId: selectionId, shieldId }],
+    });
+    await DeviceActivity.startMonitoring(
+      breakActivityName,
+      { intervalStart: clock(start), intervalEnd: clock(end), repeats: false },
+      []
+    );
+  }
+  DeviceActivity.unblockSelection({ activitySelectionId: selectionId }, "break");
 }
 
 /** Removes the schedule and blocks left by the single-pledge version of the app. */

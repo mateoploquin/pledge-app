@@ -9,5 +9,7 @@ struct ReportExtension: DeviceActivityReportExtension {
     TotalActivityReport { TotalActivityView(model: $0) }
     TopAppsReport { TopAppsView(model: $0) }
     OverviewReport { OverviewView(model: $0) }
+    SocialCutReport { SocialCutView(model: $0) }
+    RecoveredReport { RecoveredView(model: $0) }
   }
 }

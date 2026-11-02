@@ -14,4 +14,9 @@ export type Pledge = {
   startedAt: string;
   /** True once the backend knows about it (needed to charge it). */
   synced?: boolean;
+  /** When the last paid break started (ISO). */
+  breakStartedAt?: string;
+  /** Paid breaks taken on `breaksDay` (the phone's local date, YYYY-MM-DD). */
+  breaksDay?: string;
+  breaksToday?: number;
 };

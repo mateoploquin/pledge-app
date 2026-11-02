@@ -68,7 +68,7 @@ const Instructions: React.FC = () => {
 
   const steps = useMemo<StepName[]>(
     () => [
-      ...(firstPledge && isActivityReportAvailable() ? (["mirror"] as StepName[]) : []),
+      ...(isActivityReportAvailable() ? (["mirror"] as StepName[]) : []), // TEMP-TEST: always show
       "apps",
       "limit",
       "duration",
