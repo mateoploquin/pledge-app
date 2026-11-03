@@ -6,12 +6,14 @@ import { NavigationContainer } from "@react-navigation/native";
 import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StripeProvider } from "@stripe/stripe-react-native";
+import { PostHogProvider } from "posthog-react-native";
 import useAppInit from "./src/hooks/useAppInit";
 import AppNavigator from "./src/navigation";
 import { fetchPublishableKey } from "./src/services/stripe-api";
 import { STRIPE_MERCHANT_ID, STRIPE_PUBLISHABLE_KEY } from "./src/config";
 // Defines the background heartbeat task at launch, so silent pushes can run it.
 import "./src/services/devices";
+import { posthog } from "./src/services/analytics";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -53,11 +55,14 @@ export default function App() {
   return (
     <StripeProvider publishableKey={publishableKey} merchantIdentifier={STRIPE_MERCHANT_ID}>
       <NavigationContainer>
-        <SafeAreaProvider>
-          <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-            <AppNavigator initialRouteName={initialRouteName} />
-          </View>
-        </SafeAreaProvider>
+        {/* Inside the container so it can name screens (react-navigation v6). */}
+        <PostHogProvider client={posthog} autocapture={{ captureScreens: true, captureTouches: true }}>
+          <SafeAreaProvider>
+            <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+              <AppNavigator initialRouteName={initialRouteName} />
+            </View>
+          </SafeAreaProvider>
+        </PostHogProvider>
       </NavigationContainer>
     </StripeProvider>
   );

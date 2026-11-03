@@ -9,6 +9,7 @@ import {
 import { SocialCut, isActivityReportAvailable } from "../../../../modules/pledge-activity-report";
 import PillButton from "../../../components/ink/pill-button";
 import { cream, ember } from "../../../theme/tokens";
+import { track } from "../../../services/analytics";
 
 interface ScreenTimeMirrorProps {
   authorizationStatus: AuthorizationStatusType;
@@ -35,7 +36,9 @@ const ScreenTimeMirror: React.FC<ScreenTimeMirrorProps> = ({ authorizationStatus
     } finally {
       setIsRequesting(false);
     }
-    setAuthorizationStatus(getAuthorizationStatus());
+    const status = getAuthorizationStatus();
+    track("screen_time_authorization", { step: "mirror", approved: status === AuthorizationStatus.approved, status });
+    setAuthorizationStatus(status);
   }, [isRequesting, setAuthorizationStatus]);
 
   useEffect(() => {

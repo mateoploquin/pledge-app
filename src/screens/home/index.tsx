@@ -29,6 +29,7 @@ import { enableBackgroundHeartbeat, registerDevice, sendHeartbeat } from "../../
 import { AuthorizationStatus, getAuthorizationStatus } from "react-native-device-activity";
 import { ScreenTimeOverview, TimeRecovered, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
 import { cream, ember } from "../../theme/tokens";
+import { track } from "../../services/analytics";
 
 const NO_USAGE: DailyUsage = { usedMinutes: 0, remainingMinutes: 0, limitReached: false };
 
@@ -64,6 +65,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
     async (pledge: Pledge) => {
       if (finishing.current.has(pledge.id)) return;
       finishing.current.add(pledge.id);
+      track("pledge_completed", { pledge_id: pledge.id });
       stopPledgeMonitoring(pledge.id);
       const list = await removePledge(pledge.id);
       reassertBlocks(list);
@@ -83,6 +85,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
     const result = await sendHeartbeat();
     if (!result || result.forfeited.length === 0) return;
     const forfeited = pledgesRef.current.filter((p) => result.forfeited.includes(p.id));
+    for (const p of forfeited) track("pledge_forfeited", { pledge_id: p.id, reason: "screen_time_revoked" });
     for (const p of forfeited) stopPledgeMonitoring(p.id);
     let list = pledgesRef.current;
     for (const p of forfeited) list = await removePledge(p.id);

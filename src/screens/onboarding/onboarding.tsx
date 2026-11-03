@@ -25,6 +25,7 @@ import SocialSignInButtons from "../../components/buttons/social-sign-in-buttons
 import { auth } from "../../firebaseConfig";
 import { signUp } from "../../services/auth";
 import { loadPledges } from "../../services/pledges";
+import { track } from "../../services/analytics";
 import { BEAT_MS, DEAL_BEATS } from "./deal-beats";
 import { cream, glow, ink, motion, radius, shade, type } from "../../theme/tokens";
 
@@ -95,6 +96,11 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Where people stop in the opener: film, sign-up, sign-in, email, welcome, deal.
+  useEffect(() => {
+    track("opener_state_viewed", { state });
+  }, [state]);
+
   useEffect(() => {
     if (state !== "film" || index >= STANZAS.length - 1) return;
     const t = setTimeout(() => setIndex((i) => i + 1), STANZA_MS);
@@ -161,6 +167,7 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
     }
     if (darkening) return;
     setDarkening(true);
+    track("deal_finished");
     setTimeout(() => navigation.navigate("Instructions"), DARKEN_MS);
   };
 
@@ -203,8 +210,10 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
     try {
       if (mode === "signup") await signUp(email.trim(), password, name.trim());
       else await signInWithEmailAndPassword(auth, email.trim(), password);
+      track(mode === "signup" ? "sign_up_completed" : "sign_in_completed", { method: "email" });
       signedIn();
     } catch (error: any) {
+      track("sign_in_failed", { method: "email", mode, reason: error?.code ?? "error" });
       Alert.alert(mode === "signup" ? "Couldn't create the account" : "Couldn't sign in", error?.message ?? "Please try again.");
     } finally {
       setBusy(false);

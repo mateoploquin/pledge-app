@@ -11,3 +11,10 @@ export const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE
 export const STRIPE_MERCHANT_ID = "merchant.pledge.applepay";
 export const STRIPE_MERCHANT_COUNTRY = "US";
 export const CURRENCY_SYMBOL = "$";
+
+// PostHog product analytics. The project key is public by design (it can only
+// send events, not read them); an env value overrides it, an empty one turns
+// analytics off.
+export const POSTHOG_KEY =
+  process.env.EXPO_PUBLIC_POSTHOG_KEY ?? "phc_ztoSEzTASqxW2qrwL8aDXZmy9onPBG2YuhTL3bVjSA6R";
+export const POSTHOG_HOST = "https://us.i.posthog.com";

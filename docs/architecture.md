@@ -33,7 +33,7 @@ src/screens/onboarding/      opener (film + sign-in), instructions (pledge steps
 src/screens/home/            Home list; home.controller.ts = Screen Time schedules + shield payload
 src/screens/pledge-detail/   countdown, usage, surrender
 src/screens/select-apps/     Apple's FamilyActivityPicker in a modal
-src/services/                pledges (AsyncStorage), stripe-api, devices (push + heartbeat), auth
+src/services/                pledges (AsyncStorage), stripe-api, devices (push + heartbeat), auth, analytics (PostHog)
 src/components/ink/          InkScreen, Line/Dissolve, PillButton (the design system)
 src/theme/tokens.ts          colours, type, motion
 modules/pledge-activity-labels   native view: draws chosen apps' icons/names from the opaque token
@@ -197,6 +197,33 @@ Deploy: the owner runs `cd backend && vercel --prod --yes`. Agents cannot.
 - `EXPO_PUBLIC_API_URL` selects the backend. Dev reads `.env.local`;
   EAS profiles set the production URL in `eas.json`.
 - Fonts load at startup (`loadFonts`), the splash hides after.
+
+## Analytics (PostHog)
+
+`src/services/analytics.ts`, PostHog US cloud (`us.i.posthog.com`), SDK
+`posthog-react-native` with `expo-device` / `expo-application` for device
+and app properties; storage falls back to AsyncStorage (no
+`expo-file-system`). The project key is public by design and lives in
+`src/config.ts` (`EXPO_PUBLIC_POSTHOG_KEY` overrides; empty disables).
+
+- `PostHogProvider` in `App.tsx`, inside `NavigationContainer`
+  (react-navigation v6), autocaptures every screen and every tap with the
+  tapped text. Typed text is never captured.
+- App lifecycle events (installed, updated, opened, backgrounded) are on.
+- Users are identified by Firebase uid with email and name as person
+  properties (`onAuthStateChanged`); reset only on a real sign-out.
+- Every event carries `build: dev | release`; filter `release` for real
+  numbers.
+- Named events (the `AnalyticsEvent` union) mark funnel steps: opener
+  states, sign-up/in by method, `deal_finished`, `pledge_step_viewed` per
+  wizard step (the steps are one screen, so screen tracking can't see them),
+  Screen Time authorization, apps selected, terms, card, pledge started or
+  failed, breaks, surrender, completion, forfeit.
+- Never send Screen Time data (which apps, usage, threshold timings): the
+  privacy policy promises usage stays on the device, and Apple restricts it.
+- Privacy policy (`backend/src/legal.ts`) lists in-app activity and PostHog.
+  The App Store privacy label must also declare Product Interaction and
+  Device ID / User ID linked to the user, used for Analytics, not tracking.
 
 ## Apple limits that shape the product (explain, don't fight)
 

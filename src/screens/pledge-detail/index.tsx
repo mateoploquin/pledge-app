@@ -32,6 +32,7 @@ import { getPledge, pledgeEndsAt, removePledge, updatePledge } from "../../servi
 import { completePledge } from "../../services/sendPledgeData";
 import { auth } from "../../firebaseConfig";
 import { cream, ember, fonts, ink } from "../../theme/tokens";
+import { track } from "../../services/analytics";
 
 type Props = {
   navigation: any;
@@ -93,7 +94,10 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
 
   // Opened from the shield notification: go straight to the pay dialog.
   useEffect(() => {
-    if (surrenderAt) setModalVisible(true);
+    if (surrenderAt) {
+      track("surrender_opened", { from: "shield" });
+      setModalVisible(true);
+    }
   }, [surrenderAt]);
 
   useEffect(() => {
@@ -111,6 +115,7 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
     async (result: "success" | "failure") => {
       if (ended.current) return;
       ended.current = true;
+      track(result === "success" ? "pledge_completed" : "pledge_surrendered", { pledge_id: id });
       stopPledgeMonitoring(id);
       // Apps this pledge shares with another one over its limit stay blocked.
       reassertBlocks(await removePledge(id));
@@ -182,6 +187,7 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
       });
       const updated = list.find((p) => p.id === pledge.id) ?? pledge;
       setPledge(updated);
+      track("break_started", { pledge_id: pledge.id });
       try {
         await startBreak(updated, startedAt);
       } catch (e: any) {
@@ -189,6 +195,7 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
       }
     } catch (error: any) {
       const detail = error?.response?.data?.error ?? error?.message ?? "Unknown error";
+      track("break_failed", { pledge_id: pledge.id, reason: String(detail).slice(0, 200) });
       Alert.alert("We couldn't start your break", `Your apps stay blocked.\n\n${detail}`);
     } finally {
       setBuyingBreak(false);
@@ -218,7 +225,10 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
           <PillButton
             text={blocked ? "Unlock my apps" : "Give up this pledge"}
             tone={blocked && breaksLeft > 0 ? "quiet" : "ghost"}
-            onPress={() => setModalVisible(true)}
+            onPress={() => {
+              track("surrender_opened", { from: "pledge_screen" });
+              setModalVisible(true);
+            }}
             disabled={buyingBreak}
           />
         </>

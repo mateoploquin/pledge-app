@@ -6,6 +6,7 @@ import { auth } from "../../../firebaseConfig";
 import { CURRENCY_SYMBOL, STRIPE_MERCHANT_COUNTRY } from "../../../config";
 import PillButton from "../../../components/ink/pill-button";
 import { cream } from "../../../theme/tokens";
+import { track } from "../../../services/analytics";
 
 interface SetPaymentProps {
   setIsButtonDisabled: (disabled: boolean) => void;
@@ -64,6 +65,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
       return true;
     } catch (err) {
       console.error("Error initializing payment sheet:", err);
+      track("card_failed", { reason: "setup_unavailable" });
       Alert.alert("Card setup unavailable", describeError(err));
       return false;
     }
@@ -72,11 +74,13 @@ const SetPayment: React.FC<SetPaymentProps> = ({
   const openPaymentSheet = async () => {
     const { error } = await presentPaymentSheet();
     if (error) {
+      track("card_failed", { reason: error.code });
       setDismissed(true);
       if (error.code !== "Canceled") Alert.alert(`Error code: ${error.code}`, error.message);
       return;
     }
     // Card saved. The wizard records the pledge and starts it.
+    track("card_added");
     setPaymentSetupComplete(true);
     await onComplete?.();
   };

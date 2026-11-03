@@ -17,6 +17,7 @@ import {
   signInWithGoogle,
   SignInCancelled,
 } from "../../services/socialAuth";
+import { track } from "../../services/analytics";
 
 interface SocialSignInButtonsProps {
   /** Called after Firebase sign-in succeeded. */
@@ -48,9 +49,12 @@ const SocialSignInButtons: React.FC<SocialSignInButtonsProps> = ({ onSignedIn, t
     setBusy(provider);
     try {
       await (provider === "apple" ? signInWithApple() : signInWithGoogle());
+      track("sign_in_completed", { method: provider });
       onSignedIn();
     } catch (error: any) {
-      if (!(error instanceof SignInCancelled)) {
+      const cancelled = error instanceof SignInCancelled;
+      track("sign_in_failed", { method: provider, reason: cancelled ? "cancelled" : error?.code ?? "error" });
+      if (!cancelled) {
         console.error(`${provider} sign-in error:`, error);
         Alert.alert("Sign-in failed", error?.message ?? "Please try again.");
       }

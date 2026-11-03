@@ -12,6 +12,7 @@ import { SelectionInfo } from "../../../types";
 import { ActivityLabels } from "../../../../modules/pledge-activity-labels";
 import PillButton from "../../../components/ink/pill-button";
 import { cream } from "../../../theme/tokens";
+import { track } from "../../../services/analytics";
 
 interface SetAppsProps {
   authorizationStatus: AuthorizationStatusType;
@@ -46,6 +47,8 @@ const SetApps: React.FC<SetAppsProps> = ({
     (event: NativeSyntheticEvent<SelectionInfo>) => {
       if (!event.nativeEvent) return;
       AsyncStorage.setItem("selectionEvent", JSON.stringify(event.nativeEvent));
+      // No detail: which apps were chosen is Screen Time data and stays on the phone.
+      track("apps_selected");
       setSelectionEvent(event.nativeEvent);
     },
     [setSelectionEvent]
@@ -70,6 +73,7 @@ const SetApps: React.FC<SetAppsProps> = ({
       setIsRequesting(false);
     }
     const status = getAuthorizationStatus();
+    track("screen_time_authorization", { step: "apps", approved: status === AuthorizationStatus.approved, status });
     setAuthorizationStatus(status);
     return status;
   }, [isRequesting, authorizationStatus, setAuthorizationStatus]);

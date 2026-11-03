@@ -25,6 +25,7 @@ import { sendPledgeData } from "../../services/sendPledgeData";
 import { fetchHasCard } from "../../services/stripe-api";
 import { auth } from "../../firebaseConfig";
 import { registerDevice } from "../../services/devices";
+import { track } from "../../services/analytics";
 
 type StepName = "mirror" | "apps" | "limit" | "duration" | "amount" | "terms" | "card";
 
@@ -81,6 +82,16 @@ const Instructions: React.FC = () => {
   const [index, setIndex] = useState(0);
   const step = steps[Math.min(index, steps.length - 1)];
 
+  // The pledge steps are one screen, so screen tracking cannot see them.
+  useEffect(() => {
+    track("pledge_step_viewed", { step, position: index + 1, steps: steps.length, first_pledge: firstPledge });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  useEffect(() => {
+    if (termsAccepted) track("terms_accepted");
+  }, [termsAccepted]);
+
   useEffect(() => {
     setAuthorizationStatus(getAuthorizationStatus());
     hasAcceptedTerms().then(setTermsDone).catch(() => {});
@@ -124,10 +135,19 @@ const Instructions: React.FC = () => {
       await addPledge(pledge);
       if (termsAccepted) await markTermsAccepted();
       registerDevice();
+      track("pledge_started", {
+        limit_minutes: timeValue,
+        duration_days: durationDays,
+        pledge_value: pledgeValue,
+        first_pledge: firstPledge,
+      });
       haptics.success();
       navigation.reset({ index: 0, routes: [{ name: "Home" }] });
     } catch (error: any) {
       console.error("Could not start the pledge:", error);
+      track("pledge_start_failed", {
+        reason: String(error?.response?.data?.error ?? error?.message ?? "unknown").slice(0, 200),
+      });
       Alert.alert(
         "Could not start your pledge",
         error?.response?.data?.error ?? error?.message ?? "Please check Screen Time permissions and try again."
@@ -136,7 +156,7 @@ const Instructions: React.FC = () => {
       setStarting(false);
       setIsButtonDisabled(false);
     }
-  }, [starting, selectionEvent, pledgeValue, timeValue, durationDays, termsAccepted, navigation]);
+  }, [starting, selectionEvent, pledgeValue, timeValue, durationDays, termsAccepted, firstPledge, navigation]);
 
   const isLast = index >= steps.length - 1;
 
@@ -146,8 +166,13 @@ const Instructions: React.FC = () => {
   };
 
   const onBack = () => {
-    if (index > 0) setIndex(index - 1);
-    else if (navigation.canGoBack()) navigation.goBack();
+    if (index > 0) {
+      track("pledge_step_back", { step });
+      setIndex(index - 1);
+    } else if (navigation.canGoBack()) {
+      track("pledge_cancelled", { step });
+      navigation.goBack();
+    }
   };
 
   const continueDisabled =
