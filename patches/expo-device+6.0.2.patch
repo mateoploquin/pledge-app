@@ -1,0 +1,18 @@
+diff --git a/node_modules/expo-device/ios/UIDevice.swift b/node_modules/expo-device/ios/UIDevice.swift
+index 7d58ee8..dd74c77 100644
+--- a/node_modules/expo-device/ios/UIDevice.swift
++++ b/node_modules/expo-device/ios/UIDevice.swift
+@@ -185,7 +185,12 @@ public extension UIDevice {
+ 
+   // Credit: https://github.com/developerinsider/isJailBroken/blob/master/IsJailBroken/Extension/UIDevice%2BJailBroken.swift
+   var isSimulator: Bool {
+-    return TARGET_OS_SIMULATOR != 0
++    // TARGET_OS_SIMULATOR is not visible to Swift in the iOS 26 SDK.
++    #if targetEnvironment(simulator)
++    return true
++    #else
++    return false
++    #endif
+   }
+ 
+   var isJailbroken: Bool {
