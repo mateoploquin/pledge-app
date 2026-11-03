@@ -7,6 +7,8 @@ import {
   BREAKS_PER_DAY,
   LEGACY_ACTIVITY_NAME,
   LIMIT_EVENT_NAME,
+  MIN_GAP_BETWEEN_EVENTS_MS,
+  RETRY_TICKS_AFTER_LIMIT,
   TICK_EVENT_PREFIX,
   TICK_MINUTES,
   pledgeNames,
@@ -45,6 +47,57 @@ const toThreshold = (totalMinutes: number) => ({
   hour: Math.floor(totalMinutes / 60),
   minute: totalMinutes % 60,
 });
+
+type ScheduleEvent = { name: string; minutes: number; blocks: boolean };
+
+/**
+ * The threshold events of one pledge's daily schedule, in order: a tick every
+ * TICK_MINUTES below the limit (display only), the limit, then a few ticks
+ * past it. The limit and the ticks past it block, each only if the event
+ * before it fired earlier today (see MIN_GAP_BETWEEN_EVENTS_MS).
+ */
+function scheduleEvents(limit: number): ScheduleEvent[] {
+  const events: ScheduleEvent[] = [];
+  for (let m = TICK_MINUTES; m < limit; m += TICK_MINUTES) {
+    events.push({ name: `${TICK_EVENT_PREFIX}${m}`, minutes: m, blocks: false });
+  }
+  events.push({ name: LIMIT_EVENT_NAME, minutes: limit, blocks: true });
+  for (let k = 1; k <= RETRY_TICKS_AFTER_LIMIT; k++) {
+    const m = limit + k * TICK_MINUTES;
+    events.push({ name: `${TICK_EVENT_PREFIX}${m}`, minutes: m, blocks: true });
+  }
+  return events;
+}
+
+const limitOf = (pledge: Pick<Pledge, "timeValue">) => Math.max(0, Math.round(pledge.timeValue));
+
+/**
+ * Stores the guarded block action on every blocking event of this pledge. The
+ * monitor extension reads actions when an event fires, so calling this again
+ * upgrades a schedule registered by an older build without restarting it.
+ */
+export function configureLimitActions(pledge: Pick<Pledge, "id" | "timeValue">) {
+  const limit = limitOf(pledge);
+  if (limit === 0) return;
+  const { activityName, selectionId, shieldId } = pledgeNames(pledge.id);
+  const events = scheduleEvents(limit);
+  events.forEach((event, i) => {
+    if (!event.blocks) return;
+    const previous = events[i - 1];
+    const action: any = { type: "blockSelection", familyActivitySelectionId: selectionId, shieldId };
+    // Read by our patch of the monitor extension (patches/react-native-device-activity+*.patch).
+    if (previous) {
+      action.onlyIfEventRecordedEarlierToday = previous.name;
+      action.onlyIfEventRecordedEarlierTodayMinGapMS = MIN_GAP_BETWEEN_EVENTS_MS;
+    }
+    DeviceActivity.configureActions({
+      activityName,
+      callbackName: "eventDidReachThreshold",
+      eventName: event.name,
+      actions: [action],
+    });
+  });
+}
 
 /**
  * Shield shown on top of an app blocked by this pledge. The secondary button
@@ -128,7 +181,7 @@ export async function startPledgeMonitoring(
     throw new Error("No apps selected for this pledge");
   }
   const { activityName, selectionId, shieldId } = pledgeNames(pledge.id);
-  const limit = Math.max(0, Math.round(pledge.timeValue));
+  const limit = limitOf(pledge);
   const fullBlock = limit === 0;
 
   DeviceActivity.setFamilyActivitySelectionId({
@@ -168,12 +221,7 @@ export async function startPledgeMonitoring(
     });
     DeviceActivity.blockSelection({ activitySelectionId: selectionId }, "fullBlock");
   } else {
-    DeviceActivity.configureActions({
-      activityName,
-      callbackName: "eventDidReachThreshold",
-      eventName: LIMIT_EVENT_NAME,
-      actions: [blockAction],
-    });
+    configureLimitActions(pledge);
     for (const callbackName of ["intervalDidStart", "intervalDidEnd"] as const) {
       DeviceActivity.configureActions({
         activityName,
@@ -181,20 +229,14 @@ export async function startPledgeMonitoring(
         actions: [unblockAction],
       });
     }
-    for (let m = TICK_MINUTES; m < limit; m += TICK_MINUTES) {
+    for (const event of scheduleEvents(limit)) {
       events.push({
-        eventName: `${TICK_EVENT_PREFIX}${m}`,
+        eventName: event.name,
         familyActivitySelection: token,
-        threshold: toThreshold(m),
+        threshold: toThreshold(event.minutes),
         includesPastActivity: true,
       });
     }
-    events.push({
-      eventName: LIMIT_EVENT_NAME,
-      familyActivitySelection: token,
-      threshold: toThreshold(limit),
-      includesPastActivity: true,
-    });
   }
 
   await DeviceActivity.startMonitoring(
@@ -322,33 +364,62 @@ export function stopLegacyMonitoring() {
   }
 }
 
-/** Reads today's threshold events recorded by the monitor extension for one pledge. */
-export function getTodayUsage(id: string, limitMinutes: number): DailyUsage {
-  if (limitMinutes <= 0) {
-    return { usedMinutes: 0, remainingMinutes: 0, limitReached: true };
-  }
+/** When each threshold event of this pledge last fired, keeping only today's. */
+function eventsFiredToday(id: string): Map<string, number> {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
+  const fired = new Map<string, number>();
+  for (const event of DeviceActivity.getEvents(pledgeNames(id).activityName)) {
+    if (event.callbackName !== "eventDidReachThreshold" || !event.eventName) continue;
+    if (event.lastCalledAt < startOfDay) continue;
+    fired.set(event.eventName, event.lastCalledAt.getTime());
+  }
+  return fired;
+}
+
+/** Today's threshold events in the order they fired, for the debug readout. */
+export function todayEventLog(id: string): { name: string; at: Date }[] {
+  return [...eventsFiredToday(id)]
+    .map(([name, at]) => ({ name, at: new Date(at) }))
+    .sort((a, b) => a.at.getTime() - b.at.getTime());
+}
+
+/**
+ * Today's use and whether the limit really was reached, from the events the
+ * monitor extension recorded. Same rule as the extension's guard: a blocking
+ * event counts only if the event before it fired at least
+ * MIN_GAP_BETWEEN_EVENTS_MS earlier. Used minutes come from the ticks, not
+ * from the limit, so an early limit event cannot claim time that was not used.
+ */
+export function getTodayUsage(id: string, limitMinutes: number): DailyUsage {
+  const limit = Math.max(0, Math.round(limitMinutes));
+  if (limit <= 0) {
+    return { usedMinutes: 0, remainingMinutes: 0, limitReached: true };
+  }
+  const fired = eventsFiredToday(id);
 
   let usedMinutes = 0;
-  let limitReached = false;
-
-  for (const event of DeviceActivity.getEvents(pledgeNames(id).activityName)) {
-    if (event.callbackName !== "eventDidReachThreshold") continue;
-    if (event.lastCalledAt < startOfDay) continue;
-
-    if (event.eventName === LIMIT_EVENT_NAME) {
-      limitReached = true;
-      usedMinutes = Math.max(usedMinutes, limitMinutes);
-    } else if (event.eventName?.startsWith(TICK_EVENT_PREFIX)) {
-      const minutes = parseInt(event.eventName.slice(TICK_EVENT_PREFIX.length), 10);
-      if (!Number.isNaN(minutes)) usedMinutes = Math.max(usedMinutes, minutes);
-    }
+  for (const name of fired.keys()) {
+    if (!name.startsWith(TICK_EVENT_PREFIX)) continue;
+    const minutes = parseInt(name.slice(TICK_EVENT_PREFIX.length), 10);
+    if (!Number.isNaN(minutes)) usedMinutes = Math.max(usedMinutes, minutes);
   }
+
+  const events = scheduleEvents(limit);
+  const limitReached = events.some((event, i) => {
+    if (!event.blocks) return false;
+    const at = fired.get(event.name);
+    if (at === undefined) return false;
+    const previous = events[i - 1];
+    if (!previous) return true;
+    const previousAt = fired.get(previous.name);
+    return previousAt !== undefined && at - previousAt >= MIN_GAP_BETWEEN_EVENTS_MS;
+  });
+  if (limitReached) usedMinutes = Math.max(usedMinutes, limit);
 
   return {
     usedMinutes,
-    remainingMinutes: Math.max(0, limitMinutes - usedMinutes),
+    remainingMinutes: Math.max(0, limit - usedMinutes),
     limitReached,
   };
 }

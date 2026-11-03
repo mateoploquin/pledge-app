@@ -14,6 +14,7 @@ import {
   configureShield,
   reassertBlocks,
   getTodayUsage,
+  configureLimitActions,
   isPledgeMonitoring,
   startPledgeMonitoring,
   stopLegacyMonitoring,
@@ -118,6 +119,8 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
       try {
         configureShield(p);
         if (!isPledgeMonitoring(p.id)) await startPledgeMonitoring(p);
+        // Moves schedules from older builds onto the guarded limit.
+        else configureLimitActions(p);
       } catch (e) {
         console.error("Could not (re)start monitoring:", e);
       }

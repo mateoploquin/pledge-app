@@ -83,13 +83,31 @@ run it.
 2. `startPledgeMonitoring` (`home.controller.ts`) stores the selection under
    `sel<id>`, the shield under `shield<id>`, and registers a daily
    DeviceActivity schedule `Pledge<id>` (midnight to midnight) with:
-   - tick events every 5 min (`tick<n>`), used only to show today's usage;
+   - tick events every 5 min (`tick<n>`), used to show today's usage;
    - `limitReached` at the daily limit, whose action is `blockSelection`
-     with that shield; limit 0 blocks from interval start.
+     with that shield; limit 0 blocks from interval start;
+   - six more ticks past the limit (limit+5 ... limit+30) that also block;
    - `intervalDidStart` unblocks, so the block lifts at midnight.
-3. Usage today is read from the library's event store
-   (`getTodayUsage`), which is the count of ticks that fired. It is coarse
-   (5-min steps) and only for display.
+
+   Every blocking event is guarded: iOS sometimes fires a threshold early,
+   or all thresholds at once (Apple FB15103784, FB18061981; seen in the
+   field: "limit reached" at 26 of 60 minutes). A block action carries
+   `onlyIfEventRecordedEarlierToday: <previous event>` and runs only if that
+   event fired today at least 60 s earlier (`MIN_GAP_BETWEEN_EVENTS_MS`).
+   The check lives in our patch of the library's monitor extension
+   (`patches/react-native-device-activity+0.4.13.patch`). iOS fires each
+   event once a day, so if the limit is ignored the ticks past it block a
+   few minutes later. Trade-offs: if iOS fires everything at once (e.g. a
+   pledge started after the limit was already used today) nothing blocks
+   that day; time iOS genuinely counts, including from other devices on the
+   same Apple ID, still blocks. Home rewrites the guarded actions on every
+   load (`configureLimitActions`), so schedules from older builds are
+   upgraded without restarting; they lack the retry ticks until restarted.
+3. Usage today is read from the library's event store (`getTodayUsage`):
+   the highest tick that fired, in 5-min steps. The limit only counts as
+   reached under the same guard rule, and then shows as the full limit.
+   Long-press "Today" on the pledge screen lists today's events with the
+   time each fired, for diagnosing reports like the one above.
 4. The shield's "Unlock" cannot open an app (Apple), so it posts a local
    notification with `{action: "unlock", pledgeId}`. Home reads the
    response and open the surrender modal for that pledge.

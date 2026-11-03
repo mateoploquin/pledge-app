@@ -19,6 +19,7 @@ import {
   splitMinutes,
   startBreak,
   stopPledgeMonitoring,
+  todayEventLog,
 } from "../home/home.controller";
 import { BREAK_MINUTES, BREAK_PRICE, BREAKS_PER_DAY } from "../home/home.constants";
 import { chargeBreak } from "../../services/stripe-api";
@@ -153,6 +154,15 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
   const blocked = usage.limitReached && !onBreak;
   const breaksLeft = breaksLeftToday(pledge);
 
+  /** Hidden: long-press "Today" to see when each Screen Time event fired today. */
+  const showEventLog = () => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const lines = todayEventLog(id).map(
+      ({ name, at }) => `${pad(at.getHours())}:${pad(at.getMinutes())}:${pad(at.getSeconds())}  ${name}`
+    );
+    Alert.alert("Today's events", lines.length ? lines.join("\n") : "None yet.");
+  };
+
   /** $1 for 5 minutes with the apps open; the pledge keeps running. */
   const takeBreak = async () => {
     if (buyingBreak) return;
@@ -224,7 +234,9 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
         <ActivityLabels familyActivitySelection={pledge.selectionEvent?.familyActivitySelection} style={styles.appsRow} />
 
         <View style={styles.today}>
-          <Text style={styles.kicker}>Today</Text>
+          <Text style={styles.kicker} onLongPress={showEventLog} suppressHighlighting>
+            Today
+          </Text>
           <View style={styles.usedRow}>
             <Text style={styles.used}>
               {used.hours > 0 ? `${used.hours}h ${used.minutes}m` : `${used.minutes}m`}
