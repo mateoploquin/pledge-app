@@ -1,84 +1,60 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
+import AnimatedNumber from "../../../components/text/animated-number";
+import PresetChips from "../../../components/buttons/preset-chips";
+import { haptics } from "../../../utils/haptics";
+import { cream, fonts } from "../../../theme/tokens";
+import { CURRENCY_SYMBOL } from "../../../config";
 
 interface SetPledgeProps {
-  isButtonDisabled: boolean;
-  setIsButtonDisabled: (value: boolean) => void;
   pledgeValue: number;
   setPledgeValue: (value: number) => void;
 }
 
-const SetPledge: React.FC<SetPledgeProps> = ({
-  isButtonDisabled,
-  setIsButtonDisabled,
-  pledgeValue,
-  setPledgeValue,
-}) => {
+/** Step: the money on the line. */
+const SetPledge: React.FC<SetPledgeProps> = ({ pledgeValue, setPledgeValue }) => {
   return (
-    <View style={styles.setPledgeContainer}>
-      <Text style={styles.title}>How Much Do You Pledge?</Text>
-
-      <View style={styles.pledgeContainer}>
-        <Text style={styles.xxText}>{pledgeValue}</Text>
-        <Text style={styles.dollarSign}>$</Text>
-      </View>
-
-      <SetSlider
-        min={10}
-        max={1000}
-        onValueChange={(value) => setPledgeValue(value)}
-      />
-
-      <Text
-        style={{
-          marginTop: 69,
-          marginHorizontal: 34,
-          textAlign: "center",
-          fontSize: 16,
-          fontFamily: "InstrumentSerif-Regular",
-        }}
-      >
-        The higher your pledge, the greater your commitment—and the bigger the
-        impact.
+    <View style={styles.container}>
+      {/* One text run, so the sign sits on the number's baseline. Flex
+          baseline alignment does not reach a Text's real baseline on iOS. */}
+      <Text style={styles.value}>
+        <Text style={styles.currency}>{CURRENCY_SYMBOL}</Text>
+        <AnimatedNumber value={pledgeValue} />
       </Text>
+
+      <SetSlider min={0} max={20} ticks={[0, 5, 10, 15, 20]} value={pledgeValue} onValueChange={setPledgeValue} />
+
+      <PresetChips
+        values={[5, 10, 20]}
+        selected={pledgeValue}
+        onSelect={(v) => {
+          haptics.select();
+          setPledgeValue(v);
+        }}
+        format={(v) => `${CURRENCY_SYMBOL}${v}`}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  setPledgeContainer: {
-    marginTop: 69,
+  container: {
     alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "500",
-    marginBottom: 77,
-    color: "#333",
+  value: {
+    fontFamily: fonts.serif,
+    fontSize: 112,
+    lineHeight: 132,
+    letterSpacing: -3,
+    color: cream.base,
+    marginBottom: 28,
   },
-  pledgeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  xxText: {
-    fontSize: 100,
-    color: "#ccc",
-    fontWeight: "500",
-  },
-  dollarSign: {
-    fontSize: 100,
-    color: "#333",
-    fontWeight: "500",
-    borderBottomWidth: 3,
-    borderBottomColor: "#1E90FF",
-  },
-  slider: {
-    width: "90%",
-    height: 40,
+  currency: {
+    fontFamily: fonts.serifItalic,
+    fontSize: 56,
+    letterSpacing: 2,
+    color: cream.muted,
   },
 });
 

@@ -1,127 +1,95 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Alert } from "react-native";
-import colors from "../../../theme/colors";
-import MainButton from "../../../components/buttons/main-button";
-import { useStripe, isPlatformPaySupported } from "@stripe/stripe-react-native";
+import { View, Text, Alert, StyleSheet, ActivityIndicator } from "react-native";
+import { useStripe } from "@stripe/stripe-react-native";
 import { fetchPaymentSheetParams } from "../../../services/stripe-api";
-import { auth } from '../../../../firebaseConfig';
-import { sendPledgeData } from "../../../services/sendPledgeData";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { auth } from "../../../firebaseConfig";
+import { CURRENCY_SYMBOL, STRIPE_MERCHANT_COUNTRY } from "../../../config";
+import PillButton from "../../../components/ink/pill-button";
+import { cream } from "../../../theme/tokens";
 
 interface SetPaymentProps {
-  isButtonDisabled: boolean;
   setIsButtonDisabled: (disabled: boolean) => void;
   paymentSetupComplete: boolean;
   setPaymentSetupComplete: (complete: boolean) => void;
   pledgeValue: number;
-  timeValue: number;
+  durationDays: number;
   setPublishableKey: (publishableKey: string) => void;
+  /** Called once the card is saved. */
+  onComplete?: () => void | Promise<void>;
 }
 
+const describeError = (err: any) =>
+  err?.response?.data?.error ?? err?.message ?? "Could not reach the server.";
+
+/** Step: the card. Opens Stripe's sheet at once; this step has no content of its own. */
 const SetPayment: React.FC<SetPaymentProps> = ({
-  isButtonDisabled,
   setIsButtonDisabled,
   paymentSetupComplete,
   setPaymentSetupComplete,
   pledgeValue,
-  timeValue,
+  durationDays,
   setPublishableKey,
+  onComplete,
 }) => {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
-  const [isApplePaySupported, setIsApplePaySupported] = useState(false);
-
-  useEffect(() => {
-    const checkApplePaySupport = async () => {
-      const isSupported = await isPlatformPaySupported();
-      setIsApplePaySupported(isSupported);
-    };
-    checkApplePaySupport();
-  }, []);
+  const [dismissed, setDismissed] = useState(false);
 
   const initializePaymentSheet = async (): Promise<boolean> => {
     try {
       const user = auth.currentUser;
       if (!user) {
-        console.error("User not authenticated. Cannot fetch payment sheet params.");
+        Alert.alert("Sign in required", "Please sign in again before adding a card.");
         return false;
       }
-
       const idToken = await user.getIdToken();
-      const { setupIntent, ephemeralKey, customer, publishableKey, error } =
-        await fetchPaymentSheetParams(idToken);
-      if (error) {
-        console.error("Error fetching payment sheet params:", error);
-        return false;
-      }
-
-      if (publishableKey) {
-        setPublishableKey(publishableKey);
-      }
+      const { setupIntent, ephemeralKey, customer, publishableKey } = await fetchPaymentSheetParams(idToken);
+      if (publishableKey) setPublishableKey(publishableKey);
 
       const { error: initError } = await initPaymentSheet({
-        merchantDisplayName: "Pledge, Inc.",
+        merchantDisplayName: "Pledge",
         customerId: customer,
         customerEphemeralKeySecret: ephemeralKey,
         setupIntentClientSecret: setupIntent,
-        applePay: {
-          merchantCountryCode: "ES",
-        },
+        allowsDelayedPaymentMethods: false,
+        returnURL: "pledge://stripe-redirect",
+        applePay: { merchantCountryCode: STRIPE_MERCHANT_COUNTRY },
+        style: "alwaysDark",
       });
-
       if (initError) {
         console.error("Error initializing payment sheet:", initError);
+        Alert.alert("Card setup failed", initError.message);
         return false;
       }
-
       return true;
     } catch (err) {
       console.error("Error initializing payment sheet:", err);
+      Alert.alert("Card setup unavailable", describeError(err));
       return false;
     }
   };
 
   const openPaymentSheet = async () => {
-    setLoading(true);
     const { error } = await presentPaymentSheet();
-
     if (error) {
-      Alert.alert(`Error code: ${error.code}`, error.message);
-      setLoading(false);
-    } else {
-      setPaymentSetupComplete(true);
-      Alert.alert(
-        "Success",
-        "Your payment method is successfully set up for future payments!"
-      );
-
-      // Send pledge data after successful payment setup
-      const user = auth.currentUser;
-      if (user) {
-        try {
-          const idToken = await user.getIdToken();
-          await sendPledgeData({ pledgeValue, timeValue }, idToken);
-          
-          // Set the challenge start date
-          const startDate = new Date().toISOString();
-          await AsyncStorage.setItem('challengeStartDate', startDate);
-          
-          console.log("Pledge data and challenge start date set successfully");
-        } catch (err) {
-          console.error("Error sending pledge data:", err);
-        }
-      }
-
-      setLoading(false);
+      setDismissed(true);
+      if (error.code !== "Canceled") Alert.alert(`Error code: ${error.code}`, error.message);
+      return;
     }
+    // Card saved. The wizard records the pledge and starts it.
+    setPaymentSetupComplete(true);
+    await onComplete?.();
   };
 
   const handleSetUpPayment = async () => {
+    if (loading) return;
     setLoading(true);
-    const initialized = await initializePaymentSheet();
-    setLoading(false);
-    if (initialized) {
-      openPaymentSheet();
+    try {
+      const initialized = await initializePaymentSheet();
+      if (initialized) await openPaymentSheet();
+      else setDismissed(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -129,47 +97,51 @@ const SetPayment: React.FC<SetPaymentProps> = ({
     setIsButtonDisabled(!paymentSetupComplete);
   }, [paymentSetupComplete, setIsButtonDisabled]);
 
-  return (
-    <View>
-      <Text
-        style={{
-          marginHorizontal: 21,
-          color: colors.orange,
-          marginTop: 50,
-          fontSize: 24,
-          textAlign: "center",
-          fontWeight: "600",
-        }}
-      >
-        Select a Payment Method
-      </Text>
+  useEffect(() => {
+    if (!paymentSetupComplete) handleSetUpPayment();
+  }, []);
 
-      <View style={{ marginVertical: 20, paddingVertical: 10 }}>
-        {isApplePaySupported && (
-          <MainButton
-            onPress={handleSetUpPayment}
-            text={paymentSetupComplete ? "Update Payment Method" : "Set Up Payment"}
-            style={{ opacity: loading ? 0.5 : 1 }}
-            disabled={loading}
-          />
-        )}
-        {paymentSetupComplete && (
-          <Text
-            style={{
-              color: colors.orange,
-              textAlign: "center",
-              marginTop: 50,
-              fontSize: 20,
-              fontWeight: "600",
-              paddingHorizontal: 100,
-            }}
-          >
-            We've received your payment method. You're all set!
+  return (
+    <View style={styles.container}>
+      {loading || paymentSetupComplete ? (
+        <View style={styles.working}>
+          <ActivityIndicator color={cream.base} />
+          <Text style={styles.text}>
+            {paymentSetupComplete ? "Starting your pledge." : "Opening secure card setup."}
           </Text>
-        )}
-      </View>
+        </View>
+      ) : dismissed ? (
+        <>
+          <Text style={styles.text}>
+            Nothing is charged now. You only pay your {CURRENCY_SYMBOL}
+            {pledgeValue} pledge if you unlock your apps, delete Pledge or turn off Screen Time access
+            before the {durationDays} days are up.
+          </Text>
+          <PillButton text="Add a card" onPress={handleSetUpPayment} style={styles.button} />
+        </>
+      ) : null}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    gap: 20,
+  },
+  working: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  text: {
+    color: cream.muted,
+    fontSize: 15,
+    lineHeight: 21,
+    flexShrink: 1,
+  },
+  button: {
+    marginTop: 4,
+  },
+});
 
 export default SetPayment;

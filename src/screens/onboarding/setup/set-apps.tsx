@@ -1,134 +1,155 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { View, Text, StyleSheet, NativeSyntheticEvent, Alert, Linking } from "react-native";
-import colors from "../../../theme/colors";
-import { AuthorizationStatus } from 'react-native-device-activity/build/ReactNativeDeviceActivity.types';
-import { DeviceActivitySelectionView, requestAuthorization, revokeAuthorization } from 'react-native-device-activity';
-import MainButton from '../../../components/buttons/main-button';
-import { SelectionInfo } from '../../../types';
-import AppsOnboardingGrid from '../../../lists/apps-onboarding-grid';
+import { useNavigation } from "@react-navigation/native";
+import {
+  requestAuthorization,
+  getAuthorizationStatus,
+  AuthorizationStatus,
+  AuthorizationStatusType,
+} from "react-native-device-activity";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SelectionInfo } from "../../../types";
+import { ActivityLabels } from "../../../../modules/pledge-activity-labels";
+import PillButton from "../../../components/ink/pill-button";
+import { cream } from "../../../theme/tokens";
 
 interface SetAppsProps {
-  authorizationStatus: AuthorizationStatus
-  setAuthorizationStatus: (status: AuthorizationStatus) => void
-  selectionEvent: SelectionInfo;
-  setSelectionEvent: (event: SelectionInfo) => void
+  authorizationStatus: AuthorizationStatusType;
+  setAuthorizationStatus: (status: AuthorizationStatusType) => void;
+  selectionEvent: SelectionInfo | undefined;
+  setSelectionEvent: (event: SelectionInfo) => void;
+  /** Called when the user confirms a non-empty selection in the picker. */
+  onSelectionComplete: () => void;
 }
 
+const hasSelection = (s?: SelectionInfo) =>
+  !!s?.familyActivitySelection && s.applicationCount + s.categoryCount + s.webDomainCount > 0;
+
+const countOf = (s?: SelectionInfo) =>
+  s ? s.applicationCount + s.categoryCount + s.webDomainCount : 0;
+
+/**
+ * Step: which apps. Nothing opens on its own: "Choose apps" opens Apple's
+ * picker (asking for Screen Time access first if it is still needed).
+ */
 const SetApps: React.FC<SetAppsProps> = ({
   authorizationStatus,
   setAuthorizationStatus,
   selectionEvent,
-  setSelectionEvent
+  setSelectionEvent,
+  onSelectionComplete,
 }) => {
+  const navigation = useNavigation<any>();
   const [isRequesting, setIsRequesting] = useState(false);
 
-  const onRequestPress = useCallback(async () => {
-    if (isRequesting) return; // Prevent multiple rapid clicks
-    
-    try {
-      setIsRequesting(true);
-      let status: AuthorizationStatus;
-      
-      if (authorizationStatus === AuthorizationStatus.notDetermined) {
-        status = await requestAuthorization();
-      } else if (authorizationStatus === AuthorizationStatus.denied) {
-        Alert.alert(
-          "Screen Time Access Required",
-          "Please enable Screen Time access in Settings to continue",
-          [
-            {
-              text: "Open Settings",
-              onPress: Linking.openSettings,
-            },
-            {
-              text: "Cancel",
-              style: "cancel",
-            },
-          ],
-        );
-        return;
-      } else if (authorizationStatus === AuthorizationStatus.approved) {
-        status = await revokeAuthorization();
-      } else {
-        console.warn('Unexpected authorization status:', authorizationStatus);
-        return;
-      }
+  const onSelectionChange = useCallback(
+    (event: NativeSyntheticEvent<SelectionInfo>) => {
+      if (!event.nativeEvent) return;
+      AsyncStorage.setItem("selectionEvent", JSON.stringify(event.nativeEvent));
+      setSelectionEvent(event.nativeEvent);
+    },
+    [setSelectionEvent]
+  );
 
-      setAuthorizationStatus(status);
+  const openPicker = useCallback(() => {
+    navigation.navigate("SelectApps", {
+      deviceActivitySelection: selectionEvent,
+      setDeviceActivitySelection: onSelectionChange,
+      onDone: onSelectionComplete,
+    });
+  }, [navigation, selectionEvent, onSelectionChange, onSelectionComplete]);
+
+  const requestAccess = useCallback(async (): Promise<AuthorizationStatusType> => {
+    if (isRequesting) return authorizationStatus;
+    setIsRequesting(true);
+    try {
+      await requestAuthorization();
     } catch (error) {
-      console.error('Error handling authorization:', error);
-      Alert.alert(
-        "Error",
-        "There was an error setting up app monitoring. Please try again."
-      );
+      console.error("Error requesting Screen Time authorization:", error);
     } finally {
       setIsRequesting(false);
     }
-  }, [authorizationStatus, isRequesting]);
+    const status = getAuthorizationStatus();
+    setAuthorizationStatus(status);
+    return status;
+  }, [isRequesting, authorizationStatus, setAuthorizationStatus]);
 
-  const onSelectionChange = useCallback((event: NativeSyntheticEvent<SelectionInfo>) => {
-    if (!event.nativeEvent) return;
-    setSelectionEvent(event.nativeEvent)
-  }, []);
+  const showDeniedHelp = () =>
+    Alert.alert(
+      "Screen Time access needed",
+      "Pledge can only limit apps if it has Screen Time access. Turn it on in Settings and come back.",
+      [
+        { text: "Open Settings", onPress: Linking.openSettings },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
 
-  // Cleanup effect
-  useEffect(() => {
-    return () => {
-      // Reset selection when component unmounts
-      setSelectionEvent(undefined);
-    };
-  }, []);
+  const onButtonPress = async () => {
+    if (authorizationStatus === AuthorizationStatus.approved) {
+      openPicker();
+      return;
+    }
+    if (authorizationStatus === AuthorizationStatus.denied) {
+      showDeniedHelp();
+      return;
+    }
+    const status = await requestAccess();
+    if (status === AuthorizationStatus.approved) openPicker();
+    else if (status === AuthorizationStatus.denied) showDeniedHelp();
+  };
+
+  const selected = countOf(selectionEvent);
+  const label =
+    authorizationStatus === AuthorizationStatus.denied
+      ? "Turn on Screen Time access"
+      : authorizationStatus !== AuthorizationStatus.approved
+        ? "Allow Screen Time access"
+        : selected > 0
+          ? "Change apps"
+          : "Choose apps";
 
   return (
-    <View style={{ flex: 1, marginTop: 69 }}>
-      <Text
-        style={{
-          textAlign: "center",
-          fontSize: 24,
-          fontWeight: "500",
-        }}
-      >
-        The <Text style={{ color: colors.orange }}>Pledge</Text> includes
-      </Text>
-
-      <Text
-        style={{
-          marginTop: 10,
-          marginBottom: 25,
-          alignSelf: 'center',
-          fontSize: 13
-        }}
-      >
-          Choose among other apps
-      </Text>
-
-      <AppsOnboardingGrid
-        onAskPermissions={onRequestPress}
-        onSelectionChange={onSelectionChange}
-        permissionsGranted={authorizationStatus === AuthorizationStatus.approved}
-        selectionEvent={selectionEvent}
-      />
-
-      {/* <Text
-        style={{
-          marginTop: 69,
-          marginHorizontal: 34,
-          textAlign: "center",
-          fontSize: 16,
-          fontFamily: "InstrumentSerif-Regular",
-        }}
-      >
-        Pick the apps that steal your time, and reclaim it for what matters.
-      </Text> */}
+    <View style={styles.container}>
+      {hasSelection(selectionEvent) ? (
+        <>
+          <ActivityLabels
+            familyActivitySelection={selectionEvent?.familyActivitySelection}
+            style={styles.selectedRow}
+          />
+          <Text style={styles.count}>
+            {selected === 1 ? "One pick." : `${selected} picks.`}
+          </Text>
+        </>
+      ) : (
+        <Text style={styles.hint}>
+          Pick the apps themselves, like Instagram under Social. A website only counts time in Safari.
+        </Text>
+      )}
+      <PillButton text={label} tone="ghost" onPress={onButtonPress} style={styles.button} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    gap: 16,
+  },
+  selectedRow: {
+    height: 52,
+    marginHorizontal: -28,
+    paddingHorizontal: 26,
+  },
+  count: {
+    color: cream.muted,
+    fontSize: 15,
+  },
+  hint: {
+    color: cream.muted,
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  button: {
+    marginTop: 4,
   },
 });
 

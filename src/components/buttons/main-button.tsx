@@ -1,11 +1,12 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, ViewStyle } from "react-native";
 import colors from "../../theme/colors";
+import PressableScale from "./pressable-scale";
 
 interface MainButtonProps {
   onPress: () => void;
   text: string;
-  style?: any;
+  style?: ViewStyle;
   disabled?: boolean;
 }
 
@@ -17,15 +18,14 @@ const MainButton: React.FC<MainButtonProps> = ({
 }) => {
   return (
     <View style={[{ alignSelf: "center" }, style]}>
-      <Pressable
+      <PressableScale
+        haptic="press"
+        disabled={disabled}
         onPress={!disabled ? onPress : undefined}
-        style={[
-          styles.container,
-          disabled && { backgroundColor: colors.orange, opacity: 0.6 },
-        ]}
+        style={[styles.container, disabled && styles.disabled]}
       >
         <Text style={[styles.text, disabled && { opacity: 0.6 }]}>{text}</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 };
@@ -38,6 +38,15 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: colors.orange,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  disabled: {
+    opacity: 0.6,
+    shadowOpacity: 0,
   },
   text: {
     color: colors.white,

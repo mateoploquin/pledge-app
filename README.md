@@ -16,19 +16,6 @@ Check out the demo below to see Pledge in action:
 ## 📚 Why Pledge?  
 Pledge isn’t just another screen time tracker. It’s a commitment to yourself, backed by science and designed to genuinely help you change your digital habits. Whether you’re a serial scroller or just looking for a gentle nudge, Pledge helps you reclaim your time without the guilt.  
 
-## 📦 Installation  
-```
-git clone https://github.com/your-username/pledge.git  
-cd pledge  
-npm install  
-npm run ios  
-```
-
-## 🛠️ Tech Stack  
-- React Native (Expo)  
-- TypeScript  
-- Firebase    
-
 ## 🤝 Contributing  
 Pledge is open to contributions from anyone passionate about mental health and digital wellbeing. If you have ideas, fixes, or just want to lend a hand, feel free to open a PR.  
 
@@ -42,37 +29,36 @@ Got questions, feedback, or just want to chat about digital wellness? Reach out 
 
 **Break the cycle. Take the Pledge.**
 
+---
 
+## For developers
 
+Pick apps, set a daily limit, choose 7/15/30 days, put a card down. Keep your
+word and nothing is charged.
 
+Start with `CLAUDE.md` (map for agents and humans), then `docs/`:
 
+- `docs/product.md`: what the app does, screen by screen, decisions and open questions
+- `docs/design.md`: look, motion, copy voice, tokens
+- `docs/architecture.md`: stack, native targets, backend, Apple limits, dev loop, gotchas
+- `docs/release.md`: TestFlight / App Store procedure and status
+- `docs/app-review-notes.md`: notes for App Review
 
+### Run on the phone
 
-
-
---------------------------------------------------------
-
-
-
-cd pledge-app
-## Prerequisites
-
-You need to use at least `nvm` > 18:
 ```sh
-nvm use 18
+export PATH="/opt/homebrew/opt/node@20/bin:$PATH"
+npm install                      # runs patch-package
+npx expo prebuild --platform ios --no-install && (cd ios && pod install)
+npx expo start --dev-client --tunnel
 ```
 
-## Run the App in the Simulator
+Then build and install with xcodebuild/devicectl as in `docs/architecture.md`.
+Screen Time does not work in the simulator.
 
-To run the app in the simulator, use:
+### Store builds
+
 ```sh
-npx expo run:[ios or android] or npm run [ios or android]
-```
-The App extensions are currently built only for IOS so the app will no work well on Android.
-
-## Export to Transporter for TestFlight
-
-To export it to Transporter and get it on TestFlight, you need to use `EAS`:
-```sh
-eas build --platform [ios or android] --profile development
+npx eas build --platform ios --profile production --non-interactive
+npx eas submit --platform ios --latest
 ```

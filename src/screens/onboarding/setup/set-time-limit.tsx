@@ -1,86 +1,58 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
+import AnimatedNumber from "../../../components/text/animated-number";
+import PresetChips from "../../../components/buttons/preset-chips";
+import { haptics } from "../../../utils/haptics";
+import { cream, fonts } from "../../../theme/tokens";
 
 interface SetTimeLimitProps {
-  isButtonDisabled: boolean;
-  setIsButtonDisabled: (value: boolean) => void;
   timeValue: number;
   setTimeValue: (value: number) => void;
 }
 
-const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
-  isButtonDisabled,
-  setIsButtonDisabled,
-  timeValue,
-  setTimeValue,
-}) => {
+/** Step: minutes a day the apps stay open. Zero blocks them for the whole pledge. */
+const SetTimeLimit: React.FC<SetTimeLimitProps> = ({ timeValue, setTimeValue }) => {
   return (
-    <View style={styles.setPledgeContainer}>
-      <Text style={styles.title}>
-        Choose Your Time Limit{" "}
-        <Text style={{ fontSize: 12, fontWeight: "400" }}>(Per Day)</Text>
+    <View style={styles.container}>
+      {/* One text run, so the unit sits on the number's baseline (see set-pledge). */}
+      <Text style={styles.value}>
+        <AnimatedNumber value={timeValue} />
+        <Text style={styles.unit}>{timeValue === 0 ? " blocked all day" : " min a day"}</Text>
       </Text>
 
-      <View style={styles.pledgeContainer}>
-        <Text style={styles.xxText}>{timeValue}</Text>
-        <Text style={styles.dollarSign}>m</Text>
-      </View>
+      <SetSlider min={0} max={120} ticks={[0, 30, 60, 90, 120]} value={timeValue} onValueChange={setTimeValue} />
 
-      <SetSlider
-        min={10}
-        max={120}
-        onValueChange={(value) => setTimeValue(value)}
-      />
-
-      <Text
-        style={{
-          marginTop: 69,
-          marginHorizontal: 34,
-          textAlign: "center",
-          fontSize: 16,
-          fontFamily: "InstrumentSerif-Regular",
+      <PresetChips
+        values={[30, 60, 90]}
+        selected={timeValue}
+        onSelect={(v) => {
+          haptics.select();
+          setTimeValue(v);
         }}
-      >
-        Remember, every minute saved is a step closer to your goals
-      </Text>
+        format={(v) => `${v} min`}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  setPledgeContainer: {
-    marginTop: 69,
+  container: {
     alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
   },
-  title: {
+  value: {
+    fontFamily: fonts.serif,
+    fontSize: 112,
+    lineHeight: 132,
+    letterSpacing: -3,
+    color: cream.base,
+    marginBottom: 28,
+  },
+  unit: {
+    fontFamily: fonts.serifItalic,
     fontSize: 24,
-    fontWeight: "500",
-    marginBottom: 77,
-    color: "#333",
-  },
-  pledgeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  xxText: {
-    fontSize: 100,
-    color: "#ccc",
-    fontWeight: "500",
-  },
-  dollarSign: {
-    fontSize: 100,
-    color: "#333",
-    fontWeight: "500",
-    borderBottomWidth: 3,
-    borderBottomColor: "#1E90FF",
-  },
-  slider: {
-    width: "90%",
-    height: 40,
+    letterSpacing: 0,
+    color: cream.muted,
   },
 });
 
