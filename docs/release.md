@@ -4,7 +4,18 @@ How a build gets from this repo to TestFlight and the App Store, and where
 things stand. Keep this file current; it is the one place that says why a
 store build differs from the dev build.
 
-## Current status (31 October 2026)
+## Current status (3 November 2026)
+
+**Build 25 (1.1.0) is built and auto-submitted to TestFlight** (3 November
+2026, EAS build 648040b6, submission 744a02b1; confirm here once TestFlight
+shows it processed). On top of build 24: the guarded daily limit (a block
+only counts when the 5-minute ticks agree, six backup ticks past the limit,
+long-press "Today" for the event log; see `docs/architecture.md`) and
+PostHog analytics. The first attempt (EAS build 11b881e5) failed on
+`expo-device` reading `TARGET_OS_SIMULATOR` under the iOS 26 SDK;
+`patches/expo-device+6.0.2.patch` fixes it. Before the App Store, the App
+Privacy answers must add Product Interaction and User ID (Analytics, linked,
+not tracking).
 
 **Build 24 (1.1.0) is submitted to TestFlight** (uploaded 31 October 2026,
 EAS build 5c2115bf). Same app as build 23, but the first store build that
