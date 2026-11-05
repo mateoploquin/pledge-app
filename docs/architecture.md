@@ -89,23 +89,19 @@ run it.
    - six more ticks past the limit (limit+5 ... limit+30) that also block;
    - `intervalDidStart` unblocks, so the block lifts at midnight.
 
-   Every blocking event is guarded: iOS sometimes fires a threshold early,
-   or all thresholds at once (Apple FB15103784, FB18061981; seen in the
-   field: "limit reached" at 26 of 60 minutes). A block action carries
-   `onlyIfEventRecordedEarlierToday: <previous event>` and runs only if that
-   event fired today at least 60 s earlier (`MIN_GAP_BETWEEN_EVENTS_MS`).
-   The check lives in our patch of the library's monitor extension
-   (`patches/react-native-device-activity+0.4.13.patch`). iOS fires each
-   event once a day, so if the limit is ignored the ticks past it block a
-   few minutes later. Trade-offs: if iOS fires everything at once (e.g. a
-   pledge started after the limit was already used today) nothing blocks
-   that day; time iOS genuinely counts, including from other devices on the
-   same Apple ID, still blocks. Home rewrites the guarded actions on every
-   load (`configureLimitActions`), so schedules from older builds are
-   upgraded without restarting; they lack the retry ticks until restarted.
+   The block actions are unconditional. Build 25 guarded them (a block ran
+   only if the previous event fired at least 60 s earlier), to stop iOS
+   firing the limit early (Apple FB15103784, FB18061981; one field report of
+   "limit reached" at 26 of 60 minutes). On the owner's phone the limit then
+   never blocked: iOS delivers threshold events in bunches, so the guard
+   skipped real limits too. Removed in build 26. Time iOS counts, including
+   from other devices on the same Apple ID, blocks. Home rewrites the block
+   actions on every load (`configureLimitActions`), so schedules from older
+   builds pick up the current actions without restarting; schedules from
+   before build 25 lack the ticks past the limit until restarted.
 3. Usage today is read from the library's event store (`getTodayUsage`):
-   the highest tick that fired, in 5-min steps. The limit only counts as
-   reached under the same guard rule, and then shows as the full limit.
+   the highest tick that fired, in 5-min steps. The limit counts as reached
+   once any blocking event fired today, and then shows as the full limit.
    Long-press "Today" on the pledge screen lists today's events with the
    time each fired, for diagnosing reports like the one above.
 4. The shield's "Unlock" cannot open an app (Apple), so it posts a local

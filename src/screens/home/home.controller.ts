@@ -7,7 +7,6 @@ import {
   BREAKS_PER_DAY,
   LEGACY_ACTIVITY_NAME,
   LIMIT_EVENT_NAME,
-  MIN_GAP_BETWEEN_EVENTS_MS,
   RETRY_TICKS_AFTER_LIMIT,
   TICK_EVENT_PREFIX,
   TICK_MINUTES,
@@ -53,8 +52,7 @@ type ScheduleEvent = { name: string; minutes: number; blocks: boolean };
 /**
  * The threshold events of one pledge's daily schedule, in order: a tick every
  * TICK_MINUTES below the limit (display only), the limit, then a few ticks
- * past it. The limit and the ticks past it block, each only if the event
- * before it fired earlier today (see MIN_GAP_BETWEEN_EVENTS_MS).
+ * past it. The limit and the ticks past it block.
  */
 function scheduleEvents(limit: number): ScheduleEvent[] {
   const events: ScheduleEvent[] = [];
@@ -72,31 +70,24 @@ function scheduleEvents(limit: number): ScheduleEvent[] {
 const limitOf = (pledge: Pick<Pledge, "timeValue">) => Math.max(0, Math.round(pledge.timeValue));
 
 /**
- * Stores the guarded block action on every blocking event of this pledge. The
- * monitor extension reads actions when an event fires, so calling this again
- * upgrades a schedule registered by an older build without restarting it.
+ * Stores the block action on every blocking event of this pledge. The monitor
+ * extension reads actions when an event fires, so calling this again rewrites
+ * a schedule registered by an older build (build 25 stored a guarded action
+ * that iOS's bunched deliveries kept skipping) without restarting it.
  */
 export function configureLimitActions(pledge: Pick<Pledge, "id" | "timeValue">) {
   const limit = limitOf(pledge);
   if (limit === 0) return;
   const { activityName, selectionId, shieldId } = pledgeNames(pledge.id);
-  const events = scheduleEvents(limit);
-  events.forEach((event, i) => {
-    if (!event.blocks) return;
-    const previous = events[i - 1];
-    const action: any = { type: "blockSelection", familyActivitySelectionId: selectionId, shieldId };
-    // Read by our patch of the monitor extension (patches/react-native-device-activity+*.patch).
-    if (previous) {
-      action.onlyIfEventRecordedEarlierToday = previous.name;
-      action.onlyIfEventRecordedEarlierTodayMinGapMS = MIN_GAP_BETWEEN_EVENTS_MS;
-    }
+  for (const event of scheduleEvents(limit)) {
+    if (!event.blocks) continue;
     DeviceActivity.configureActions({
       activityName,
       callbackName: "eventDidReachThreshold",
       eventName: event.name,
-      actions: [action],
+      actions: [{ type: "blockSelection", familyActivitySelectionId: selectionId, shieldId }],
     });
-  });
+  }
 }
 
 /**
@@ -385,11 +376,10 @@ export function todayEventLog(id: string): { name: string; at: Date }[] {
 }
 
 /**
- * Today's use and whether the limit really was reached, from the events the
- * monitor extension recorded. Same rule as the extension's guard: a blocking
- * event counts only if the event before it fired at least
- * MIN_GAP_BETWEEN_EVENTS_MS earlier. Used minutes come from the ticks, not
- * from the limit, so an early limit event cannot claim time that was not used.
+ * Today's use and whether the limit was reached, from the events the monitor
+ * extension recorded: reached once any blocking event fired today (the same
+ * events that block). Used minutes come from the ticks, shown as the full
+ * limit once it is reached.
  */
 export function getTodayUsage(id: string, limitMinutes: number): DailyUsage {
   const limit = Math.max(0, Math.round(limitMinutes));
@@ -405,16 +395,7 @@ export function getTodayUsage(id: string, limitMinutes: number): DailyUsage {
     if (!Number.isNaN(minutes)) usedMinutes = Math.max(usedMinutes, minutes);
   }
 
-  const events = scheduleEvents(limit);
-  const limitReached = events.some((event, i) => {
-    if (!event.blocks) return false;
-    const at = fired.get(event.name);
-    if (at === undefined) return false;
-    const previous = events[i - 1];
-    if (!previous) return true;
-    const previousAt = fired.get(previous.name);
-    return previousAt !== undefined && at - previousAt >= MIN_GAP_BETWEEN_EVENTS_MS;
-  });
+  const limitReached = scheduleEvents(limit).some((event) => event.blocks && fired.has(event.name));
   if (limitReached) usedMinutes = Math.max(usedMinutes, limit);
 
   return {

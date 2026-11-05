@@ -5,15 +5,8 @@ export const LIMIT_EVENT_NAME = "limitReached";
 export const TICK_MINUTES = 5;
 
 /**
- * iOS sometimes fires the limit early, or fires every threshold at once. A
- * block event only counts when the event before it fired at least this long
- * before it: real use cannot climb a whole tick in a few seconds.
- */
-export const MIN_GAP_BETWEEN_EVENTS_MS = 60 * 1000;
-/**
- * Extra ticks past the limit that also block, guarded the same way. If iOS
- * fires the limit too early and the guard ignores it, iOS will not fire it
- * again that day, so these catch the real limit a few minutes later.
+ * Extra ticks past the limit that also block. iOS fires each event once a
+ * day; if it drops or delays the limit event, these block a few minutes later.
  */
 export const RETRY_TICKS_AFTER_LIMIT = 6;
 
