@@ -6,7 +6,7 @@ store build differs from the dev build.
 
 ## Current status (5 November 2026)
 
-**Build 26 (1.1.0) is being built for TestFlight** (5 November 2026). Fixes
+**Build 26 (1.1.0) is being built for TestFlight** (5 November 2026, EAS build 8903867b, submission ce1113d9; confirm once TestFlight shows it processed). Fixes
 build 25's limit never blocking: iOS delivers threshold events in bunches
 (the owner's phone showed tick5, tick10 and tick15 at the same second), so
 the 60 s guard skipped real limits. The block actions are unconditional
