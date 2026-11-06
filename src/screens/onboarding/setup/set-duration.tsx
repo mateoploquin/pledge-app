@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import PressableScale from "../../../components/buttons/pressable-scale";
 import { haptics } from "../../../utils/haptics";
-import { cream, fonts, ink, radius } from "../../../theme/tokens";
+import { color, cream, fonts, ink, radius } from "../../../theme/tokens";
 
 export const DURATION_OPTIONS = [7, 15, 30];
 
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     color: ink.base,
   },
   labelActive: {
-    color: "rgba(23, 19, 15, 0.65)",
+    color: color.receiptLabel,
   },
 });
 

@@ -26,6 +26,7 @@ import { fetchHasCard } from "../../services/stripe-api";
 import { auth } from "../../firebaseConfig";
 import { registerDevice } from "../../services/devices";
 import { track } from "../../services/analytics";
+import { color } from "../../theme/tokens";
 
 type StepName = "mirror" | "apps" | "limit" | "duration" | "amount" | "terms" | "card";
 
@@ -259,10 +260,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "rgba(248, 244, 236, 0.22)",
+    backgroundColor: color.divider,
   },
   dotOn: {
-    backgroundColor: "#F8F4EC",
+    backgroundColor: color.text,
   },
   step: {
     flex: 1,

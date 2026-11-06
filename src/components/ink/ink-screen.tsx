@@ -1,13 +1,14 @@
 import React from "react";
-import { StatusBar, StyleSheet, Text, View, StyleProp, ViewStyle } from "react-native";
+import { StatusBar, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PressableScale from "../buttons/pressable-scale";
-import { cream, glow, ink } from "../../theme/tokens";
+import { color, glow, spacing } from "../../theme/tokens";
 
 interface InkScreenProps {
   children: React.ReactNode;
-  /** Shown top-left as "‹ label"; omit for no way back. */
+  /** Spoken name of the back chevron; omit `onBack` for no way back. */
   backLabel?: string;
   onBack?: () => void;
   style?: StyleProp<ViewStyle>;
@@ -24,8 +25,24 @@ const InkScreen: React.FC<InkScreenProps> = ({ children, backLabel, onBack, styl
       <LinearGradient pointerEvents="none" colors={glow.colors} locations={glow.locations} style={styles.glow} />
       <View style={[styles.body, { paddingTop: insets.top + 8 }, style]}>
         {onBack ? (
-          <PressableScale onPress={onBack} style={styles.back} haptic="tap" hitSlop={12}>
-            <Text style={styles.backText}>‹ {backLabel ?? "Back"}</Text>
+          <PressableScale
+            onPress={onBack}
+            style={styles.back}
+            haptic="tap"
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={backLabel ?? "Back"}
+          >
+            <Svg width={24} height={24} viewBox="0 0 24 24">
+              <Path
+                d="M15 5l-7 7 7 7"
+                fill="none"
+                stroke={color.text}
+                strokeWidth={1.75}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
           </PressableScale>
         ) : null}
         {children}
@@ -42,7 +59,7 @@ const InkScreen: React.FC<InkScreenProps> = ({ children, backLabel, onBack, styl
 const styles = StyleSheet.create({
   ground: {
     flex: 1,
-    backgroundColor: ink.base,
+    backgroundColor: color.bg,
   },
   glow: {
     position: "absolute",
@@ -53,22 +70,19 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: spacing.lg,
   },
   back: {
     alignSelf: "flex-start",
-    paddingVertical: 8,
+    height: 44,
+    width: 44,
+    justifyContent: "center",
     marginLeft: -4,
-    paddingHorizontal: 4,
-  },
-  backText: {
-    color: cream.muted,
-    fontSize: 16,
   },
   footer: {
-    paddingHorizontal: 28,
-    paddingTop: 12,
-    gap: 12,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: 4,
     alignItems: "center",
   },
 });

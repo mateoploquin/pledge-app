@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import colors from "../../theme/colors";
+import { color } from "../../theme/tokens";
 import {
   isAppleSignInAvailable,
   signInWithApple,
@@ -145,8 +146,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonDark: {
-    borderColor: "#F8F4EC",
-    backgroundColor: "#F8F4EC",
+    borderColor: color.action,
+    backgroundColor: color.action,
   },
   icon: {
     marginRight: 10,

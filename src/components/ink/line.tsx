@@ -1,32 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, StyleSheet, Text, TextStyle, StyleProp } from "react-native";
-import { ember, fonts, motion, type } from "../../theme/tokens";
+import { AccessibilityInfo, Animated, Text, TextStyle, StyleProp } from "react-native";
+import { motion, type } from "../../theme/tokens";
 
 interface LineProps {
-  /** `*word*` sets that word in italic. */
+  /** The old `*word*` emphasis marks are ignored while screens move over. */
   text: string;
-  /** "display" for the one big line on a screen, "heading" for a smaller one. */
-  size?: "display" | "heading";
+  /** "hero" and "display" are caps serif for brand moments; "heading" is a functional title. */
+  size?: "hero" | "display" | "heading";
   style?: StyleProp<TextStyle>;
 }
 
-/** The serif line: one thought, one italic word, in ember. */
-export const Line: React.FC<LineProps> = ({ text, size = "display", style }) => {
-  const parts = text.split(/(\*[^*]+\*)/g).filter(Boolean);
-  return (
-    <Text style={[size === "display" ? type.display : type.heading, style]}>
-      {parts.map((part, i) =>
-        part.startsWith("*") ? (
-          <Text key={i} style={styles.italic}>
-            {part.slice(1, -1)}
-          </Text>
-        ) : (
-          <Text key={i}>{part}</Text>
-        )
-      )}
-    </Text>
-  );
-};
+/** One headline: upright caps serif on a brand moment, Inter Display elsewhere. */
+export const Line: React.FC<LineProps> = ({ text, size = "display", style }) => (
+  <Text accessibilityRole="header" style={[type[size], style]}>
+    {text.replace(/\*/g, "")}
+  </Text>
+);
 
 interface DissolveProps {
   /** Changing this fades the old children out and the new ones in. */
@@ -88,10 +77,3 @@ export const Dissolve: React.FC<DissolveProps> = ({ id, children, style }) => {
     </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  italic: {
-    fontFamily: fonts.serifItalic,
-    color: ember,
-  },
-});

@@ -1,13 +1,17 @@
 import React from "react";
 import { ActivityIndicator, StyleSheet, Text, StyleProp, ViewStyle } from "react-native";
 import PressableScale from "../buttons/pressable-scale";
-import { cream, ink, radius } from "../../theme/tokens";
+import { color, fonts, radius } from "../../theme/tokens";
 
 interface PillButtonProps {
   text: string;
   onPress: () => void;
-  /** "primary" is the one cream pill on a screen; "ghost" an outline; "quiet" plain text. */
-  tone?: "primary" | "ghost" | "quiet";
+  /**
+   * "primary" is the one solid ivory button on a screen; "ghost" an outline;
+   * "quiet" plain text; "consequential" an outline for an action that costs
+   * money or can't be undone.
+   */
+  tone?: "primary" | "ghost" | "quiet" | "consequential";
   disabled?: boolean;
   /** Shows a spinner in place of the text, keeping the button's size. */
   busy?: boolean;
@@ -30,26 +34,23 @@ const PillButton: React.FC<PillButtonProps> = ({
       disabled={inactive}
       scaleTo={tone === "quiet" ? 0.98 : 0.97}
       haptic={tone === "primary" ? "press" : "tap"}
+      accessibilityRole="button"
+      accessibilityLabel={text}
+      accessibilityState={{ disabled: inactive, busy }}
       style={[
         styles.base,
         tone === "primary" && styles.primary,
         tone === "ghost" && styles.ghost,
+        tone === "consequential" && styles.consequential,
         tone === "quiet" && styles.quiet,
-        disabled && styles.disabled,
+        disabled && tone === "primary" && styles.primaryDisabled,
         style,
       ]}
     >
       {busy ? (
-        <ActivityIndicator color={tone === "primary" ? ink.base : cream.base} />
+        <ActivityIndicator color={tone === "primary" ? color.onAction : color.text} />
       ) : (
-        <Text
-          style={[
-            styles.text,
-            tone === "primary" && styles.primaryText,
-            tone === "ghost" && styles.ghostText,
-            tone === "quiet" && styles.quietText,
-          ]}
-        >
+        <Text style={[styles.text, tone === "primary" && styles.primaryText, disabled && styles.disabledText]}>
           {text}
         </Text>
       )}
@@ -62,39 +63,39 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radius.pill,
-    minHeight: 54,
+    borderRadius: radius.control,
+    minHeight: 56,
     paddingHorizontal: 20,
   },
   primary: {
-    backgroundColor: cream.base,
+    backgroundColor: color.action,
+  },
+  primaryDisabled: {
+    backgroundColor: color.surface,
   },
   ghost: {
     borderWidth: 1,
-    borderColor: ink.line,
+    borderColor: color.controlEdge,
+  },
+  consequential: {
+    borderWidth: 1,
+    borderColor: color.error,
   },
   quiet: {
-    minHeight: 40,
-  },
-  disabled: {
-    opacity: 0.4,
+    minHeight: 48,
   },
   text: {
-    fontSize: 17,
-    fontWeight: "600",
+    fontFamily: fonts.uiMedium,
+    fontSize: 16,
+    lineHeight: 20,
+    color: color.text,
   },
   primaryText: {
-    color: ink.base,
+    fontFamily: fonts.uiSemibold,
+    color: color.onAction,
   },
-  ghostText: {
-    color: cream.base,
-    fontWeight: "500",
-    fontSize: 16,
-  },
-  quietText: {
-    color: cream.muted,
-    fontWeight: "400",
-    fontSize: 14,
+  disabledText: {
+    color: color.textTertiary,
   },
 });
 

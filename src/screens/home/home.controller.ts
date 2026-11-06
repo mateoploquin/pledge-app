@@ -38,9 +38,9 @@ export type DailyUsage = {
 };
 
 // The shield extension expects 0-255 channel values. Same palette as the app.
-const ink = { red: 23, green: 19, blue: 15 };
-const cream = { red: 248, green: 244, blue: 236 };
-const creamMuted = { red: 190, green: 182, blue: 170 };
+const ink = { red: 20, green: 12, blue: 11 };
+const cream = { red: 248, green: 240, blue: 230 };
+const creamMuted = { red: 216, green: 201, blue: 190 };
 
 const toThreshold = (totalMinutes: number) => ({
   hour: Math.floor(totalMinutes / 60),

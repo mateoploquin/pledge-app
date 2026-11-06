@@ -1,5 +1,15 @@
 # Pledge — design
 
+> **Being replaced (6 Nov 2026).** The owner rebuilt the brand: dark editorial,
+> Noto Serif Display upright caps on brand moments, Inter for all UI and money.
+> Source: `~/Desktop/creative/` and the Paper file "Pledge — Design System".
+> Tokens in `src/theme/tokens.ts` and the new `src/components/ink/` parts are
+> already current; screens are moving over one group at a time, and the old
+> `ink`, `cream` and `ember` names are aliases until that's done. Below this
+> note, the tokens, type and component details describe the old look. Motion,
+> copy voice, layout rules and the owner's corrections still apply. This file
+> gets rewritten when the screens are done.
+
 How the app looks, moves and speaks. The owner set this direction on
 27 October 2026 ("this is the vibe I want for the whole app") after seeing
 the opener, and every screen has since been moved over to it. New work

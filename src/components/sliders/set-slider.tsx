@@ -3,7 +3,7 @@ import { haptics } from "../../utils/haptics";
 import { View, Text, StyleSheet, PanResponder } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
-import { cream, ink } from "../../theme/tokens";
+import { color, cream, ink } from "../../theme/tokens";
 const SLIDER_WIDTH = SCREEN_WIDTH * 0.8;
 
 interface SetSliderProps {
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   },
   track: {
     height: 6,
-    backgroundColor: "rgba(248, 244, 236, 0.18)",
+    backgroundColor: color.divider,
     borderRadius: 3,
     position: "relative",
   },
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   tick: {
     width: 1,
     height: 8,
-    backgroundColor: "rgba(248, 244, 236, 0.30)",
+    backgroundColor: color.controlEdge,
     marginBottom: 6,
   },
   tickLabel: {

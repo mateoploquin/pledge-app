@@ -16,6 +16,7 @@ import SharePledge from "../screens/onboarding/share-pledge";
 import ChallengeCompleted from "../screens/challenge-completed";
 import PledgeDetail from "../screens/pledge-detail";
 import SelectAppsView from "../screens/select-apps";
+import { color } from "../theme/tokens";
 
 const Stack = createStackNavigator();
 
@@ -48,7 +49,7 @@ const softTiming = {
   config: { duration: 420, easing: Easing.out(Easing.cubic) },
 };
 
-const INK = "#17130F";
+const INK = color.bg;
 
 const softFade = {
   headerShown: false,

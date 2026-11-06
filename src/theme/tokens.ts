@@ -1,66 +1,83 @@
 /**
- * The look of the app, in one place: dark ink grounds lit by golden-hour
- * light at the top, cream serif words with the italic word in ember, soft
- * pills for buttons.
- * New screens pull from here; older screens are being moved over.
+ * The look of the app, in one place. Dark editorial: Night grounds, solid
+ * espresso surfaces, ivory type, orange only as concentrated light. Values
+ * come from the Paper file "Pledge — Design System". Limits, money and consent
+ * always sit on solid surfaces in plain Inter.
  */
-export const ink = {
-  /** Page ground. */
-  base: "#17130F",
-  /** Raised surfaces on the ground (cards, sheets), warmed by the light. */
-  raised: "#2A1F17",
-  /** Hairlines on the ground. */
-  line: "rgba(248, 244, 236, 0.16)",
-  /** The warm edge of a card in the light. */
-  edge: "rgba(255, 179, 107, 0.24)",
-};
-
-export const cream = {
-  base: "#F8F4EC",
-  /** Secondary text on ink. */
-  muted: "rgba(248, 244, 236, 0.72)",
-  /** Placeholder and disabled text on ink. */
-  faint: "rgba(248, 244, 236, 0.45)",
-};
-
-/** The warm accent: the italic word, numbers that matter, active states. */
-export const ember = "#FF8A5B";
-
-/** The sun of the welcome film, a lighter step of ember. */
-export const amber = "#FFB36B";
-
-/**
- * Golden hour: the warm light of the welcome film glowing down from the top
- * of every screen and fading into the ink by about two thirds of the way.
- */
-export const glow = {
-  colors: ["rgba(255, 166, 92, 0.34)", "rgba(255, 138, 91, 0.12)", "rgba(23, 19, 15, 0)"] as const,
-  locations: [0, 0.38, 1] as const,
+export const color = {
+  bg: "#140C0B",
+  raised: "#241310",
+  surface: "#301B17",
+  surfacePressed: "#41251E",
+  text: "#F8F0E6",
+  textSecondary: "#D8C9BE",
+  textTertiary: "#A89488",
+  /** Hairlines. Under 3:1 on dark, so never the only edge of a control. */
+  divider: "#6F5549",
+  controlEdge: "#A89488",
+  action: "#F8F0E6",
+  onAction: "#241310",
+  focus: "#FFD1A3",
+  /** Expressive light. Ivory on it is under 3:1: never a button fill. */
+  solar: "#ED602A",
+  ember: "#9F3425",
+  oxblood: "#551A20",
+  amber: "#F4A052",
+  success: "#8FBF9A",
+  warning: "#E8B65C",
+  error: "#F2908F",
+  receiptLabel: "#6B5548",
+  receiptRule: "#C9B9AB",
+  receiptOpen: "#9F3425",
+  scrim: "rgba(20, 12, 11, 0.72)",
 };
 
 export const fonts = {
-  serif: "InstrumentSerif-Regular",
-  serifItalic: "InstrumentSerif-Italic",
+  /** Brand moments only: uppercase, never money, forms or terms. */
+  display: "NotoSerifDisplay-Regular",
+  /** Functional titles. */
+  title: "InterDisplay-Medium",
+  ui: "Inter-Regular",
+  uiMedium: "Inter-Medium",
+  uiSemibold: "Inter-SemiBold",
+  // Until the screens move over (see `ink`, below): these styled numbers, which belong in Inter.
+  serif: "Inter-SemiBold",
+  serifItalic: "Inter-Medium",
 };
 
 export const type = {
-  /** The big spoken line: one thought per screen. */
-  display: { fontFamily: fonts.serif, fontSize: 42, lineHeight: 46, letterSpacing: -0.6, color: cream.base },
-  /** A smaller serif heading. */
-  heading: { fontFamily: fonts.serif, fontSize: 32, lineHeight: 36, letterSpacing: -0.4, color: cream.base },
-  body: { fontSize: 16, lineHeight: 22, color: cream.muted },
-  label: { fontSize: 14, color: cream.muted },
+  /** Editorial headline on brand moments. */
+  hero: { fontFamily: fonts.display, fontSize: 48, lineHeight: 50, letterSpacing: -1.2, textTransform: "uppercase" as const, color: color.text },
+  /** A longer editorial line. */
+  display: { fontFamily: fonts.display, fontSize: 42, lineHeight: 46, letterSpacing: -1.05, textTransform: "uppercase" as const, color: color.text },
+  /** Title of a functional screen, sentence case. */
+  heading: { fontFamily: fonts.title, fontSize: 30, lineHeight: 36, letterSpacing: -0.6, color: color.text },
+  /** Time and money. */
+  value: { fontFamily: fonts.uiSemibold, fontSize: 44, lineHeight: 48, letterSpacing: -0.88, fontVariant: ["tabular-nums" as const], color: color.text },
+  body: { fontFamily: fonts.ui, fontSize: 16, lineHeight: 24, color: color.textSecondary },
+  label: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 18, color: color.textSecondary },
 };
+
+export const spacing = { xs: 8, sm: 12, md: 16, lg: 24, xl: 32, xxl: 40 };
 
 export const radius = {
-  pill: 30,
-  card: 22,
+  control: 12,
+  card: 18,
+  glass: 24,
+  /** Old name; everything that was a pill is now a control. */
+  pill: 12,
 };
 
-/** Dark shade laid over film so the words read on any frame. */
+/** Laid over film so the words read on any frame. */
 export const shade = {
-  colors: ["rgba(23,19,15,0.10)", "rgba(23,19,15,0.35)", "rgba(23,19,15,0.88)"] as const,
+  colors: ["rgba(20,12,11,0.10)", "rgba(20,12,11,0.35)", "rgba(20,12,11,0.88)"] as const,
   locations: [0, 0.45, 1] as const,
+};
+
+/** The low oxblood light at the top of screens. */
+export const glow = {
+  colors: ["rgba(85, 26, 32, 0.70)", "rgba(85, 26, 32, 0.22)", "rgba(20, 12, 11, 0)"] as const,
+  locations: [0, 0.38, 1] as const,
 };
 
 export const motion = {
@@ -69,3 +86,10 @@ export const motion = {
   /** How fast the outgoing thought leaves before the next one fades in. */
   outMs: 160,
 };
+
+// Old names, so screens not rebuilt yet already wear the new palette.
+// They go once every screen uses `color` directly.
+export const ink = { base: color.bg, raised: color.surface, line: color.divider, edge: color.divider };
+export const cream = { base: color.text, muted: color.textSecondary, faint: color.textTertiary };
+export const ember = color.solar;
+export const amber = color.amber;

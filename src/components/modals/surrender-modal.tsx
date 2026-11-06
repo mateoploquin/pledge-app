@@ -9,7 +9,7 @@ import { CURRENCY_SYMBOL } from "../../config";
 import { haptics } from "../../utils/haptics";
 import PillButton from "../ink/pill-button";
 import { Line } from "../ink/line";
-import { cream, ink, radius } from "../../theme/tokens";
+import { color, cream, ink, radius } from "../../theme/tokens";
 
 interface SurrenderModalProps {
   isVisible: boolean;
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   scrim: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(23, 19, 15, 0.72)",
+    backgroundColor: color.scrim,
   },
   sheet: {
     backgroundColor: ink.raised,
