@@ -189,7 +189,7 @@ const Onboarding: React.FC<OpenerProps> = ({ initial = "film" }) => {
   /** First time in: the deal, then the first pledge. With pledges already: straight on. */
   const signedIn = async () => {
     const pledges = await loadPledges().catch(() => []);
-    if (false && pledges.length > 0) { // TEMP-TEST: always play the deal
+    if (pledges.length > 0) {
       navigation.navigate("Instructions");
       return;
     }

@@ -222,7 +222,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
   const atStake = pledges.reduce((sum, p) => sum + p.pledgeValue, 0);
 
   return (
-    <InkScreen footer={<PillButton text="New pledge" onPress={() => navigation.navigate("Register")} /* TEMP-TEST: walk through sign-in + deal */ />}>
+    <InkScreen footer={<PillButton text="New pledge" onPress={() => navigation.navigate("Instructions")} />}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Dissolve id={headline(pledges, usage)} style={styles.head}>
           <Line text={headline(pledges, usage)} />
