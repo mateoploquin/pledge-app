@@ -15,10 +15,46 @@ access charges the pledge. Keeping your word costs nothing.
 | How a build gets to TestFlight / App Store, current status | `docs/release.md` |
 | Notes for App Review | `docs/app-review-notes.md` |
 
+## Commands
+
+There are no tests or linter. Check your work with the type checkers and,
+for anything touching Screen Time, a build on the owner's phone.
+
+```sh
+export PATH="/opt/homebrew/opt/node@20/bin:$PATH"
+npx tsc --noEmit                         # app type check
+(cd backend && npm run typecheck)        # backend type check
+(cd backend && npm run dev)              # backend locally (Hono, tsx watch)
+npx expo start --dev-client --tunnel     # Metro for the dev build on the phone
+# TestFlight build: bumps buildNumber in app.json (commit it), submits itself
+npx eas-cli@latest build --platform ios --profile production --auto-submit --non-interactive --no-wait
+```
+
+## Code map (the parts that span files)
+
+- App code is in `src/` (screens with `*.controller.ts` beside the screen
+  holding the Screen Time logic); local Expo modules in `modules/`; native
+  extensions in `targets/`; backend (Vercel, Stripe, Firebase Admin) in
+  `backend/`.
+- Enforcement lives in `src/screens/home/home.controller.ts`: each pledge
+  is a DeviceActivity schedule `Pledge<id>` with 5-min `tick<n>` events,
+  `limitReached` and six blocking ticks past it. Constants are in
+  `home.constants.ts`. Read "How a pledge is enforced" in
+  `docs/architecture.md` before changing any of it.
+- Every Screen Time name is built from the pledge's 10-char id. Ids must
+  stay fixed length and names must not contain underscores, because the
+  library clears events by prefix and joins its storage keys with `_`
+  (`events_<activity>_<callback>_<event>`).
+- `targets/ActivityMonitorExtension` is copied from
+  `node_modules/react-native-device-activity` at prebuild (gitignored).
+  Change the library with `patch-package` (`patches/`), not that folder.
+
 ## Working rules
 
 - Branch `make-device-activity-work` is the live branch. Commit and push
   there when asked; the owner reviews on GitHub (mateoploquin/pledge-app).
+  Commit as the owner: `git -c user.name=mateoploquin -c
+  user.email=mateoploquina@gmail.com commit ...`.
 - Node 20: `export PATH="/opt/homebrew/opt/node@20/bin:$PATH"` before any
   `npx`. Xcode 26.6 locally; EAS is pinned to the same.
 - `ios/` is generated (gitignored). Native changes go through
