@@ -12,7 +12,7 @@
     },
     "development": {
       "extends": "base",
-      "developmentClient": false,
+      "developmentClient": true,
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"

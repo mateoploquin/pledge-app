@@ -59,7 +59,9 @@ npx eas-cli@latest build --platform ios --profile production --auto-submit --non
   Commit as the owner: `git -c user.name=mateoploquin -c
   user.email=mateoploquina@gmail.com commit ...`.
 - Node 20: `export PATH="/opt/homebrew/opt/node@20/bin:$PATH"` before any
-  `npx`. Xcode 26.6 locally; EAS is pinned to the same.
+  `npx`. This Mac has no Xcode (7 Nov 2026), so iOS builds run on EAS,
+  which is pinned to Xcode 26.6. The dev client comes from the `development`
+  profile.
 - `ios/` is generated (gitignored). Native changes go through
   `npx expo prebuild --platform ios --no-install && (cd ios && pod install)`,
   with `--clean` when a target's structure changes. Never hand-edit `ios/`.
