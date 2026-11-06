@@ -32,10 +32,13 @@ npx eas-cli@latest build --platform ios --profile production --auto-submit --non
 
 ## Code map (the parts that span files)
 
-- App code is in `src/` (screens with `*.controller.ts` beside the screen
-  holding the Screen Time logic); local Expo modules in `modules/`; native
+- App code is in `src/`; local Expo modules in `modules/`; native
   extensions in `targets/`; backend (Vercel, Stripe, Firebase Admin) in
   `backend/`.
+- Home, pledge detail and the pledge wizard keep their logic in a hook
+  beside the screen (`use-home.ts`, `use-pledge-detail.ts`,
+  `use-pledge-wizard.ts`); the screen file only draws. Redesign the screen,
+  not the hook.
 - Enforcement lives in `src/screens/home/home.controller.ts`: each pledge
   is a DeviceActivity schedule `Pledge<id>` with 5-min `tick<n>` events,
   `limitReached` and six blocking ticks past it. Constants are in
