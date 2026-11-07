@@ -41,12 +41,11 @@ light, fine grain, edges sinking into dark.
   card is frosted glass: a faint warm-white fill, background blur, a bright
   1 px rim along the top edge, an orange rim along the bottom, and a soft
   shadow beneath. It needs light behind it to read, so a blurred glow sits
-  behind each glass card. The primary button is a clear glass pill (fully rounded) with no colour
-  of its own: it takes its colour only from what is behind it, through
-  background blur and a faint white sheen (lighter at the top), a bright top
-  rim and a thin white edge. Never tint or fill the button with brand colour;
-  the owner rejected an amber-to-dark gradient pill as "horrific". Ivory
-  SemiBold text. Reference: the stacked glowing pills and the frosted product
+  behind each glass card. The primary button uses exactly the same glass as the card (same fill,
+  rims and blur, radius 24), so it takes its colour only from what is behind
+  it. No shine line across the middle, no text shadow, no outer shadow or
+  halo, no brand-colour tint: the owner found a tinted gradient pill
+  "horrific" and a glossy clear one "AI generated". Ivory Inter Medium text. Reference: the stacked glowing pills and the frosted product
   card on the owner's board.
 - **Text on glass stays readable.** Secondary text on glass is lifted to
   `#E6D8CC` and main text is ivory, because the glow behind lowers contrast.
