@@ -37,17 +37,26 @@ light, fine grain, edges sinking into dark.
   deal, empty Home, "You kept your word" and the launch screen. On Home with a
   pledge, the wizard, Review, give-up and Account, the glow is only a soft
   light at the top and bottom edges.
-- **Money and limits stay on solid ground.** Cards, receipts, numbers and
-  buttons are solid surfaces with no grain, glass or photo behind them, in
-  plain Inter. The textured background makes them read as solid.
+- **Glass for cards and the main button (owner, 7 Nov 2026).** The pledge
+  card is frosted glass: a faint warm-white fill, background blur, a bright
+  1 px rim along the top edge, an orange rim along the bottom, and a soft
+  shadow beneath. It needs light behind it to read, so a blurred glow sits
+  behind each glass card. The primary button is a glass pill (fully rounded):
+  a hot amber highlight on the left fading through solar and ember to
+  dark glass on the right, a bright top rim and a faint orange halo, ivory
+  SemiBold text. Reference: the stacked glowing pills and the frosted product
+  card on the owner's board.
+- **Text on glass stays readable.** Secondary text on glass is lifted to
+  `#E6D8CC` and main text is ivory, because the glow behind lowers contrast.
+  The Sign in with Apple button stays solid ivory (Apple's rules for that
+  button).
 - **Type:** Noto Serif Display upright caps for brand headlines; small spaced
   caps in Inter (11 pt, +0.14 em) for captions and section labels, often with a
   thin rule; Inter for everything with a number in it.
 - **Photography and films:** blurred, backlit silhouettes in orange haze, shot
   slow-shutter or slightly out of focus so nobody is identifiable. This is
   the grade for regrading `montage.mp4` and `still-in-traffic.mp4`.
-- **Not this:** glass cards over bright photos for anything showing money,
-  coloured digital noise, hard-edged gradient shapes, bright orange grounds
+- **Not this:** coloured digital noise, hard-edged gradient shapes, bright orange grounds
   behind small text.
 
 How the app looks, moves and speaks. The owner set this direction on
