@@ -10,6 +10,46 @@
 > copy voice, layout rules and the owner's corrections still apply. This file
 > gets rewritten when the screens are done.
 
+## Direction: "last light" (owner, 7 Nov 2026)
+
+The owner picked this after seeing v2 in Paper ("I'm really liking this
+vibe"). Source: their Pinterest board `pledge-20-uxuix`, and the v2 row at the
+top of the "04 All screens + v2" page in the Paper file. Every screen rebuilt
+from here on follows it.
+
+The feel: a sun at the horizon seen through haze, on film. Big soft fields of
+light, fine grain, edges sinking into dark.
+
+- **Blurred light, not shapes.** Backgrounds are two or three large radial
+  glows in the brand oranges (amber core, solar, ember, oxblood) blurred until
+  they have no edges, fading into espresso `#140C0B`. The glowing sun, often
+  low or cut by a thin horizon rule, is the recurring image and echoes the
+  Pure Horizon Sun logo.
+- **Film grain on every background.** Monochrome noise (brightness only, no
+  coloured specks), about one pixel per speck. It is one tile,
+  `assets/textures/grain.png` (256 px, drawn at 128 pt and repeated), laid over
+  the background and under the content. Strength: 26 % opacity on brand
+  moments, 18 % on screens with money or limits. It also hides gradient
+  banding.
+- **Vignette on brand moments.** The edges darken to near-black so the light
+  seems to come from inside the frame.
+- **The glow scales with distance from money.** Strongest on the opener, the
+  deal, empty Home, "You kept your word" and the launch screen. On Home with a
+  pledge, the wizard, Review, give-up and Account, the glow is only a soft
+  light at the top and bottom edges.
+- **Money and limits stay on solid ground.** Cards, receipts, numbers and
+  buttons are solid surfaces with no grain, glass or photo behind them, in
+  plain Inter. The textured background makes them read as solid.
+- **Type:** Noto Serif Display upright caps for brand headlines; small spaced
+  caps in Inter (11 pt, +0.14 em) for captions and section labels, often with a
+  thin rule; Inter for everything with a number in it.
+- **Photography and films:** blurred, backlit silhouettes in orange haze, shot
+  slow-shutter or slightly out of focus so nobody is identifiable. This is
+  the grade for regrading `montage.mp4` and `still-in-traffic.mp4`.
+- **Not this:** glass cards over bright photos for anything showing money,
+  coloured digital noise, hard-edged gradient shapes, bright orange grounds
+  behind small text.
+
 How the app looks, moves and speaks. The owner set this direction on
 27 October 2026 ("this is the vibe I want for the whole app") after seeing
 the opener, and every screen has since been moved over to it. New work
