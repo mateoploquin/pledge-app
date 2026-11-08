@@ -14,14 +14,15 @@ function page(title: string, body: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title} · Pledge</title>
 <style>
-  :root { color-scheme: light dark; }
-  body { font: 17px/1.6 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 28px 20px 60px; max-width: 720px; margin-inline: auto; color: #1d1d1f; background: #fff6f1; }
-  @media (prefers-color-scheme: dark) { body { color: #f2f2f2; background: #1a1412; } a { color: #ff8a50; } }
+  /* The app's palette (src/theme/tokens.ts): espresso ground, ivory text. */
+  :root { color-scheme: dark; }
+  body { font: 17px/1.6 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 28px 20px 60px; max-width: 720px; margin-inline: auto; color: #D8C9BE; background: #140C0B; }
+  h1, h2 { color: #F8F0E6; }
   h1 { font-size: 28px; margin: 0 0 4px; }
   h2 { font-size: 19px; margin: 32px 0 8px; }
   p, li { margin: 8px 0; }
-  .meta { color: #8a8a8e; font-size: 14px; margin-bottom: 24px; }
-  a { color: #ff5900; }
+  .meta { color: #A89488; font-size: 14px; margin-bottom: 24px; }
+  a { color: #F8F0E6; text-decoration: underline; }
   nav a { margin-right: 16px; }
 </style>
 </head>

@@ -6,7 +6,7 @@ import { auth } from "../../../firebaseConfig";
 import { CURRENCY_SYMBOL, STRIPE_MERCHANT_COUNTRY } from "../../../config";
 import PillButton from "../../../components/ink/pill-button";
 import Callout from "../../../components/ink/callout";
-import { cream } from "../../../theme/tokens";
+import { color, cream, radius } from "../../../theme/tokens";
 import { track } from "../../../services/analytics";
 
 interface SetPaymentProps {
@@ -57,6 +57,26 @@ const SetPayment: React.FC<SetPaymentProps> = ({
         returnURL: "pledge://stripe-redirect",
         applePay: { merchantCountryCode: STRIPE_MERCHANT_COUNTRY },
         style: "alwaysDark",
+        // Stripe's sheet in the app's palette (src/theme/tokens.ts).
+        appearance: {
+          colors: {
+            primary: color.action,
+            background: color.raised,
+            componentBackground: color.surface,
+            componentBorder: color.divider,
+            componentDivider: color.divider,
+            primaryText: color.text,
+            secondaryText: color.textSecondary,
+            placeholderText: color.textTertiary,
+            icon: color.textSecondary,
+            error: color.error,
+          },
+          shapes: { borderRadius: radius.control },
+          primaryButton: {
+            colors: { background: color.action, text: color.onAction },
+            shapes: { borderRadius: radius.control },
+          },
+        },
       });
       if (initError) {
         console.error("Error initializing payment sheet:", initError);

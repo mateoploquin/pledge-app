@@ -199,9 +199,14 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
   beats: the owner dropped it there (30 Oct 2026) as too much noise and
   brought it back for the welcome only (31 Oct 2026). Don't propose other
   footage; the owner picks the film.
-- Splash and launch screen: solid ink. iOS caches launch screens; after
+- Splash and launch screen: the ivory Pure Horizon Sun, 112 pt wide, on
+  espresso #140C0B (`assets/splash.png`). iOS caches launch screens; after
   changing it the phone may need a reinstall and a reboot.
-- App icon: ink background, cream mark (`assets/icon.png`).
+- App icon: the solar symbol (#ED602A) on espresso, 1024 px, no alpha
+  (`assets/icon.png`, owner chose solar on 7 Nov 2026). Both images are drawn
+  from the master geometry with exact colours, not exported from Paper,
+  which shifts colours on export.
+- Stripe card sheet and the Terms/Privacy pages use the same palette.
 - Shield (block screen): ink material blur, cream title, muted subtitle,
   SF Symbol `lock.fill` (iOS tints it; the library ignores a custom tint),
   cream primary, muted secondary. Animation is not possible there.
