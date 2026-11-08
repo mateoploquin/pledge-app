@@ -109,20 +109,23 @@ time: 4h 20m → 3h 50m a day". Method (owner's picks, 31 Oct 2026):
 
 ### Pledge detail (`src/screens/pledge-detail/index.tsx`)
 
-Countdown ("N days left", same rounding as the card), today's usage, top
-apps for this selection (when the report extension is bundled), and
-"Give up" which opens the surrender modal. Surrender charges the card, stops
+Countdown in caps ("24 DAYS LEFT.", same rounding as the card), the
+chosen apps, then a glass "Today" card: status caption (long press opens
+the hidden event log), "N of M min used" and the bar, "Your pledge $X, not
+charged", "Ends", and the top apps for this selection (when the report
+extension is bundled). Quiet "Give up this pledge" opens the surrender
+sheet: dark glass, "Wait.", a glass "No, keep going" and a red-outline
+"Pay $X and unlock" (v2, owner 8 Nov 2026). Surrender charges the card, stops
 monitoring, removes the pledge. There is no failure screen afterwards.
 
 While the apps are blocked, the detail screen's footer offers "5 minutes
-for $1" (cream pill, no count shown; "Unlock my apps" drops to quiet text
+for $1" (glass button, no count shown; "Unlock my apps" drops to quiet text
 below): a paid break. Not in the surrender modal; that stays about giving
 up (owner, 31 Oct 2026). The card is charged $1 (`POST /stripe/break`), the
 pledge keeps running, and the apps unlock for 5 minutes on the clock, used
 or not (owner changed this from "5 minutes of use", 31 Oct 2026). Up to 3 a
 day per pledge, counted on the phone's local date and enforced by the
-backend. The detail screen reads "On a break. The apps lock again at
-14:05." and the Home card "On a 5-minute break". A break that would end
+backend. The detail screen's card reads "14:05 when the apps lock again" and the Home card "On a 5-minute break". A break that would end
 after midnight is not re-blocked: the midnight reset unblocks anyway.
 
 ### Shield (drawn by iOS from `shieldPayload` in `home.controller.ts`)

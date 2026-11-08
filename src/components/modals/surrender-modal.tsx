@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Alert, Pressable, Modal } from "react-native";
-import Animated, { FadeIn, FadeInDown, FadeOut } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { chargePledge } from "../../services/stripe-api";
 import { syncedIdToken } from "../../services/sendPledgeData";
@@ -9,7 +10,7 @@ import { CURRENCY_SYMBOL } from "../../config";
 import { haptics } from "../../utils/haptics";
 import PillButton from "../ink/pill-button";
 import { Line } from "../ink/line";
-import { color, cream, ink, radius } from "../../theme/tokens";
+import { color, fonts, glass } from "../../theme/tokens";
 
 interface SurrenderModalProps {
   isVisible: boolean;
@@ -54,19 +55,20 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({ isVisible, pledge, onCl
       <Animated.View style={styles.scrim} entering={FadeIn.duration(220)} exiting={FadeOut.duration(180)}>
         <Pressable style={StyleSheet.absoluteFill} onPress={loading ? undefined : onClose} />
         <Animated.View
-          entering={FadeInDown.duration(360).springify().damping(18)}
-          style={[styles.sheet, { marginBottom: Math.max(insets.bottom, 12) }]}
+          entering={FadeIn.duration(320)}
+          style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 12) + 20 }]}
         >
-          <Line text="*Wait.*" size="heading" />
+          <BlurView intensity={glass.blur} tint="dark" style={[StyleSheet.absoluteFill, styles.blur]} />
+          <Line text="Wait." size="heading" />
           <Text style={styles.text}>
             Unlocking now means giving up this pledge and paying the {CURRENCY_SYMBOL}
             {pledgeValue}. You've come this far.
           </Text>
           <View style={styles.actions}>
-            <PillButton text="No, keep going" onPress={onClose} disabled={loading} />
+            <PillButton text="No, keep going" tone="glass" onPress={onClose} disabled={loading} />
             <PillButton
               text={`Pay ${CURRENCY_SYMBOL}${pledgeValue} and unlock`}
-              tone="quiet"
+              tone="consequential"
               onPress={handleSurrender}
               busy={loading}
             />
@@ -83,25 +85,28 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     backgroundColor: color.scrim,
   },
+  // Dark glass rising from the bottom edge (v2 Paper "D4 Give up").
   sheet: {
-    backgroundColor: ink.raised,
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: ink.line,
-    marginHorizontal: 12,
-    paddingHorizontal: 28,
+    backgroundColor: "rgba(36,19,16,0.78)",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    borderColor: "rgba(255,222,196,0.2)",
+    paddingHorizontal: 24,
     paddingTop: 28,
-    paddingBottom: 20,
-    gap: 16,
+    gap: 12,
+    overflow: "hidden",
   },
+  blur: { zIndex: -1 },
   text: {
-    color: cream.muted,
+    fontFamily: fonts.ui,
+    color: glass.textSecondary,
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   actions: {
-    gap: 8,
-    marginTop: 8,
+    gap: 12,
+    marginTop: 24,
   },
 });
 
