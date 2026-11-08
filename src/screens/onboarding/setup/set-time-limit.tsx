@@ -4,7 +4,7 @@ import SetSlider from "../../../components/sliders/set-slider";
 import AnimatedNumber from "../../../components/text/animated-number";
 import PresetChips from "../../../components/buttons/preset-chips";
 import { haptics } from "../../../utils/haptics";
-import { cream, fonts } from "../../../theme/tokens";
+import { color, fonts } from "../../../theme/tokens";
 
 interface SetTimeLimitProps {
   timeValue: number;
@@ -30,7 +30,7 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({ timeValue, setTimeValue }) 
           haptics.select();
           setTimeValue(v);
         }}
-        format={(v) => `${v} min`}
+        format={(v) => String(v)}
       />
     </View>
   );
@@ -38,21 +38,22 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({ timeValue, setTimeValue }) 
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    alignSelf: "stretch",
   },
   value: {
-    fontFamily: fonts.serif,
-    fontSize: 112,
-    lineHeight: 132,
-    letterSpacing: -3,
-    color: cream.base,
-    marginBottom: 28,
+    fontFamily: fonts.uiSemibold,
+    fontSize: 44,
+    lineHeight: 48,
+    letterSpacing: -0.9,
+    color: color.text,
+    fontVariant: ["tabular-nums"],
+    marginBottom: 20,
   },
   unit: {
-    fontFamily: fonts.serifItalic,
-    fontSize: 24,
+    fontFamily: fonts.ui,
+    fontSize: 16,
     letterSpacing: 0,
-    color: cream.muted,
+    color: color.textSecondary,
   },
 });
 

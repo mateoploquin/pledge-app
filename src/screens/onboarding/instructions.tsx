@@ -5,117 +5,93 @@ import SetTimeLimit from "./setup/set-time-limit";
 import SetDuration from "./setup/set-duration";
 import SetApps from "./setup/set-apps";
 import ScreenTimeMirror from "./setup/screen-time-mirror";
-import AcceptTerms from "./setup/accept-terms";
+import Review from "./setup/review";
 import SetPayment from "./setup/set-up-payment";
 import InkScreen from "../../components/ink/ink-screen";
 import PillButton from "../../components/ink/pill-button";
+import Caption from "../../components/ink/caption";
 import { Dissolve, Line } from "../../components/ink/line";
 import { StepName, usePledgeWizard } from "./use-pledge-wizard";
-import { color } from "../../theme/tokens";
 
 /** The one line at the top of each step. */
 const QUESTION: Record<StepName, string> = {
-  mirror: "Your last\n*seven* days.",
-  apps: "Which apps take\nthe *most* from you?",
-  limit: "How much is\n*enough* a day?",
-  duration: "For how\n*long?*",
-  amount: "What's your\nword *worth?*",
-  terms: "The *rules.*",
-  card: "Put your card\n*down.*",
+  mirror: "Your last seven days.",
+  apps: "Which apps take the most from you?",
+  limit: "How much is enough a day?",
+  duration: "For how long?",
+  amount: "What's your word worth?",
+  review: "Your word, in full.",
+  card: "Put your card down.",
 };
 
 /**
- * Making a pledge: one question per screen, dissolving to the next. The
- * first pledge opens with the 7-day mirror (the deal was told on the film
- * after sign-in). Terms
- * are asked once per device and the card step is skipped when a card is
- * already on file, so a second pledge takes four taps.
+ * Making a pledge (v2 Paper group "B"): one question per screen, dissolving
+ * to the next, solid ivory buttons (owner, 8 Nov 2026). The first pledge
+ * opens with the 7-day mirror. Review shows on every pledge; the card step
+ * is skipped when a card is already on file.
  */
 const Instructions: React.FC = () => {
-  const {
-    steps,
-    step,
-    index,
-    setIndex,
-    isLast,
-    canLeave,
-    continueDisabled,
-    starting,
-    onContinue,
-    onBack,
-    startPledge,
-    selectionEvent,
-    setSelectionEvent,
-    timeValue,
-    setTimeValue,
-    durationDays,
-    setDurationDays,
-    pledgeValue,
-    setPledgeValue,
-    termsAccepted,
-    setTermsAccepted,
-    authorizationStatus,
-    setAuthorizationStatus,
-    paymentSetupComplete,
-    setPaymentSetupComplete,
-    setIsButtonDisabled,
-  } = usePledgeWizard();
+  const w = usePledgeWizard();
+  const { step, steps, index } = w;
+
+  const continueLabel =
+    step === "review" ? (w.hasCard ? "Lock it in" : "Add a card to lock it in") : w.isLast ? "Lock it in" : "Continue";
 
   return (
     <InkScreen
+      onBack={w.canLeave ? w.onBack : undefined}
+      backLabel={index > 0 ? "Back" : "Cancel"}
+      topRight={<Caption>{`Step ${index + 1} of ${steps.length}`}</Caption>}
       footer={
         step === "card" ? null : (
           <>
-            <PillButton
-              text={isLast ? "Lock it in" : "Continue"}
-              onPress={onContinue}
-              disabled={continueDisabled}
-              busy={starting}
-            />
-            {canLeave && <PillButton text={index > 0 ? "Back" : "Cancel"} tone="quiet" onPress={onBack} />}
+            <PillButton text={continueLabel} onPress={w.onContinue} disabled={w.continueDisabled} busy={w.starting} />
+            {w.canLeave && <PillButton text={index > 0 ? "Back" : "Cancel"} tone="quiet" onPress={w.onBack} />}
           </>
         )
       }
     >
-      <View style={styles.progress}>
-        {steps.map((s, i) => (
-          <View key={s} style={[styles.dot, i <= index && styles.dotOn]} />
-        ))}
-      </View>
-
       <Dissolve id={step} style={styles.step}>
-        <Line text={QUESTION[step]} />
-        <View style={styles.control}>
+        <Line size="heading" text={QUESTION[step]} style={styles.question} />
+        <View style={[styles.control, step === "review" && styles.controlTop]}>
           {step === "mirror" ? (
             <ScreenTimeMirror
-              authorizationStatus={authorizationStatus}
-              setAuthorizationStatus={setAuthorizationStatus}
+              authorizationStatus={w.authorizationStatus}
+              setAuthorizationStatus={w.setAuthorizationStatus}
             />
           ) : step === "apps" ? (
             <SetApps
-              authorizationStatus={authorizationStatus}
-              setAuthorizationStatus={setAuthorizationStatus}
-              selectionEvent={selectionEvent}
-              setSelectionEvent={setSelectionEvent}
-              onSelectionComplete={() => setIndex(steps.indexOf("apps") + 1)}
+              authorizationStatus={w.authorizationStatus}
+              setAuthorizationStatus={w.setAuthorizationStatus}
+              selectionEvent={w.selectionEvent}
+              setSelectionEvent={w.setSelectionEvent}
+              onSelectionComplete={() => w.setIndex(steps.indexOf("apps") + 1)}
             />
           ) : step === "limit" ? (
-            <SetTimeLimit timeValue={timeValue} setTimeValue={setTimeValue} />
+            <SetTimeLimit timeValue={w.timeValue} setTimeValue={w.setTimeValue} />
           ) : step === "duration" ? (
-            <SetDuration durationDays={durationDays} setDurationDays={setDurationDays} />
+            <SetDuration durationDays={w.durationDays} setDurationDays={w.setDurationDays} />
           ) : step === "amount" ? (
-            <SetPledge pledgeValue={pledgeValue} setPledgeValue={setPledgeValue} />
-          ) : step === "terms" ? (
-            <AcceptTerms termsAccepted={termsAccepted} setTermsAccepted={setTermsAccepted} />
+            <SetPledge pledgeValue={w.pledgeValue} setPledgeValue={w.setPledgeValue} />
+          ) : step === "review" ? (
+            <Review
+              selection={w.selectionEvent}
+              timeValue={w.timeValue}
+              durationDays={w.durationDays}
+              pledgeValue={w.pledgeValue}
+              askTerms={!w.termsDone}
+              termsAccepted={w.termsAccepted}
+              setTermsAccepted={w.setTermsAccepted}
+            />
           ) : step === "card" ? (
             <SetPayment
-              setIsButtonDisabled={setIsButtonDisabled}
-              paymentSetupComplete={paymentSetupComplete}
-              setPaymentSetupComplete={setPaymentSetupComplete}
-              pledgeValue={pledgeValue}
-              durationDays={durationDays}
+              setIsButtonDisabled={w.setIsButtonDisabled}
+              paymentSetupComplete={w.paymentSetupComplete}
+              setPaymentSetupComplete={w.setPaymentSetupComplete}
+              pledgeValue={w.pledgeValue}
+              durationDays={w.durationDays}
               setPublishableKey={() => {}}
-              onComplete={startPledge}
+              onComplete={w.startPledge}
             />
           ) : null}
         </View>
@@ -125,29 +101,10 @@ const Instructions: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  progress: {
-    flexDirection: "row",
-    gap: 6,
-    marginTop: 10,
-    marginBottom: 28,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: color.divider,
-  },
-  dotOn: {
-    backgroundColor: color.text,
-  },
-  step: {
-    flex: 1,
-  },
-  control: {
-    flex: 1,
-    justifyContent: "center",
-    paddingVertical: 24,
-  },
+  step: { flex: 1 },
+  question: { marginTop: 24 },
+  control: { flex: 1, justifyContent: "center", paddingVertical: 24 },
+  controlTop: { justifyContent: "flex-start" },
 });
 
 export default Instructions;

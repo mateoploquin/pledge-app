@@ -5,6 +5,7 @@ import { fetchPaymentSheetParams } from "../../../services/stripe-api";
 import { auth } from "../../../firebaseConfig";
 import { CURRENCY_SYMBOL, STRIPE_MERCHANT_COUNTRY } from "../../../config";
 import PillButton from "../../../components/ink/pill-button";
+import Callout from "../../../components/ink/callout";
 import { cream } from "../../../theme/tokens";
 import { track } from "../../../services/analytics";
 
@@ -116,11 +117,11 @@ const SetPayment: React.FC<SetPaymentProps> = ({
         </View>
       ) : dismissed ? (
         <>
-          <Text style={styles.text}>
-            Nothing is charged now. You only pay your {CURRENCY_SYMBOL}
-            {pledgeValue} pledge if you unlock your apps, delete Pledge or turn off Screen Time access
-            before the {durationDays} days are up.
-          </Text>
+          <Callout
+            tone="error"
+            title="Your card wasn't saved."
+            text="Nothing was charged and your pledge hasn't started. Try again, or use another card."
+          />
           <PillButton text="Add a card" onPress={handleSetUpPayment} style={styles.button} />
         </>
       ) : null}

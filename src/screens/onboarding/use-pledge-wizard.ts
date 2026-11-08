@@ -17,7 +17,7 @@ import { auth } from "../../firebaseConfig";
 import { registerDevice } from "../../services/devices";
 import { track } from "../../services/analytics";
 
-export type StepName = "mirror" | "apps" | "limit" | "duration" | "amount" | "terms" | "card";
+export type StepName = "mirror" | "apps" | "limit" | "duration" | "amount" | "review" | "card";
 
 /**
  * The state of making a pledge: which steps apply, what's been chosen, when
@@ -52,10 +52,11 @@ export const usePledgeWizard = () => {
       "limit",
       "duration",
       "amount",
-      ...(termsDone ? [] : (["terms"] as StepName[])),
+      // Review shows on every pledge; its terms checkbox only until accepted.
+      "review",
       ...(hasCard ? [] : (["card"] as StepName[])),
     ],
-    [firstPledge, termsDone, hasCard]
+    [firstPledge, hasCard]
   );
   const [index, setIndex] = useState(0);
   const step = steps[Math.min(index, steps.length - 1)];
@@ -158,7 +159,7 @@ export const usePledgeWizard = () => {
     (step === "mirror" && authorizationStatus !== AuthorizationStatus.approved) ||
     (step === "apps" && !selectionEvent?.familyActivitySelection) ||
     (step === "amount" && pledgeValue < 1) ||
-    (step === "terms" && !termsAccepted) ||
+    (step === "review" && !termsDone && !termsAccepted) ||
     (step === "card" && !paymentSetupComplete);
 
   const canLeave = index > 0 || navigation.canGoBack();
@@ -191,5 +192,7 @@ export const usePledgeWizard = () => {
     paymentSetupComplete,
     setPaymentSetupComplete,
     setIsButtonDisabled,
+    termsDone,
+    hasCard,
   };
 };

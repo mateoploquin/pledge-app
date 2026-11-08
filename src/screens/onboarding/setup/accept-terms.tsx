@@ -29,7 +29,7 @@ const rules = [
   },
 ];
 
-const openLegal = async (doc: "terms" | "privacy") => {
+export const openLegal = async (doc: "terms" | "privacy") => {
   haptics.tap();
   const url = `${API_URL}/${doc}`;
   try {

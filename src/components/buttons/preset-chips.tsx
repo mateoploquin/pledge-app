@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { cream, ink } from "../../theme/tokens";
+import { color, fonts, radius } from "../../theme/tokens";
 import PressableScale from "./pressable-scale";
 
 interface PresetChipsProps {
@@ -40,30 +40,31 @@ const PresetChips: React.FC<PresetChipsProps> = ({
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
     gap: 10,
-    marginTop: 26,
-    paddingHorizontal: 20,
+    marginTop: 24,
+    alignSelf: "stretch",
   },
   chip: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 20,
+    flex: 1,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.control,
     borderWidth: 1,
-    borderColor: ink.line,
+    borderColor: color.divider,
   },
   chipActive: {
-    backgroundColor: cream.base,
-    borderColor: cream.base,
+    backgroundColor: color.action,
+    borderColor: color.action,
   },
   label: {
+    fontFamily: fonts.ui,
     fontSize: 15,
-    fontWeight: "500",
-    color: cream.base,
+    color: color.textSecondary,
   },
   labelActive: {
-    color: ink.base,
+    fontFamily: fonts.uiSemibold,
+    color: color.onAction,
   },
 });
 

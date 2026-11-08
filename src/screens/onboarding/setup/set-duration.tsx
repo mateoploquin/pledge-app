@@ -1,8 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import PressableScale from "../../../components/buttons/pressable-scale";
 import { haptics } from "../../../utils/haptics";
-import { color, cream, fonts, ink, radius } from "../../../theme/tokens";
+import { color, fonts, radius } from "../../../theme/tokens";
 
 export const DURATION_OPTIONS = [7, 15, 30];
 
@@ -27,11 +28,12 @@ const SetDuration: React.FC<SetDurationProps> = ({ durationDays, setDurationDays
             style={[styles.option, active && styles.optionActive]}
             scaleTo={0.97}
           >
-            {/* One text run, so "days" sits on the number's baseline (see set-pledge). */}
-            <Text style={[styles.number, active && styles.textActive]}>
-              {d}
-              <Text style={[styles.label, active && styles.labelActive]}> days</Text>
-            </Text>
+            <Text style={[styles.label, active && styles.labelActive]}>{d} days</Text>
+            {active && (
+              <Svg width={16} height={12} viewBox="0 0 16 12">
+                <Path d="M1.5 6.5l4 4L14.5 1.5" fill="none" stroke={color.onAction} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            )}
           </PressableScale>
         );
       })}
@@ -41,35 +43,31 @@ const SetDuration: React.FC<SetDurationProps> = ({ durationDays, setDurationDays
 
 const styles = StyleSheet.create({
   container: {
-    gap: 12,
+    gap: 10,
+    alignSelf: "stretch",
   },
   option: {
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    borderRadius: radius.card,
+    height: 56,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: radius.control,
     borderWidth: 1,
-    borderColor: ink.line,
+    borderColor: color.divider,
   },
   optionActive: {
-    backgroundColor: cream.base,
-    borderColor: cream.base,
-  },
-  number: {
-    fontFamily: fonts.serif,
-    fontSize: 44,
-    lineHeight: 54,
-    color: cream.base,
+    backgroundColor: color.action,
+    borderColor: color.action,
   },
   label: {
-    fontFamily: fonts.serifItalic,
-    fontSize: 22,
-    color: cream.muted,
-  },
-  textActive: {
-    color: ink.base,
+    fontFamily: fonts.ui,
+    fontSize: 16,
+    color: color.textSecondary,
   },
   labelActive: {
-    color: color.receiptLabel,
+    fontFamily: fonts.uiSemibold,
+    color: color.onAction,
   },
 });
 

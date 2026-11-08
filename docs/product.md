@@ -48,20 +48,22 @@ launches already signed in). Signed in without → the deal, then Instructions.
 
 ### Making a pledge (`src/screens/onboarding/instructions.tsx`)
 
-One question per screen, dots on top, "Continue" and "Back"/"Cancel"
-pinned at the bottom, content dissolving between steps. Steps, in order:
+One question per screen, "STEP n OF N" top right, a solid ivory
+"Continue" and a quiet "Back"/"Cancel" pinned at the bottom, content
+dissolving between steps (v2, owner 8 Nov 2026). Steps, in order:
 
 | Step | Question | Control | Continue is enabled when |
 | --- | --- | --- | --- |
-| mirror (first pledge only, and only when the report extension is bundled) | Your last *seven* days. | Asks Screen Time access immediately, then the system-drawn 7-day total and top 3 apps | Screen Time access approved |
-| apps | Which apps take the *most* from you? | "Choose apps" opens Apple's picker (never on its own, owner 31 Oct 2026); shows the chosen app icons after | at least one app, category or site chosen |
-| limit | How much is *enough* a day? | slider 0–120 min with ticks 0/30/60/90/120, presets 30/60/90; 0 means blocked all day | always |
-| duration | For how *long?* | 7 / 15 / 30 days | always |
-| amount | What's your word *worth?* | slider 0–20 with ticks 0/5/10/15/20, presets 5/10/20 | amount ≥ 1 |
-| terms (once per device) | The *rules.* | four rules, Terms and Privacy open in an in-app sheet, one checkbox | accepted |
-| card (skipped when a card is on file) | Put your card *down.* | Stripe PaymentSheet opens immediately; saving the card continues on its own | card saved |
+| mirror (first pledge only, and only when the report extension is bundled) | Your last seven days. | Asks Screen Time access immediately, then the system-drawn 7-day total and top 3 apps | Screen Time access approved |
+| apps | Which apps take the most from you? | "Choose apps" opens Apple's picker (never on its own, owner 31 Oct 2026); shows the chosen app icons after | at least one app, category or site chosen |
+| limit | How much is enough a day? | slider 0–120 min with ticks 0/30/60/90/120, presets 30/60/90; 0 means blocked all day | always |
+| duration | For how long? | 7 / 15 / 30 days | always |
+| amount | What's your word worth? | slider 0–20 with ticks 0/5/10/15/20, presets 5/10/20 | amount ≥ 1 |
+| review (every pledge) | Your word, in full. | Apps (counts, since Apple hides app names), Daily limit ("resets at midnight"), Length (with end date), "Your pledge $X", then "Nothing is charged now. You pay $X only if you unlock early, delete Pledge or turn off Screen Time access." The Terms and Privacy checkbox shows once per device | terms accepted (first time only) |
+| card (skipped when a card is on file) | Put your card down. | Stripe PaymentSheet opens immediately; saving the card continues on its own. If it's closed or fails: "Your card wasn't saved." callout and "Add a card" | card saved |
 
-Last step's button reads "Lock it in". Locking in: backend records the
+Review's button reads "Lock it in", or "Add a card to lock it in" when no
+card is on file. Locking in: backend records the
 pledge (`POST /pledge`), the Screen Time schedule starts, the pledge is
 saved locally, device is registered for push, success haptic, Home.
 

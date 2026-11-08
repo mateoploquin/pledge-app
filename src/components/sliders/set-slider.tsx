@@ -3,7 +3,7 @@ import { haptics } from "../../utils/haptics";
 import { View, Text, StyleSheet, PanResponder } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
-import { color, cream, ink } from "../../theme/tokens";
+import { color, cream, fonts } from "../../theme/tokens";
 const SLIDER_WIDTH = SCREEN_WIDTH * 0.8;
 
 interface SetSliderProps {
@@ -37,7 +37,7 @@ const SetSlider: React.FC<SetSliderProps> = ({ min, max, value: controlled, tick
   }, [controlled]);
 
   const fillStyle = useAnimatedStyle(() => ({ width: position.value }));
-  const thumbStyle = useAnimatedStyle(() => ({ left: position.value - 10 }));
+  const thumbStyle = useAnimatedStyle(() => ({ left: position.value - 14 }));
   // Page x of the track's left edge, captured when a touch starts.
   const trackPageX = useRef(0);
 
@@ -118,9 +118,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   track: {
-    height: 6,
-    backgroundColor: color.divider,
-    borderRadius: 3,
+    height: 4,
+    backgroundColor: color.surfacePressed,
+    borderRadius: 2,
     position: "relative",
   },
   hitArea: {
@@ -131,22 +131,24 @@ const styles = StyleSheet.create({
     height: 48,
   },
   fill: {
-    height: 6,
+    height: 4,
     backgroundColor: cream.base,
-    borderRadius: 3,
+    borderRadius: 2,
     position: "absolute",
     left: 0,
     top: 0,
   },
   thumb: {
-    width: 20,
-    height: 20,
+    width: 28,
+    height: 28,
     backgroundColor: cream.base,
-    borderRadius: 10,
+    borderRadius: 14,
     position: "absolute",
-    top: -7,
-    borderWidth: 3,
-    borderColor: ink.base,
+    top: -12,
+    shadowColor: "#000",
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
   },
   ticksContainer: {
     width: SLIDER_WIDTH,
@@ -167,7 +169,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   tickLabel: {
-    fontSize: 12,
+    fontFamily: fonts.ui,
+    fontSize: 13,
     color: cream.faint,
   },
 });

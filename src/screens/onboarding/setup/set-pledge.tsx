@@ -4,7 +4,7 @@ import SetSlider from "../../../components/sliders/set-slider";
 import AnimatedNumber from "../../../components/text/animated-number";
 import PresetChips from "../../../components/buttons/preset-chips";
 import { haptics } from "../../../utils/haptics";
-import { cream, fonts } from "../../../theme/tokens";
+import { color, fonts } from "../../../theme/tokens";
 import { CURRENCY_SYMBOL } from "../../../config";
 
 interface SetPledgeProps {
@@ -40,21 +40,19 @@ const SetPledge: React.FC<SetPledgeProps> = ({ pledgeValue, setPledgeValue }) =>
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    alignSelf: "stretch",
   },
   value: {
-    fontFamily: fonts.serif,
-    fontSize: 112,
-    lineHeight: 132,
-    letterSpacing: -3,
-    color: cream.base,
-    marginBottom: 28,
+    fontFamily: fonts.uiSemibold,
+    fontSize: 44,
+    lineHeight: 48,
+    letterSpacing: -0.9,
+    color: color.text,
+    fontVariant: ["tabular-nums"],
+    marginBottom: 20,
   },
   currency: {
-    fontFamily: fonts.serifItalic,
-    fontSize: 56,
-    letterSpacing: 2,
-    color: cream.muted,
+    fontFamily: fonts.uiSemibold,
   },
 });
 
