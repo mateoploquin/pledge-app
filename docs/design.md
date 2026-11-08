@@ -24,7 +24,10 @@ light, fine grain, edges sinking into dark.
   glows in the brand oranges (amber core, solar, ember, oxblood) blurred until
   they have no edges, fading into espresso `#140C0B`. The glowing sun, often
   low or cut by a thin horizon rule, is the recurring image and echoes the
-  Pure Horizon Sun logo.
+  Pure Horizon Sun logo. Build each glow from a radial gradient that fades
+  to fully transparent at its own edge, never a hard shape plus a blur
+  filter: React Native has no CSS blur, and in Paper a blurred circle shows
+  its hard edge when zoomed out.
 - **Film grain on every background.** Monochrome noise (brightness only, no
   coloured specks), about one pixel per speck. It is one tile,
   `assets/textures/grain.png` (256 px, drawn at 128 pt and repeated), laid over
