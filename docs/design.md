@@ -130,8 +130,8 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
 - The opener's content block is absolutely pinned to the bottom (left/right
   28) so switching states never changes the buttons' position; the Apple
   button's slot (62 pt) is reserved before its availability is known. The
-  Apple and Google buttons are one hand-drawn pill (`ProviderButton`), not
-  Apple's native button, so they match and always read in English.
+  Apple button is a hand-drawn pill (`ProviderButton`), not Apple's native
+  button, so it keeps the app's type and always reads in English.
 - Horizontal lists of chosen apps scroll; they never wrap into a wall.
 
 ## Components (`src/components/ink/`, `src/components/buttons/`)

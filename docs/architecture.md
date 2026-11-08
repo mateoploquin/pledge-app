@@ -16,8 +16,9 @@ Apple lets us do, how to build, and the traps already walked into.
 - Screen Time: `react-native-device-activity` 0.4.13 (its config plugin
   generates three extension targets) plus two local Expo modules and one
   hand-written extension target.
-- Auth: Firebase web SDK (project `pledgetrial`) with email, Sign in with
-  Apple (`expo-apple-authentication`) and Google (`@react-native-google-signin`).
+- Auth: Firebase web SDK (project `pledgetrial`) with Sign in with Apple
+  (`expo-apple-authentication`). Google sign-in was removed on 8 Nov 2026;
+  email sign-in goes with the v2 opener.
 - Payments: `@stripe/stripe-react-native` PaymentSheet in setup mode; the
   backend charges off-session later.
 - Push: `expo-notifications` for local notifications and the APNs token.
@@ -188,7 +189,7 @@ Deploy: the owner runs `cd backend && vercel --prod --yes`. Agents cannot.
 - `app.json`: version 1.1.0, build number auto-incremented by EAS and
   committed; bundle `com.pledgecompany.pledge`; team GC2XRZ6HSJ; iOS
   deployment target 16.0; `useFrameworks: static`; plugins listed there.
-  `app.config.js` extends it (Google URL scheme) and holds the
+  `app.config.js` extends it and holds the
   `PLEDGE_WITHOUT_REPORT` switch (unused now).
 - `EXPO_PUBLIC_API_URL` selects the backend. Dev reads `.env.local`;
   EAS profiles set the production URL in `eas.json`.

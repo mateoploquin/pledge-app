@@ -26,7 +26,8 @@ One screen, four states on the same looping film:
 1. **film**: the montage loops full-bleed under a dark shade. Serif lines
    dissolve one at a time. One cream pill: "I'm new here"; a quiet link:
    "I already have an account".
-2. **signup / login**: Sign in with Apple, Google, or email, on the film.
+2. **signup / login**: Sign in with Apple or email, on the film. Google was
+   removed on 8 Nov 2026; the v2 opener (one screen, Apple only) replaces this.
    Switching between the two is a dissolve, never a layout jump.
 3. **email**: name (signup only), email, password.
 4. **deal** (first time in, when no pledge is stored on the device): the

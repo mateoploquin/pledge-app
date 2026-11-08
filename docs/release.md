@@ -137,7 +137,6 @@ and that the built app has `Extensions/ReportExtension.appex`.
       rules step, and update `docs/app-review-notes.md`.
 - [ ] App Privacy questionnaire in App Store Connect.
 - [ ] Screenshots from a real device.
-- [ ] Google OAuth consent screen verified.
 - [ ] App Review notes pasted from `docs/app-review-notes.md`, with a demo
       account filled in.
 
