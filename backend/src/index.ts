@@ -1,10 +1,11 @@
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import type { DecodedIdToken } from "firebase-admin/auth";
-import { devicesRef, getPledge, getUser, pledgesRef, upsertUser, verifyIdToken } from "./firebase.js";
+import { db, devicesRef, firebaseApp, getPledge, getUser, pledgesRef, upsertUser, verifyIdToken, type PledgeRecord } from "./firebase.js";
+import { getAuth } from "firebase-admin/auth";
 import { checkDevices, forfeitActivePledges } from "./forfeit.js";
 import { apnsConfigured } from "./apns.js";
-import { chargeBreak, chargePledge, createPaymentSheetParams, ensureCustomer, hasPaymentMethod } from "./stripe.js";
+import { cardSummary, chargeBreak, chargePledge, createPaymentSheetParams, ensureCustomer, hasPaymentMethod, stripe } from "./stripe.js";
 import { privacyHtml, termsHtml } from "./legal.js";
 
 type Env = { Variables: { user: DecodedIdToken } };
@@ -73,6 +74,14 @@ app.use("/stripe/break", async (c, next) => {
   c.set("user", await verifyIdToken(c.req.header("authorization")));
   await next();
 });
+app.use("/charges", async (c, next) => {
+  c.set("user", await verifyIdToken(c.req.header("authorization")));
+  await next();
+});
+app.use("/account", async (c, next) => {
+  c.set("user", await verifyIdToken(c.req.header("authorization")));
+  await next();
+});
 
 app.post("/auth/firebase/signup", async (c) => {
   const decoded = c.get("user");
@@ -92,7 +101,8 @@ app.post("/stripe/payment-sheet", async (c) => {
 
 app.get("/stripe/payment-method", async (c) => {
   const user = await getUser(c.get("user").uid);
-  return c.json({ hasCard: await hasPaymentMethod(user) });
+  const card = await cardSummary(user);
+  return c.json({ hasCard: !!card || (await hasPaymentMethod(user)), card });
 });
 
 const PLEDGE_MIN = 1;
@@ -201,9 +211,69 @@ app.post("/pledge", async (c) => {
   return c.json({ id, ...record });
 });
 
+/** Active pledges; with ?status=all, ended ones too (Account, "Past pledges"), newest first. */
 app.get("/pledges", async (c) => {
-  const snap = await pledgesRef(c.get("user").uid).where("status", "==", "active").get();
-  return c.json({ pledges: snap.docs.map((d) => ({ id: d.id, ...d.data() })) });
+  const ref = pledgesRef(c.get("user").uid);
+  const snap = c.req.query("status") === "all" ? await ref.get() : await ref.where("status", "==", "active").get();
+  const pledges = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as PledgeRecord)
+    .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+  return c.json({ pledges });
+});
+
+/** Money actually taken (Account, "Charges"): pledges given up or forfeited, and paid breaks. Newest first. */
+app.get("/charges", async (c) => {
+  const snap = await db().collection("users").doc(c.get("user").uid).collection("charges").get();
+  const charges = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as Record<string, any>)
+    .filter((ch) => ch.status === "succeeded" || ch.status === "processing")
+    .map((ch) => ({
+      id: ch.id,
+      kind: ch.kind === "break" ? "break" : "pledge",
+      amount: ch.amount,
+      currency: ch.currency,
+      pledgeId: ch.pledgeId,
+      createdAt: ch.createdAt,
+    }))
+    .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+  return c.json({ charges });
+});
+
+/**
+ * Deletes the account (Apple requires it in the app). Running pledges are
+ * charged first, the same as giving up, and only with ?charge=1: without it
+ * the answer is 409 with what would be charged, so the app can say so. Then
+ * the Stripe customer, every Firestore record and the Firebase user go.
+ */
+app.delete("/account", async (c) => {
+  const uid = c.get("user").uid;
+  const user = await getUser(uid);
+  const active = (await pledgesRef(uid).where("status", "==", "active").get()).docs.map(
+    (d) => ({ id: d.id, ...d.data() }) as PledgeRecord
+  );
+  if (active.length > 0) {
+    const total = active.reduce((sum, p) => sum + p.pledgeValue, 0);
+    if (c.req.query("charge") !== "1") {
+      return c.json({ error: "Running pledges must be paid first", activePledges: active.length, total }, 409);
+    }
+    if (!user) return c.json({ error: "Unknown user" }, 404);
+    for (const pledge of active) {
+      const outcome = await chargePledge(user, pledge);
+      if (outcome.status !== "succeeded" && outcome.status !== "processing") {
+        return c.json({ error: `Payment ${outcome.status}; the account was not deleted` }, 402);
+      }
+    }
+  }
+  if (user?.stripeCustomerId) {
+    try {
+      await stripe().customers.del(user.stripeCustomerId);
+    } catch (err: any) {
+      if (err?.code !== "resource_missing") throw err;
+    }
+  }
+  await db().recursiveDelete(db().collection("users").doc(uid));
+  await getAuth(firebaseApp()).deleteUser(uid);
+  return c.json({ deleted: true });
 });
 
 app.post("/pledge/:id/complete", async (c) => {

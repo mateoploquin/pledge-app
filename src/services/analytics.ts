@@ -28,6 +28,9 @@ export type AnalyticsEvent =
   | "sign_in_completed"
   | "sign_in_failed"
   | "deal_finished"
+  // Account.
+  | "signed_out"
+  | "account_deleted"
   // Making a pledge: one event per step shown, then the result.
   | "pledge_step_viewed"
   | "pledge_step_back"

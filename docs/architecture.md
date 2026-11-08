@@ -162,9 +162,11 @@ needs `Authorization: Bearer <Firebase ID token>`.
 | --- | --- |
 | `POST /auth/firebase/signup` | creates the user doc |
 | `POST /stripe/payment-sheet` | customer + ephemeral key + SetupIntent for PaymentSheet |
-| `GET /stripe/payment-method` | whether a card is on file (skips the card step) |
+| `GET /stripe/payment-method` | whether a card is on file (skips the card step), and its brand and last four for Account |
 | `POST /pledge` | records a pledge (idempotent on id); validates amount 1–100 |
-| `GET /pledges` | the user's pledges |
+| `GET /pledges` | the user's active pledges; `?status=all` adds ended ones, newest first (Account, Past pledges) |
+| `GET /charges` | money actually taken: given-up or forfeited pledges and paid breaks, newest first |
+| `DELETE /account` | deletes the Stripe customer, every `users/{uid}` record and the Firebase user. With running pledges it answers 409 unless `?charge=1`, which charges them first like giving up |
 | `POST /pledge/:id/complete` | marks completed |
 | `POST /stripe/charge` | charges a pledge (surrender) |
 | `POST /device`, `POST /heartbeat` | deletion detection (above) |

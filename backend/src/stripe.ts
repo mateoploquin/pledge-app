@@ -239,6 +239,15 @@ export async function chargeBreak(user: UserRecord, pledgeId: string, day: strin
   };
 }
 
+/** Brand and last four digits of the saved card, for Account ("Visa 4242"). */
+export async function cardSummary(user?: UserRecord): Promise<{ brand: string; last4: string } | null> {
+  if (!user?.stripeCustomerId) return null;
+  const id = await latestPaymentMethod(user.stripeCustomerId);
+  if (!id) return null;
+  const method = await stripe().paymentMethods.retrieve(id);
+  return method.card ? { brand: method.card.brand, last4: method.card.last4 } : null;
+}
+
 /** Whether the customer has any saved card. */
 export async function hasPaymentMethod(user?: UserRecord): Promise<boolean> {
   if (!user?.stripeCustomerId) return false;

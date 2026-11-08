@@ -16,6 +16,7 @@ import SharePledge from "../screens/onboarding/share-pledge";
 import ChallengeCompleted from "../screens/challenge-completed";
 import PledgeDetail from "../screens/pledge-detail";
 import SelectAppsView from "../screens/select-apps";
+import { AccountScreen, ChargesScreen, DeleteAccountScreen, PastPledgesScreen } from "../screens/account";
 import { color } from "../theme/tokens";
 
 const Stack = createStackNavigator();
@@ -85,6 +86,10 @@ const AppNavigator = ({ initialRouteName }) => {
         options={{ ...softFade, gestureEnabled: false }}
       />
       <Stack.Screen name="PledgeDetail" component={PledgeDetail} />
+      <Stack.Screen name="Account" component={AccountScreen} />
+      <Stack.Screen name="Charges" component={ChargesScreen} />
+      <Stack.Screen name="PastPledges" component={PastPledgesScreen} />
+      <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Instructions" component={Instructions} />
       <Stack.Screen name="Details" component={DetailsScreen} />

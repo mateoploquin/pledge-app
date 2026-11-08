@@ -128,6 +128,24 @@ day per pledge, counted on the phone's local date and enforced by the
 backend. The detail screen's card reads "14:05 when the apps lock again" and the Home card "On a 5-minute break". A break that would end
 after midnight is not re-blocked: the midnight reset unblocks anyway.
 
+### Account (`src/screens/account/index.tsx`)
+
+Opened from the icon top right on Home (v2, owner 8 Nov 2026). Plain on
+purpose: a glass list of Payment method ("Visa 4242"), Charges, Past
+pledges, Screen Time access (On/Off), Terms, Privacy and Help, then a quiet
+"Sign out" and a red "Delete account".
+
+- **Charges**: each given-up or forfeited pledge and paid break, with date
+  and amount. Empty: "No charges. Keeping your word costs nothing."
+- **Past pledges**: length and amount, end date, and "Kept" or "Paid $X".
+  No streaks, no totals.
+- **Sign out** is refused while a pledge runs (working default), because
+  Pledge would stop watching the apps.
+- **Delete account** says it removes the account, card and history and
+  can't be undone. With pledges running it warns that they are given up and
+  charged first, and the button reads "Pay $X and delete". Apple requires
+  deletion in the app.
+
 ### Shield (drawn by iOS from `shieldPayload` in `home.controller.ts`)
 
 Title "That's enough for today." Subtitle names the pledge amount. Primary
