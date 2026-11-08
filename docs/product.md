@@ -69,9 +69,17 @@ saved locally, device is registered for push, success haptic, Home.
 
 ### Home (`src/screens/home/index.tsx`)
 
-The list of pledges, several can run at once. Each card: apps, today's use
-against the limit, days left (rounded up). Empty state shows the 7-day
-mirror. A "+" starts another pledge. Heartbeat to the backend on every
+The list of pledges, several can run at once (v2, owner 8 Nov 2026). Top:
+the logo lockup and an Account icon. A caps headline from the state
+("NOTHING ON THE LINE YET.", "ONE PLEDGE RUNNING.", "N PLEDGES RUNNING.",
+"THAT'S ENOUGH FOR TODAY.") and "$X on your word." Each card is glass:
+a status in words ("On track", "Close to your limit" when 20% or 5 min is
+left, "Blocked until midnight", "On a 5-minute break", "No allowance"),
+days left (rounded up), "N min left today", a thin bar, "X of Y min used",
+"Resets at midnight", the apps and the amount. Empty state shows the 7-day
+mirror under "YOUR LAST 7 DAYS" with a low sun. When Screen Time access is
+off while pledges run: "Your apps aren't being limited.", a warning, and
+"Open Settings". A glass "New pledge" starts another pledge. Heartbeat to the backend on every
 foreground; forfeited pledges reported back are removed.
 
 **Time back** (under the cards, `TimeRecovered` → `targets/ReportExtension/Recovered.swift`).

@@ -13,8 +13,8 @@ const UsageBar: React.FC<{ used: number; limit: number }> = ({ used, limit }) =>
 };
 
 const styles = StyleSheet.create({
-  track: { height: 4, backgroundColor: color.divider },
-  fill: { height: 4, backgroundColor: color.text },
+  track: { height: 4, borderRadius: 2, backgroundColor: "rgba(255,222,196,0.16)", overflow: "hidden" },
+  fill: { height: 4, borderRadius: 2, backgroundColor: color.text },
 });
 
 export default UsageBar;

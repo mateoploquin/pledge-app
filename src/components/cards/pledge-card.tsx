@@ -3,10 +3,13 @@ import { View, Text, StyleSheet } from "react-native";
 import PressableScale from "../buttons/pressable-scale";
 import { ActivityLabels } from "../../../modules/pledge-activity-labels";
 import { Pledge } from "../../types";
-import { DailyUsage, isOnBreak, splitMinutes } from "../../screens/home/home.controller";
+import { DailyUsage, isOnBreak } from "../../screens/home/home.controller";
 import { CURRENCY_SYMBOL } from "../../config";
 import { pledgeEndsAt } from "../../services/pledges";
-import { cream, ember, fonts, ink, radius } from "../../theme/tokens";
+import GlassSurface from "../ink/glass-surface";
+import StatusBadge, { PledgeStatus } from "../ink/status-badge";
+import UsageBar from "../ink/usage-bar";
+import { color, fonts, glass } from "../../theme/tokens";
 
 interface PledgeCardProps {
   pledge: Pledge;
@@ -28,80 +31,84 @@ export const daysLeftLabel = (pledge: Pledge, now = Date.now()) => {
   return `${days} days left`;
 };
 
-/** One running pledge: how long is left, its apps, where today stands. */
-const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
-  const used = splitMinutes(usage.usedMinutes);
-  const usedLabel = used.hours > 0 ? `${used.hours}h ${used.minutes}m` : `${used.minutes}m`;
+/** Where a pledge stands today, in words. Usage moves in 5-minute steps. */
+export const pledgeStatus = (pledge: Pledge, usage: DailyUsage): { status: PledgeStatus; text: string } => {
+  if (isOnBreak(pledge)) return { status: "blocked", text: "On a 5-minute break" };
+  if (pledge.timeValue === 0) return { status: "blocked", text: "No allowance" };
+  if (usage.limitReached) return { status: "blocked", text: "Blocked until midnight" };
+  const left = Math.max(0, pledge.timeValue - usage.usedMinutes);
+  if (left <= Math.max(5, pledge.timeValue * 0.2)) return { status: "close", text: "Close to your limit" };
+  return { status: "active", text: "On track" };
+};
 
-  const onBreak = isOnBreak(pledge);
-  const status = onBreak
-    ? "On a 5-minute break"
-    : pledge.timeValue === 0
-      ? "Blocked for the whole pledge"
-      : usage.limitReached
-        ? "Limit reached. Blocked until midnight."
-        : `${usedLabel} of ${pledge.timeValue} min today`;
+/** One running pledge on glass (v2 Paper "C2"): status, minutes left, the bar, apps and stake. */
+const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
+  const { status, text } = pledgeStatus(pledge, usage);
+  const noAllowance = pledge.timeValue === 0;
+  const used = Math.min(usage.usedMinutes, pledge.timeValue);
+  const left = Math.max(0, pledge.timeValue - usage.usedMinutes);
 
   return (
-    <PressableScale onPress={onPress} style={styles.card} scaleTo={0.985} haptic="tap">
-      <View style={styles.topRow}>
-        <Text style={styles.daysLeft}>{daysLeftLabel(pledge)}</Text>
-        <Text style={styles.stake}>
-          {CURRENCY_SYMBOL}
-          {pledge.pledgeValue} on it
-        </Text>
-      </View>
+    <PressableScale onPress={onPress} scaleTo={0.985} haptic="tap" style={styles.press}>
+      <GlassSurface style={styles.card}>
+        <View style={styles.topRow}>
+          <StatusBadge status={status} text={text} />
+          <Text style={styles.small}>{daysLeftLabel(pledge)}</Text>
+        </View>
 
-      <ActivityLabels
-        familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
-        style={styles.appsRow}
-        pillWidth={170}
-        fontSize={14}
-      />
+        {noAllowance ? (
+          <Text style={styles.line}>Blocked for the whole pledge.</Text>
+        ) : (
+          <>
+            <Text style={styles.value}>
+              {usage.limitReached ? 0 : left} min<Text style={styles.unit}> left today</Text>
+            </Text>
+            <UsageBar used={used} limit={pledge.timeValue} />
+            <View style={styles.row}>
+              <Text style={styles.small}>
+                {used} of {pledge.timeValue} min used
+              </Text>
+              <Text style={styles.small}>Resets at midnight</Text>
+            </View>
+          </>
+        )}
 
-      <Text style={[styles.status, usage.limitReached && !onBreak && styles.statusBlocked]}>{status}</Text>
+        <View style={[styles.row, styles.bottom]}>
+          <ActivityLabels
+            familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
+            style={styles.apps}
+            pillWidth={150}
+            fontSize={14}
+          />
+          <Text style={styles.stake}>
+            {CURRENCY_SYMBOL}
+            {pledge.pledgeValue}
+          </Text>
+        </View>
+      </GlassSurface>
     </PressableScale>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: ink.raised,
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: ink.edge,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    marginBottom: 12,
+  press: { marginBottom: 12 },
+  card: { padding: 20, gap: 14 },
+  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
+  bottom: { paddingTop: 14, borderTopWidth: 1, borderTopColor: glass.rule },
+  value: {
+    fontFamily: fonts.uiSemibold,
+    fontSize: 44,
+    lineHeight: 48,
+    letterSpacing: -0.9,
+    color: color.text,
+    fontVariant: ["tabular-nums"],
   },
-  topRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-    marginBottom: 12,
-  },
-  daysLeft: {
-    fontFamily: fonts.serif,
-    fontSize: 28,
-    color: cream.base,
-  },
-  stake: {
-    fontFamily: fonts.serifItalic,
-    fontSize: 18,
-    color: ember,
-  },
-  appsRow: {
-    height: 46,
-    marginHorizontal: -6,
-  },
-  status: {
-    marginTop: 12,
-    fontSize: 14,
-    color: cream.muted,
-  },
-  statusBlocked: {
-    color: ember,
-  },
+  unit: { fontFamily: fonts.ui, fontSize: 16, letterSpacing: 0, color: glass.textSecondary },
+  line: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 22, color: glass.textSecondary },
+  small: { fontFamily: fonts.ui, fontSize: 14, color: glass.textSecondary },
+  apps: { flex: 1, height: 40, marginLeft: -6 },
+  stake: { fontFamily: fonts.uiSemibold, fontSize: 15, color: color.text, fontVariant: ["tabular-nums"] },
 });
 
 export default PledgeCard;
