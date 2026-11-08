@@ -2,16 +2,18 @@ import React from "react";
 import { ActivityIndicator, StyleSheet, Text, StyleProp, ViewStyle } from "react-native";
 import PressableScale from "../buttons/pressable-scale";
 import { color, fonts, radius } from "../../theme/tokens";
+import GlassSurface from "./glass-surface";
 
 interface PillButtonProps {
   text: string;
   onPress: () => void;
   /**
-   * "primary" is the one solid ivory button on a screen; "ghost" an outline;
-   * "quiet" plain text; "consequential" an outline for an action that costs
-   * money or can't be undone.
+   * "primary" is the solid ivory button (making a pledge, Apple sign-in);
+   * "glass" the clear glass button (Home, detail, Account); "ghost" an
+   * outline; "quiet" plain text; "consequential" a red outline for an action
+   * that costs money or can't be undone.
    */
-  tone?: "primary" | "ghost" | "quiet" | "consequential";
+  tone?: "primary" | "glass" | "ghost" | "quiet" | "consequential";
   disabled?: boolean;
   /** Shows a spinner in place of the text, keeping the button's size. */
   busy?: boolean;
@@ -43,10 +45,12 @@ const PillButton: React.FC<PillButtonProps> = ({
         tone === "ghost" && styles.ghost,
         tone === "consequential" && styles.consequential,
         tone === "quiet" && styles.quiet,
+        tone === "glass" && styles.glass,
         disabled && tone === "primary" && styles.primaryDisabled,
         style,
       ]}
     >
+      {tone === "glass" && <GlassSurface style={StyleSheet.absoluteFill} />}
       {busy ? (
         <ActivityIndicator color={tone === "primary" ? color.onAction : color.text} />
       ) : (
@@ -79,7 +83,12 @@ const styles = StyleSheet.create({
   },
   consequential: {
     borderWidth: 1,
-    borderColor: color.error,
+    borderColor: "rgba(242,144,143,0.75)",
+    borderRadius: radius.glass,
+  },
+  glass: {
+    borderRadius: radius.glass,
+    overflow: "hidden",
   },
   quiet: {
     minHeight: 48,

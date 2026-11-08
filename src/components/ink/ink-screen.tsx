@@ -1,10 +1,10 @@
 import React from "react";
 import { StatusBar, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PressableScale from "../buttons/pressable-scale";
-import { color, glow, spacing } from "../../theme/tokens";
+import { color, spacing } from "../../theme/tokens";
+import Backdrop, { BackdropVariant } from "./backdrop";
 
 interface InkScreenProps {
   children: React.ReactNode;
@@ -14,17 +14,31 @@ interface InkScreenProps {
   style?: StyleProp<ViewStyle>;
   /** Pinned under the content, above the home indicator. */
   footer?: React.ReactNode;
+  /** Which light the ground carries (docs/design.md, "last light"). */
+  variant?: BackdropVariant;
+  /** Small caps label on the right of the back chevron's row ("STEP 3 OF 7"). */
+  topRight?: React.ReactNode;
 }
 
-/** The dark ground every screen stands on, lit warm from the top. */
-const InkScreen: React.FC<InkScreenProps> = ({ children, backLabel, onBack, style, footer }) => {
+/** The dark ground every screen stands on: espresso, a soft light, grain. */
+const InkScreen: React.FC<InkScreenProps> = ({
+  children,
+  backLabel,
+  onBack,
+  style,
+  footer,
+  variant = "quiet",
+  topRight,
+}) => {
   const insets = useSafeAreaInsets();
   return (
     <View style={styles.ground}>
       <StatusBar barStyle="light-content" />
-      <LinearGradient pointerEvents="none" colors={glow.colors} locations={glow.locations} style={styles.glow} />
+      <Backdrop variant={variant} />
       <View style={[styles.body, { paddingTop: insets.top + 8 }, style]}>
-        {onBack ? (
+        {onBack || topRight ? (
+          <View style={styles.topRow}>
+          {onBack ? (
           <PressableScale
             onPress={onBack}
             style={styles.back}
@@ -44,6 +58,9 @@ const InkScreen: React.FC<InkScreenProps> = ({ children, backLabel, onBack, styl
               />
             </Svg>
           </PressableScale>
+          ) : <View />}
+          {topRight}
+          </View>
         ) : null}
         {children}
       </View>
@@ -61,12 +78,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: color.bg,
   },
-  glow: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "65%",
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   body: {
     flex: 1,

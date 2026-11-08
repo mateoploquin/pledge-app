@@ -80,6 +80,28 @@ export const glow = {
   locations: [0, 0.38, 1] as const,
 };
 
+/**
+ * The "last light" glass (docs/design.md): a faint warm-white fill over a
+ * blur, a bright rim on top, an orange rim on the bottom. Its colour comes
+ * from whatever glows behind it, so a glass card always has a glow behind.
+ */
+export const glass = {
+  fill: ["rgba(255,236,214,0.16)", "rgba(248,240,230,0.06)", "rgba(36,19,16,0.35)"] as const,
+  fillLocations: [0, 0.45, 1] as const,
+  border: "rgba(255,222,196,0.22)",
+  rimTop: "rgba(255,240,224,0.45)",
+  rimLeft: "rgba(255,214,170,0.18)",
+  rimBottom: "rgba(237,96,42,0.35)",
+  /** Hairlines inside a glass card. */
+  rule: "rgba(255,222,196,0.14)",
+  /** Secondary text on glass, lifted because the glow lowers contrast. */
+  textSecondary: "#E6D8CC",
+  blur: 30,
+};
+
+/** Film grain strength: brand moments, then everything else. */
+export const grain = { brand: 0.26, quiet: 0.18 };
+
 export const motion = {
   /** Crossfade between two thoughts on the same screen. */
   dissolveMs: 450,
