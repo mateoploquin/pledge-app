@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import colors from "../../theme/colors";
-import { color } from "../../theme/tokens";
+import { color, fonts, radius } from "../../theme/tokens";
 import {
   isAppleSignInAvailable,
   signInWithApple,
@@ -33,7 +33,7 @@ const appleCheck = isAppleSignInAvailable()
   .catch(() => false)
   .then((ok) => (appleKnown = ok));
 
-const APPLE_SLOT = 50 + 12;
+const APPLE_SLOT = 56;
 
 const SocialSignInButtons: React.FC<SocialSignInButtonsProps> = ({ onSignedIn, tone = "light" }) => {
   const dark = tone === "dark";
@@ -118,15 +118,13 @@ const styles = StyleSheet.create({
     color: colors.darkGray3,
     fontSize: 13,
   },
-  appleButton: {
-    marginBottom: 12,
-  },
+  appleButton: {},
   appleSlot: {
     height: APPLE_SLOT,
   },
   button: {
-    height: 50,
-    borderRadius: 25,
+    height: 56,
+    borderRadius: radius.control,
     borderWidth: 1,
     borderColor: colors.darkGray,
     backgroundColor: colors.white,
@@ -142,9 +140,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   label: {
+    fontFamily: fonts.uiSemibold,
     fontSize: 16,
-    fontWeight: "500",
-    color: colors.black,
+    color: color.onAction,
   },
   disabled: {
     opacity: 0.6,
@@ -169,7 +167,7 @@ const ProviderButton: React.FC<{
       <ActivityIndicator color={colors.black} />
     ) : (
       <>
-        <AntDesign name={icon} size={18} color={colors.black} style={styles.icon} />
+        <AntDesign name={icon} size={18} color={color.onAction} style={styles.icon} />
         <Text style={styles.label}>{label}</Text>
       </>
     )}

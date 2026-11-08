@@ -21,36 +21,27 @@ minus a small fee (wording still open, see decisions).
 
 ### Opener (`src/screens/onboarding/onboarding.tsx`)
 
-One screen, four states on the same looping film:
+One screen, three states, no film (v2 "last light", owner 8 Nov 2026). The
+sun sits on the horizon behind sign-in and the welcome; the deal has a low
+sun.
 
-1. **film**: the montage loops full-bleed under a dark shade. Serif lines
-   dissolve one at a time. One cream pill: "I'm new here"; a quiet link:
-   "I already have an account".
-2. **signup / login**: Sign in with Apple or email, on the film. Google was
-   removed on 8 Nov 2026; the v2 opener (one screen, Apple only) replaces this.
-   Switching between the two is a dissolve, never a layout jump.
-3. **email**: name (signup only), email, password.
-4. **deal** (first time in, when no pledge is stored on the device): the
-   welcome, then the deal. **Welcome** (`onboarding.tsx`, state
-   `welcome`, about 10 s), strictly in order: "Welcome to Pledge." alone
-   on plain ink for 1.5 s, no animation; the New York film
-   (`still-in-traffic.mp4`, a woman in the sun on a busy street, played
-   once, its full 8 s) fades in behind it (900 ms) and plays 2.5 s with only
-   the title; then "It helps you use your phone *less.*" fades in under it;
-   when the film ends everything darkens (700 ms), the film is dropped, and
-   the dark lifts onto the first beat only after the welcome's words have
-   dissolved out (else they flash back). **Deal**: four beats that play on
-   their own, 3.4 s each (about 14 s), on plain ink, centred on the screen
-   (the welcome stays at the bottom), one serif line and one
-   small figure per beat (`deal-beats.tsx`): "Pick your apps." (the apps
-   appear); "Set a limit. Put money on it." (an ember ring fills to 30 min,
-   $10 counts up beside it); "Hit it, and they lock." (the 30 min ring runs
-   out and the shield appears); "Unlock early? You lose it." (the $10 dims
-   to "charged"). One example, same numbers throughout. After the last beat
-   the screen darkens to ink (700 ms) and the first question comes up on
-   its own. A tap skips to the next beat (during the welcome, straight to
-   its darkening). "Cancel" on the first question goes back, still signed
-   in, and plays the welcome and the deal again.
+1. **signin**: the logo lockup and "THE WORLD IS STILL HERE" on top;
+   "RECLAIM YOUR LIFE." and "Put money on your screen time. Keep your word
+   and it costs nothing." at the bottom; one solid ivory button, "Continue
+   with Apple"; a quiet "I already have an account", which runs the same
+   Apple sign-in. Sign in with Apple is the only way in: Google and email
+   were dropped on 8 Nov 2026, so accounts made that way can't sign in.
+2. **welcome** (first time in, when no pledge is stored on the device):
+   "WELCOME TO PLEDGE." on the same sun, then "It helps you use your phone
+   less." fades in after 2.5 s; at 6.5 s it darkens (700 ms) onto the deal.
+3. **deal**: four beats that play on their own, 3.4 s each, one caps line
+   and a small glass card of plain figures per beat (`deal-beats.tsx`):
+   "Pick your apps." (Your apps); "Set a limit. Put money on it." (Daily
+   limit 30 min, Your pledge $10); "Hit it, and they lock." (Locked until
+   midnight); "Unlock early? You lose it." ($10 charged). Beat marks along
+   the bottom. After the last beat the screen darkens (700 ms) and the first
+   question comes up. A tap skips ahead; "Cancel" on the first question goes
+   back, still signed in, and plays the welcome and the deal again.
 
 Signed in with pledges → Instructions straight away (Home when the app
 launches already signed in). Signed in without → the deal, then Instructions.
