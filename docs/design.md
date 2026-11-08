@@ -47,6 +47,11 @@ light, fine grain, edges sinking into dark.
   halo, no brand-colour tint: the owner found a tinted gradient pill
   "horrific" and a glossy clear one "AI generated". Ivory Inter Medium text. Reference: the stacked glowing pills and the frosted product
   card on the owner's board.
+- **Making a pledge uses solid buttons (owner, 8 Nov 2026).** In the wizard,
+  Review and the card step, the main button and the selected chip are solid
+  ivory with espresso SemiBold text, radius 12, as in v1. Unselected chips and
+  "Choose apps" are thin outlines; disabled Continue is a surface fill with
+  tertiary text. The glass button stays on Home, detail and Account.
 - **Text on glass stays readable.** Secondary text on glass is lifted to
   `#E6D8CC` and main text is ivory, because the glow behind lowers contrast.
   The Sign in with Apple button stays solid ivory (Apple's rules for that
