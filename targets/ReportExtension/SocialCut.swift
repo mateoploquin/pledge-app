@@ -104,7 +104,7 @@ struct SocialCutView: View {
       // No Screen Time for the week yet (often right after access is granted).
       // Say so instead of drawing nothing.
       Text("No Screen Time recorded on this phone this week yet.")
-        .font(.system(size: 16))
+        .font(.custom("Inter-Regular", size: 16))
         .foregroundColor(muted)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     } else {
@@ -117,8 +117,8 @@ struct SocialCutView: View {
       HStack(spacing: 6) {
         Circle().fill(ember).frame(width: 6, height: 6)
         Text("SOCIAL MEDIA")
-          .font(.system(size: 11, weight: .medium))
-          .tracking(0.8)
+          .font(.custom("Inter-Medium", size: 11))
+          .tracking(1.54)
           .foregroundColor(ember)
       }
       .opacity(marked ? 1 : 0)
@@ -130,16 +130,17 @@ struct SocialCutView: View {
       VStack(alignment: .leading, spacing: 10) {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
           Text(hoursText(shownSeconds))
-            .font(.custom("InstrumentSerif-Regular", size: 64))
+            .font(.custom("Inter-SemiBold", size: 64))
+            .tracking(-0.02 * 64)
             .foregroundColor(cream)
             .monospacedDigit()
           Text("back.")
-            .font(.custom("InstrumentSerif-Italic", size: 64))
+            .font(.custom("Inter-Medium", size: 20))
             .foregroundColor(ember)
         }
         .opacity(showNumber ? 1 : 0)
         Text(yearLine)
-          .font(.system(size: 16))
+          .font(.custom("Inter-Regular", size: 16))
           .foregroundColor(cream)
           .opacity(showYear ? 1 : 0)
       }
@@ -158,8 +159,8 @@ struct SocialCutView: View {
         VStack(spacing: 8) {
           bar(day, index: index, longest: longest)
           Text(Self.dayFormatter.string(from: day.id).uppercased())
-            .font(.system(size: 11, weight: .medium))
-            .tracking(0.6)
+            .font(.custom("Inter-Medium", size: 11))
+            .tracking(1.54)
             .foregroundColor(muted)
         }
         .frame(maxWidth: .infinity)
@@ -178,7 +179,7 @@ struct SocialCutView: View {
     return VStack(spacing: 6) {
       Spacer(minLength: 0)
       Text(formatDuration(day.total))
-        .font(.system(size: 11))
+        .font(.custom("Inter-Regular", size: 11))
         .foregroundColor(muted)
         .monospacedDigit()
         .lineLimit(1)
@@ -187,18 +188,21 @@ struct SocialCutView: View {
         .animation(.easeOut(duration: 0.4).delay(marked ? 0 : 0.3 + delay), value: risen)
         .animation(.easeOut(duration: 0.3), value: marked)
       ZStack(alignment: .bottom) {
-        // The social part sits on top of the kept part and tucks under it by
-        // one corner radius, so together they read as one rounded bar.
+        // Until it is marked, each day is ONE bar (no seam where the social
+        // part will split off; owner, 9 Nov 2026). On marking, the social part
+        // appears on top of the kept part, tucked under it by one corner
+        // radius, in cream, and only its colour animates to ember.
         RoundedRectangle(cornerRadius: Self.radius)
           .fill(marked ? ember : cream)
           .frame(width: Self.barWidth, height: socialHeight + Self.radius)
+          .animation(.easeOut(duration: 0.35), value: marked)
+          .opacity(marked ? 1 : 0)
           .offset(y: -(keptHeight - Self.radius) + (cut ? -46 : 0))
           .opacity(socialHeight > 0 && !cut ? 1 : 0)
-          .animation(.easeOut(duration: 0.35), value: marked)
           .animation(.timingCurve(0.4, 0, 0.2, 1, duration: 1.1).delay(Double(index) * 0.07), value: cut)
         RoundedRectangle(cornerRadius: Self.radius)
           .fill(cream)
-          .frame(width: Self.barWidth, height: keptHeight)
+          .frame(width: Self.barWidth, height: marked ? keptHeight : height)
       }
       .frame(height: height, alignment: .bottom)
       .scaleEffect(x: 1, y: risen ? 1 : 0, anchor: .bottom)

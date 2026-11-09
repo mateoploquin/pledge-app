@@ -143,16 +143,17 @@ struct RecoveredView: View {
       switch model.stage {
       case .noHistory:
         Text("Not enough Screen Time from before your pledge to compare yet.")
-          .font(.system(size: 16))
+          .font(.custom("Inter-Regular", size: 16))
           .foregroundColor(muted)
       case .baselineOnly:
         kicker("BEFORE PLEDGE")
         Text("\(formatDuration(model.beforePledged)) a day")
-          .font(.custom("InstrumentSerif-Regular", size: 44))
+          .font(.custom("Inter-SemiBold", size: 44))
+            .tracking(-0.02 * 44)
           .foregroundColor(cream)
           .padding(.top, 8)
         Text("on these apps. Your first full day counts from tomorrow.")
-          .font(.system(size: 15))
+          .font(.custom("Inter-Regular", size: 15))
           .foregroundColor(muted)
           .padding(.top, 4)
       case .compared:
@@ -171,24 +172,25 @@ struct RecoveredView: View {
 
       HStack(alignment: .firstTextBaseline, spacing: 10) {
         Text(backText)
-          .font(.custom("InstrumentSerif-Regular", size: 56))
+          .font(.custom("Inter-SemiBold", size: 56))
+            .tracking(-0.02 * 56)
           .foregroundColor(cream)
           .monospacedDigit()
         Text("back.")
-          .font(.custom("InstrumentSerif-Italic", size: 56))
+          .font(.custom("Inter-Medium", size: 20))
           .foregroundColor(ember)
       }
       .opacity(backShown ? 1 : 0)
       .padding(.top, 22)
 
       Text(sinceLine)
-        .font(.system(size: 15))
+        .font(.custom("Inter-Regular", size: 15))
         .foregroundColor(muted)
         .opacity(backShown ? 1 : 0)
         .padding(.top, 2)
 
       Text("All screen time: \(formatDuration(model.beforeTotal)) → \(formatDuration(model.nowTotal)) a day")
-        .font(.system(size: 13))
+        .font(.custom("Inter-Regular", size: 13))
         .foregroundColor(muted)
         .opacity(backShown ? 1 : 0)
         .padding(.top, 14)
@@ -230,14 +232,14 @@ struct RecoveredView: View {
   private func row<Bar: View>(_ label: String, value: TimeInterval, @ViewBuilder bar: () -> Bar) -> some View {
     HStack(spacing: 12) {
       Text(label.uppercased())
-        .font(.system(size: 11, weight: .medium))
-        .tracking(0.6)
+        .font(.custom("Inter-Medium", size: 11))
+        .tracking(1.54)
         .foregroundColor(muted)
         .frame(width: 44, alignment: .leading)
       bar()
       Spacer(minLength: 0)
       Text(formatDuration(value))
-        .font(.system(size: 12))
+        .font(.custom("Inter-Regular", size: 12))
         .foregroundColor(muted)
         .monospacedDigit()
         .fixedSize()
@@ -246,8 +248,8 @@ struct RecoveredView: View {
 
   private func kicker(_ text: String) -> some View {
     Text(text)
-      .font(.system(size: 11, weight: .medium))
-      .tracking(0.8)
+      .font(.custom("Inter-Medium", size: 11))
+      .tracking(1.54)
       .foregroundColor(muted)
   }
 

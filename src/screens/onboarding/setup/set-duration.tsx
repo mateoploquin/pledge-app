@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fonts.ui,
     fontSize: 16,
+    lineHeight: 20,
     color: color.textSecondary,
   },
   labelActive: {

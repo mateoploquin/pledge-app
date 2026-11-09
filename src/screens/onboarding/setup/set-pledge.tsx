@@ -4,7 +4,7 @@ import SetSlider from "../../../components/sliders/set-slider";
 import AnimatedNumber from "../../../components/text/animated-number";
 import PresetChips from "../../../components/buttons/preset-chips";
 import { haptics } from "../../../utils/haptics";
-import { color, fonts } from "../../../theme/tokens";
+import { fonts, type } from "../../../theme/tokens";
 import { CURRENCY_SYMBOL } from "../../../config";
 
 interface SetPledgeProps {
@@ -42,14 +42,10 @@ const styles = StyleSheet.create({
   container: {
     alignSelf: "stretch",
   },
+  // Paper B6: as B4, the track 32 pt under the number (SetSlider adds 20).
   value: {
-    fontFamily: fonts.uiSemibold,
-    fontSize: 44,
-    lineHeight: 48,
-    letterSpacing: -0.9,
-    color: color.text,
-    fontVariant: ["tabular-nums"],
-    marginBottom: 20,
+    ...type.value,
+    marginBottom: 12,
   },
   currency: {
     fontFamily: fonts.uiSemibold,

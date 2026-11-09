@@ -16,6 +16,10 @@ interface InkScreenProps {
   footer?: React.ReactNode;
   /** Which light the ground carries (docs/design.md, "last light"). */
   variant?: BackdropVariant;
+  /** Extra lights drawn into the ground, under the vignette and grain. */
+  backdrop?: React.ReactNode;
+  /** Distance from the screen's bottom edge to the footer (Paper: 32; Home 40). */
+  footerBottom?: number;
   /** Small caps label on the right of the back chevron's row ("STEP 3 OF 7"). */
   topRight?: React.ReactNode;
 }
@@ -29,12 +33,14 @@ const InkScreen: React.FC<InkScreenProps> = ({
   footer,
   variant = "quiet",
   topRight,
+  backdrop,
+  footerBottom = 32,
 }) => {
   const insets = useSafeAreaInsets();
   return (
     <View style={styles.ground}>
       <StatusBar barStyle="light-content" />
-      <Backdrop variant={variant} />
+      <Backdrop variant={variant}>{backdrop}</Backdrop>
       <View style={[styles.body, { paddingTop: insets.top + 8 }, style]}>
         {onBack || topRight ? (
           <View style={styles.topRow}>
@@ -47,12 +53,12 @@ const InkScreen: React.FC<InkScreenProps> = ({
             accessibilityRole="button"
             accessibilityLabel={backLabel ?? "Back"}
           >
-            <Svg width={24} height={24} viewBox="0 0 24 24">
+            <Svg width={12} height={20} viewBox="0 0 12 20">
               <Path
-                d="M15 5l-7 7 7 7"
+                d="M10 2L2 10l8 8"
                 fill="none"
                 stroke={color.text}
-                strokeWidth={1.75}
+                strokeWidth={1.8}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -65,7 +71,7 @@ const InkScreen: React.FC<InkScreenProps> = ({
         {children}
       </View>
       {footer ? (
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>{footer}</View>
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom - 34, 0) + footerBottom }]}>{footer}</View>
       ) : (
         <View style={{ height: insets.bottom }} />
       )}

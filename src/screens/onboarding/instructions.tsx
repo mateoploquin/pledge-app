@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet } from "react-native";
 import SetPledge from "./setup/set-pledge";
 import SetTimeLimit from "./setup/set-time-limit";
 import SetDuration from "./setup/set-duration";
 import SetApps from "./setup/set-apps";
 import ScreenTimeMirror from "./setup/screen-time-mirror";
-import Review from "./setup/review";
+import Review, { TermsCheck } from "./setup/review";
 import SetPayment from "./setup/set-up-payment";
 import InkScreen from "../../components/ink/ink-screen";
 import PillButton from "../../components/ink/pill-button";
@@ -25,6 +25,20 @@ const QUESTION: Record<StepName, string> = {
 };
 
 /**
+ * Space between the question and the control, per step (v2 Paper B1–B8,
+ * "Content" padding-top). The control is not centred: Paper places it.
+ */
+const CONTROL_TOP: Record<StepName, number> = {
+  mirror: 28,
+  apps: 28,
+  limit: 120,
+  duration: 160,
+  amount: 120,
+  review: 24,
+  card: 28,
+};
+
+/**
  * Making a pledge (v2 Paper group "B"): one question per screen, dissolving
  * to the next, solid ivory buttons (owner, 8 Nov 2026). The first pledge
  * opens with the 7-day mirror. Review shows on every pledge; the card step
@@ -33,6 +47,9 @@ const QUESTION: Record<StepName, string> = {
 const Instructions: React.FC = () => {
   const w = usePledgeWizard();
   const { step, steps, index } = w;
+  // The card step's "Add a card" lives in the footer (Paper B8); the step
+  // hands over its retry once the sheet was closed or failed.
+  const [retryCard, setRetryCard] = useState<(() => void) | null>(null);
 
   const continueLabel =
     step === "review" ? (w.hasCard ? "Lock it in" : "Add a card to lock it in") : w.isLast ? "Lock it in" : "Continue";
@@ -43,17 +60,35 @@ const Instructions: React.FC = () => {
       backLabel={index > 0 ? "Back" : "Cancel"}
       topRight={<Caption>{`Step ${index + 1} of ${steps.length}`}</Caption>}
       footer={
-        step === "card" ? null : (
+        step === "card" ? (
+          retryCard ? (
+            <>
+              <PillButton text="Add a card" onPress={retryCard} />
+              {w.canLeave && <PillButton text="Back" tone="quiet" onPress={w.onBack} />}
+            </>
+          ) : null
+        ) : step === "review" ? (
+          // Paper B7: the terms sit over the button, 16 apart. The quiet Back
+          // stays, as on every step (rebrand only, same flow).
+          <View style={styles.reviewFooter}>
+            {!w.termsDone && <TermsCheck termsAccepted={w.termsAccepted} setTermsAccepted={w.setTermsAccepted} />}
+            <PillButton text={continueLabel} onPress={w.onContinue} disabled={w.continueDisabled} busy={w.starting} />
+            {w.canLeave && <PillButton text="Back" tone="quiet" onPress={w.onBack} />}
+          </View>
+        ) : (
           <>
             <PillButton text={continueLabel} onPress={w.onContinue} disabled={w.continueDisabled} busy={w.starting} />
-            {w.canLeave && <PillButton text={index > 0 ? "Back" : "Cancel"} tone="quiet" onPress={w.onBack} />}
+            {/* No quiet Cancel on "Your last seven days" (owner, 9 Nov 2026); the chevron still leaves. */}
+            {w.canLeave && step !== "mirror" && (
+              <PillButton text={index > 0 ? "Back" : "Cancel"} tone="quiet" onPress={w.onBack} />
+            )}
           </>
         )
       }
     >
       <Dissolve id={step} style={styles.step}>
         <Line size="heading" text={QUESTION[step]} style={styles.question} />
-        <View style={[styles.control, step === "review" && styles.controlTop]}>
+        <View style={[styles.control, { paddingTop: CONTROL_TOP[step] }]}>
           {step === "mirror" ? (
             <ScreenTimeMirror
               authorizationStatus={w.authorizationStatus}
@@ -79,9 +114,6 @@ const Instructions: React.FC = () => {
               timeValue={w.timeValue}
               durationDays={w.durationDays}
               pledgeValue={w.pledgeValue}
-              askTerms={!w.termsDone}
-              termsAccepted={w.termsAccepted}
-              setTermsAccepted={w.setTermsAccepted}
             />
           ) : step === "card" ? (
             <SetPayment
@@ -92,6 +124,7 @@ const Instructions: React.FC = () => {
               durationDays={w.durationDays}
               setPublishableKey={() => {}}
               onComplete={w.startPledge}
+              onRetryChange={(retry) => setRetryCard(() => retry)}
             />
           ) : null}
         </View>
@@ -103,8 +136,8 @@ const Instructions: React.FC = () => {
 const styles = StyleSheet.create({
   step: { flex: 1 },
   question: { marginTop: 24 },
-  control: { flex: 1, justifyContent: "center", paddingVertical: 24 },
-  controlTop: { justifyContent: "flex-start" },
+  control: { flex: 1 },
+  reviewFooter: { alignSelf: "stretch", gap: 16, marginBottom: 8 },
 });
 
 export default Instructions;

@@ -36,7 +36,7 @@ export const fonts = {
   /** Brand moments only: uppercase, never money, forms or terms. */
   display: "NotoSerifDisplay-Regular",
   /** Functional titles. */
-  title: "InterDisplay-Medium",
+  title: "Inter-Medium",
   ui: "Inter-Regular",
   uiMedium: "Inter-Medium",
   uiSemibold: "Inter-SemiBold",
@@ -53,7 +53,7 @@ export const type = {
   /** Title of a functional screen, sentence case. */
   heading: { fontFamily: fonts.title, fontSize: 30, lineHeight: 36, letterSpacing: -0.6, color: color.text },
   /** Time and money. */
-  value: { fontFamily: fonts.uiSemibold, fontSize: 44, lineHeight: 48, letterSpacing: -0.88, fontVariant: ["tabular-nums" as const], color: color.text },
+  value: { fontFamily: fonts.uiSemibold, fontSize: 44, lineHeight: 48, letterSpacing: -0.88, color: color.text },
   body: { fontFamily: fonts.ui, fontSize: 16, lineHeight: 24, color: color.textSecondary },
   label: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 18, color: color.textSecondary },
 };

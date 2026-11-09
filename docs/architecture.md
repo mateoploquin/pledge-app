@@ -17,8 +17,9 @@ Apple lets us do, how to build, and the traps already walked into.
   generates three extension targets) plus two local Expo modules and one
   hand-written extension target.
 - Auth: Firebase web SDK (project `pledgetrial`) with Sign in with Apple
-  (`expo-apple-authentication`). Google sign-in was removed on 8 Nov 2026;
-  email sign-in goes with the v2 opener.
+  (`expo-apple-authentication`) and Google (`@react-native-google-signin`,
+  URL scheme added in `app.config.js` from `GoogleService-Info.plist`;
+  removed 8 Nov, re-added 9 Nov 2026). Email sign-in went with the v2 opener.
 - Payments: `@stripe/stripe-react-native` PaymentSheet in setup mode; the
   backend charges off-session later.
 - Push: `expo-notifications` for local notifications and the APNs token.

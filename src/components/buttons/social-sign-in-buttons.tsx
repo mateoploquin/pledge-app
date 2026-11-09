@@ -15,6 +15,7 @@ import { color, fonts, radius } from "../../theme/tokens";
 import {
   isAppleSignInAvailable,
   signInWithApple,
+  signInWithGoogle,
   SignInCancelled,
 } from "../../services/socialAuth";
 import { track } from "../../services/analytics";
@@ -33,22 +34,22 @@ const appleCheck = isAppleSignInAvailable()
   .catch(() => false)
   .then((ok) => (appleKnown = ok));
 
-const APPLE_SLOT = 56;
+const APPLE_SLOT = 56 + 12;
 
 const SocialSignInButtons: React.FC<SocialSignInButtonsProps> = ({ onSignedIn, tone = "light" }) => {
   const dark = tone === "dark";
   const [appleAvailable, setAppleAvailable] = useState<boolean | null>(appleKnown);
-  const [busy, setBusy] = useState<"apple" | null>(null);
+  const [busy, setBusy] = useState<"apple" | "google" | null>(null);
 
   useEffect(() => {
     if (appleAvailable === null) appleCheck.then(setAppleAvailable);
   }, [appleAvailable]);
 
-  const run = async (provider: "apple") => {
+  const run = async (provider: "apple" | "google") => {
     if (busy) return;
     setBusy(provider);
     try {
-      await signInWithApple();
+      await (provider === "apple" ? signInWithApple() : signInWithGoogle());
       track("sign_in_completed", { method: provider });
       onSignedIn();
     } catch (error: any) {
@@ -77,8 +78,9 @@ const SocialSignInButtons: React.FC<SocialSignInButtonsProps> = ({ onSignedIn, t
         // Hold the Apple button's room while the answer is on its way.
         <View style={styles.appleSlot} />
       ) : appleAvailable && (
-        // Drawn by hand rather than with Apple's native button so it keeps
-        // the app's type and an English label whatever the phone's language.
+        // Drawn by hand rather than with Apple's native button so it matches
+        // Google's: same pill, type and English label whatever the phone's
+        // language.
         <ProviderButton
           icon="apple1"
           label="Continue with Apple"
@@ -89,6 +91,15 @@ const SocialSignInButtons: React.FC<SocialSignInButtonsProps> = ({ onSignedIn, t
           style={styles.appleButton}
         />
       )}
+
+      <ProviderButton
+        icon="google"
+        label="Continue with Google"
+        dark={dark}
+        busy={busy === "google"}
+        disabled={busy !== null}
+        onPress={() => run("google")}
+      />
     </View>
   );
 };
@@ -118,7 +129,9 @@ const styles = StyleSheet.create({
     color: colors.darkGray3,
     fontSize: 13,
   },
-  appleButton: {},
+  appleButton: {
+    marginBottom: 12,
+  },
   appleSlot: {
     height: APPLE_SLOT,
   },
@@ -137,11 +150,12 @@ const styles = StyleSheet.create({
     backgroundColor: color.action,
   },
   icon: {
-    marginRight: 10,
+    marginRight: 8,
   },
   label: {
     fontFamily: fonts.uiSemibold,
     fontSize: 16,
+    lineHeight: 20,
     color: color.onAction,
   },
   disabled: {
@@ -150,7 +164,7 @@ const styles = StyleSheet.create({
 });
 
 const ProviderButton: React.FC<{
-  icon: "apple1";
+  icon: "apple1" | "google";
   label: string;
   dark: boolean;
   busy: boolean;
@@ -167,7 +181,7 @@ const ProviderButton: React.FC<{
       <ActivityIndicator color={colors.black} />
     ) : (
       <>
-        <AntDesign name={icon} size={18} color={color.onAction} style={styles.icon} />
+        <AntDesign name={icon} size={16} color={color.onAction} style={styles.icon} />
         <Text style={styles.label}>{label}</Text>
       </>
     )}

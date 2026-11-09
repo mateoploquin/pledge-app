@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import PressableScale from "../buttons/pressable-scale";
-import { ActivityLabels } from "../../../modules/pledge-activity-labels";
+import { ActivityNames } from "../../../modules/pledge-activity-labels";
 import { Pledge } from "../../types";
 import { DailyUsage, isOnBreak } from "../../screens/home/home.controller";
 import { CURRENCY_SYMBOL } from "../../config";
@@ -74,11 +74,10 @@ const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
         )}
 
         <View style={[styles.row, styles.bottom]}>
-          <ActivityLabels
+          {/* Paper C2/C3: the apps as plain names, the stake on the right. */}
+          <ActivityNames
             familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
             style={styles.apps}
-            pillWidth={150}
-            fontSize={14}
           />
           <Text style={styles.stake}>
             {CURRENCY_SYMBOL}
@@ -91,24 +90,29 @@ const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
 };
 
 const styles = StyleSheet.create({
-  press: { marginBottom: 12 },
-  card: { padding: 20, gap: 14 },
+  press: {
+    marginBottom: 12,
+    shadowColor: "#0A0605",
+    shadowOpacity: 0.55,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 24 },
+  },
+  card: { paddingVertical: 18, paddingHorizontal: 20, gap: 12 },
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
-  bottom: { paddingTop: 14, borderTopWidth: 1, borderTopColor: glass.rule },
+  bottom: { paddingTop: 2 },
   value: {
     fontFamily: fonts.uiSemibold,
     fontSize: 44,
     lineHeight: 48,
-    letterSpacing: -0.9,
+    letterSpacing: -0.88,
     color: color.text,
-    fontVariant: ["tabular-nums"],
   },
-  unit: { fontFamily: fonts.ui, fontSize: 16, letterSpacing: 0, color: glass.textSecondary },
+  unit: { fontFamily: fonts.ui, fontSize: 16, lineHeight: 20, letterSpacing: 0, color: glass.textSecondary },
   line: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 22, color: glass.textSecondary },
-  small: { fontFamily: fonts.ui, fontSize: 14, color: glass.textSecondary },
-  apps: { flex: 1, height: 40, marginLeft: -6 },
-  stake: { fontFamily: fonts.uiSemibold, fontSize: 15, color: color.text, fontVariant: ["tabular-nums"] },
+  small: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 18, color: glass.textSecondary },
+  apps: { flex: 1, height: 20 },
+  stake: { fontFamily: fonts.uiSemibold, fontSize: 15, lineHeight: 18, color: color.text },
 });
 
 export default PledgeCard;

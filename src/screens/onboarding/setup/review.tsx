@@ -12,10 +12,6 @@ interface ReviewProps {
   timeValue: number;
   durationDays: number;
   pledgeValue: number;
-  /** The checkbox shows once per device, until the terms are accepted. */
-  askTerms: boolean;
-  termsAccepted: boolean;
-  setTermsAccepted: (value: boolean) => void;
 }
 
 /** "3 apps, 1 category": Apple keeps the app names out of Pledge's own views. */
@@ -35,17 +31,10 @@ const endDate = (days: number) =>
 /**
  * Step: the whole pledge on one sober receipt, on every pledge (v2 Paper
  * "B7 Review", owner trimmed it on 8 Nov 2026): three rows, the amount and
- * one sentence of when money moves. The terms checkbox only on the first.
+ * one sentence of when money moves. The terms checkbox is `TermsCheck`, in
+ * the footer over the button.
  */
-const Review: React.FC<ReviewProps> = ({
-  selection,
-  timeValue,
-  durationDays,
-  pledgeValue,
-  askTerms,
-  termsAccepted,
-  setTermsAccepted,
-}) => {
+const Review: React.FC<ReviewProps> = ({ selection, timeValue, durationDays, pledgeValue }) => {
   const amount = `${CURRENCY_SYMBOL}${pledgeValue}`;
   const rows: [string, string][] = [
     ["Apps", appsLabel(selection)],
@@ -68,40 +57,47 @@ const Review: React.FC<ReviewProps> = ({
         Nothing is charged now. You pay {amount} only if you unlock early, delete Pledge or turn off Screen Time
         access.
       </Text>
-
-      {askTerms && (
-        <Pressable
-          onPress={() => {
-            haptics.select();
-            setTermsAccepted(!termsAccepted);
-          }}
-          style={styles.agree}
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: termsAccepted }}
-        >
-          <View style={[styles.check, termsAccepted && styles.checkOn]}>
-            {termsAccepted && (
-              <Svg width={12} height={10} viewBox="0 0 16 12">
-                <Path d="M1.5 6.5l4 4L14.5 1.5" fill="none" stroke={color.onAction} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-            )}
-          </View>
-          <Text style={styles.agreeText}>
-            I agree to the{" "}
-            <Text style={styles.link} onPress={() => openLegal("terms")}>
-              Terms
-            </Text>{" "}
-            and{" "}
-            <Text style={styles.link} onPress={() => openLegal("privacy")}>
-              Privacy Policy
-            </Text>
-            .
-          </Text>
-        </Pressable>
-      )}
     </View>
   );
 };
+
+/**
+ * The Terms and Privacy checkbox, shown once per device until accepted. Paper
+ * B7 puts it in the footer, 16 pt over the button, top-aligned with the text.
+ */
+export const TermsCheck: React.FC<{ termsAccepted: boolean; setTermsAccepted: (value: boolean) => void }> = ({
+  termsAccepted,
+  setTermsAccepted,
+}) => (
+  <Pressable
+    onPress={() => {
+      haptics.select();
+      setTermsAccepted(!termsAccepted);
+    }}
+    style={styles.agree}
+    accessibilityRole="checkbox"
+    accessibilityState={{ checked: termsAccepted }}
+  >
+    <View style={[styles.check, termsAccepted && styles.checkOn]}>
+      {termsAccepted && (
+        <Svg width={12} height={10} viewBox="0 0 16 12">
+          <Path d="M1.5 6.5l4 4L14.5 1.5" fill="none" stroke={color.onAction} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      )}
+    </View>
+    <Text style={styles.agreeText}>
+      I agree to the{" "}
+      <Text style={styles.link} onPress={() => openLegal("terms")}>
+        Terms
+      </Text>{" "}
+      and{" "}
+      <Text style={styles.link} onPress={() => openLegal("privacy")}>
+        Privacy Policy
+      </Text>
+      .
+    </Text>
+  </Pressable>
+);
 
 const styles = StyleSheet.create({
   container: { alignSelf: "stretch" },
@@ -116,10 +112,10 @@ const styles = StyleSheet.create({
   label: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 20, color: color.textTertiary },
   value: { flexShrink: 1, textAlign: "right", fontFamily: fonts.ui, fontSize: 15, lineHeight: 20, color: color.text },
   total: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingTop: 16 },
-  totalLabel: { fontFamily: fonts.uiMedium, fontSize: 15, color: color.text },
+  totalLabel: { fontFamily: fonts.uiMedium, fontSize: 15, lineHeight: 20, color: color.text },
   totalValue: { fontFamily: fonts.uiSemibold, fontSize: 22, lineHeight: 28, color: color.text, fontVariant: ["tabular-nums"] },
   rule: { marginTop: 20, fontFamily: fonts.ui, fontSize: 15, lineHeight: 22, color: color.textSecondary },
-  agree: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 28 },
+  agree: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   check: {
     width: 22,
     height: 22,

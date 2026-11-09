@@ -108,3 +108,73 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+type NativeCaptionProps = {
+  familyActivitySelection?: string;
+  fontSize?: number;
+  tracking?: number;
+  color?: string;
+  maxItems?: number;
+  fontName?: string;
+  uppercase?: boolean;
+  align?: "leading" | "trailing";
+  style?: StyleProp<ViewStyle>;
+};
+
+let NativeCaption: React.ComponentType<NativeCaptionProps> | null = null;
+if (Platform.OS === "ios") {
+  try {
+    NativeCaption = requireNativeViewManager("PledgeActivityCaption");
+  } catch {
+    NativeCaption = null;
+  }
+}
+
+/**
+ * The selection's names as one right-aligned line of small spaced caps
+ * ("INSTAGRAM, TIKTOK, YOUTUBE +2"), drawn by the system from the tokens.
+ * Defaults are the Caption style (Inter Medium 11, 0.14 em, #A89488).
+ */
+export const ActivityCaption: React.FC<{
+  familyActivitySelection?: string | null;
+  style?: StyleProp<ViewStyle>;
+  maxItems?: number;
+  color?: string;
+}> = ({ familyActivitySelection, style, maxItems = 3, color = "#A89488" }) => {
+  if (!NativeCaption || !familyActivitySelection) return React.createElement(View, { style });
+  return React.createElement(NativeCaption, {
+    familyActivitySelection,
+    fontSize: 11,
+    tracking: 1.54,
+    color,
+    maxItems,
+    style,
+  });
+};
+
+/**
+ * The selection's names as plain text on one line, left-aligned
+ * ("Instagram, TikTok, YouTube +2"), as on the v2 pledge card. Drawn by the
+ * system from the tokens; truncates instead of wrapping.
+ */
+export const ActivityNames: React.FC<{
+  familyActivitySelection?: string | null;
+  style?: StyleProp<ViewStyle>;
+  maxItems?: number;
+  color?: string;
+  fontSize?: number;
+  align?: "leading" | "trailing";
+}> = ({ familyActivitySelection, style, maxItems = 3, color = "#F8F0E6", fontSize = 15, align = "leading" }) => {
+  if (!NativeCaption || !familyActivitySelection) return React.createElement(View, { style });
+  return React.createElement(NativeCaption, {
+    familyActivitySelection,
+    fontSize,
+    tracking: 0,
+    color,
+    maxItems,
+    fontName: "Inter-Regular",
+    uppercase: false,
+    align,
+    style,
+  });
+};

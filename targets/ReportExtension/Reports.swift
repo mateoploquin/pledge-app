@@ -90,7 +90,8 @@ struct OverviewView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: Self.gap) {
       Text(formatDuration(model.total))
-        .font(.system(size: model.style.fontSize, weight: .bold, design: .rounded))
+        .font(.custom("Inter-SemiBold", size: model.style.fontSize))
+        .tracking(-0.02 * model.style.fontSize)
         .foregroundColor(model.style.textColor)
         .minimumScaleFactor(0.5)
         .lineLimit(1)
@@ -106,7 +107,8 @@ struct TotalActivityView: View {
 
   var body: some View {
     Text(formatDuration(model.total))
-      .font(.system(size: model.style.fontSize, weight: .bold, design: .rounded))
+      .font(.custom("Inter-SemiBold", size: model.style.fontSize))
+      .tracking(-0.02 * model.style.fontSize)
       .foregroundColor(model.style.textColor)
       .minimumScaleFactor(0.5)
       .lineLimit(1)
@@ -125,7 +127,7 @@ struct TopAppsView: View {
     VStack(spacing: 0) {
       if model.apps.isEmpty {
         Text("No activity yet")
-          .font(.system(size: 15))
+          .font(.custom("Inter-Regular", size: 15))
           .foregroundColor(model.style.mutedColor)
           .frame(maxWidth: .infinity, alignment: .leading)
           .frame(height: Self.rowHeight)
@@ -136,18 +138,18 @@ struct TopAppsView: View {
             if let token = app.token {
               Label(token)
                 .labelStyle(.titleAndIcon)
-                .font(.system(size: 15, weight: .medium))
+                .font(.custom("Inter-Regular", size: 15))
                 .foregroundColor(model.style.textColor)
                 .lineLimit(1)
             } else {
               Text(app.name)
-                .font(.system(size: 15, weight: .medium))
+                .font(.custom("Inter-Regular", size: 15))
                 .foregroundColor(model.style.textColor)
                 .lineLimit(1)
             }
             Spacer(minLength: 8)
             Text(formatDuration(app.duration))
-              .font(.system(size: 15, weight: .semibold, design: .rounded))
+              .font(.custom("Inter-Regular", size: 15))
               .foregroundColor(model.style.textColor)
               .monospacedDigit()
           }

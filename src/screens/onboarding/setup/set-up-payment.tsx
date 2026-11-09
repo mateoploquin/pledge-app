@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Alert, StyleSheet, ActivityIndicator } from "react-native";
 import { useStripe } from "@stripe/stripe-react-native";
 import { fetchPaymentSheetParams } from "../../../services/stripe-api";
 import { auth } from "../../../firebaseConfig";
 import { CURRENCY_SYMBOL, STRIPE_MERCHANT_COUNTRY } from "../../../config";
-import PillButton from "../../../components/ink/pill-button";
 import Callout from "../../../components/ink/callout";
 import { color, cream, radius } from "../../../theme/tokens";
 import { track } from "../../../services/analytics";
@@ -18,6 +17,11 @@ interface SetPaymentProps {
   setPublishableKey: (publishableKey: string) => void;
   /** Called once the card is saved. */
   onComplete?: () => void | Promise<void>;
+  /**
+   * Hands the wizard "try again" while the card wasn't saved (null otherwise),
+   * so "Add a card" sits in the footer as in Paper B8.
+   */
+  onRetryChange?: (retry: (() => void) | null) => void;
 }
 
 const describeError = (err: any) =>
@@ -32,6 +36,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
   durationDays,
   setPublishableKey,
   onComplete,
+  onRetryChange,
 }) => {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
@@ -126,6 +131,14 @@ const SetPayment: React.FC<SetPaymentProps> = ({
     if (!paymentSetupComplete) handleSetUpPayment();
   }, []);
 
+  const showRetry = dismissed && !loading && !paymentSetupComplete;
+  const retry = useRef(handleSetUpPayment);
+  retry.current = handleSetUpPayment;
+  useEffect(() => {
+    onRetryChange?.(showRetry ? () => retry.current() : null);
+  }, [showRetry]);
+  useEffect(() => () => onRetryChange?.(null), []);
+
   return (
     <View style={styles.container}>
       {loading || paymentSetupComplete ? (
@@ -136,14 +149,12 @@ const SetPayment: React.FC<SetPaymentProps> = ({
           </Text>
         </View>
       ) : dismissed ? (
-        <>
-          <Callout
-            tone="error"
-            title="Your card wasn't saved."
-            text="Nothing was charged and your pledge hasn't started. Try again, or use another card."
-          />
-          <PillButton text="Add a card" onPress={handleSetUpPayment} style={styles.button} />
-        </>
+        <Callout
+            compact
+          tone="error"
+          title="Your card wasn't saved."
+          text="Nothing was charged and your pledge hasn't started. Try again, or use another card."
+        />
       ) : null}
     </View>
   );
@@ -163,9 +174,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
     flexShrink: 1,
-  },
-  button: {
-    marginTop: 4,
   },
 });
 

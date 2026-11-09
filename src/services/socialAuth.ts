@@ -1,6 +1,8 @@
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
+import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import {
+  GoogleAuthProvider,
   OAuthProvider,
   signInWithCredential,
   updateProfile,
@@ -58,5 +60,42 @@ export async function signInWithApple(): Promise<User> {
   }
 
   await registerWithBackend(user, name || user.displayName);
+  return user;
+}
+
+let googleConfigured = false;
+function ensureGoogleConfigured() {
+  if (googleConfigured) return;
+  // On iOS the client id is read from GoogleService-Info.plist bundled by Expo.
+  GoogleSignin.configure({});
+  googleConfigured = true;
+}
+
+export async function signInWithGoogle(): Promise<User> {
+  ensureGoogleConfigured();
+  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+
+  let idToken: string | null | undefined;
+  let name: string | null | undefined;
+  try {
+    const response = await GoogleSignin.signIn();
+    if (response.type === "cancelled") throw new SignInCancelled();
+    idToken = response.data.idToken;
+    name = response.data.user.name;
+  } catch (e: any) {
+    if (e instanceof SignInCancelled || e?.code === statusCodes.SIGN_IN_CANCELLED) {
+      throw new SignInCancelled();
+    }
+    throw e;
+  }
+  if (!idToken) {
+    throw new Error("Google did not return an ID token");
+  }
+
+  const { user } = await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
+  if (name && !user.displayName) {
+    await updateProfile(user, { displayName: name });
+  }
+  await registerWithBackend(user, name ?? user.displayName);
   return user;
 }

@@ -27,13 +27,13 @@ sun.
 
 1. **signin**: the logo lockup and "THE WORLD IS STILL HERE" on top;
    "RECLAIM YOUR LIFE." and "Put money on your screen time. Keep your word
-   and it costs nothing." at the bottom; one solid ivory button, "Continue
-   with Apple"; a quiet "I already have an account", which runs the same
-   Apple sign-in. Sign in with Apple is the only way in: Google and email
-   were dropped on 8 Nov 2026, so accounts made that way can't sign in.
+   and it costs nothing." at the bottom; two solid ivory buttons, "Continue
+   with Apple" and "Continue with Google" (Google re-added 9 Nov 2026,
+   owner); a quiet "I already have an account", which runs the same Apple
+   sign-in. Email sign-in was dropped on 8 Nov 2026.
 2. **welcome** (first time in, when no pledge is stored on the device):
    "WELCOME TO PLEDGE." on the same sun, then "It helps you use your phone
-   less." fades in after 2.5 s; at 6.5 s it darkens (700 ms) onto the deal.
+   less." fades in after 2.5 s; at 6.5 s it cross-dissolves into the deal: the words dissolve while the deal's low-sun ground fades in over the sun (1.2 s), never through black (owner, 9 Nov 2026).
 3. **deal**: four beats that play on their own, 3.4 s each, one caps line
    and a small glass card of plain figures per beat (`deal-beats.tsx`):
    "Pick your apps." (Your apps); "Set a limit. Put money on it." (Daily
@@ -54,13 +54,13 @@ dissolving between steps (v2, owner 8 Nov 2026). Steps, in order:
 
 | Step | Question | Control | Continue is enabled when |
 | --- | --- | --- | --- |
-| mirror (first pledge only, and only when the report extension is bundled) | Your last seven days. | Asks Screen Time access immediately, then the system-drawn 7-day total and top 3 apps | Screen Time access approved |
-| apps | Which apps take the most from you? | "Choose apps" opens Apple's picker (never on its own, owner 31 Oct 2026); shows the chosen app icons after | at least one app, category or site chosen |
+| mirror (first pledge only, and only when the report extension is bundled) | Your last seven days. | Asks Screen Time access immediately, then the system-drawn last 7 days: the bars rise, the social-media part of each breaks off, and it adds up to "Xh back" a week (`SocialCut`, Inter, solar accent) | Screen Time access approved |
+| apps | Which apps take the most from you? | "Choose apps" opens Apple's picker (never on its own, owner 31 Oct 2026); after, the chosen apps, "N apps chosen" and an underlined "Change apps" | at least one app, category or site chosen |
 | limit | How much is enough a day? | slider 0–120 min with ticks 0/30/60/90/120, presets 30/60/90; 0 means blocked all day | always |
 | duration | For how long? | 7 / 15 / 30 days | always |
 | amount | What's your word worth? | slider 0–20 with ticks 0/5/10/15/20, presets 5/10/20 | amount ≥ 1 |
-| review (every pledge) | Your word, in full. | Apps (counts, since Apple hides app names), Daily limit ("resets at midnight"), Length (with end date), "Your pledge $X", then "Nothing is charged now. You pay $X only if you unlock early, delete Pledge or turn off Screen Time access." The Terms and Privacy checkbox shows once per device | terms accepted (first time only) |
-| card (skipped when a card is on file) | Put your card down. | Stripe PaymentSheet opens immediately; saving the card continues on its own. If it's closed or fails: "Your card wasn't saved." callout and "Add a card" | card saved |
+| review (every pledge) | Your word, in full. | Apps (counts, since Apple hides app names), Daily limit ("resets at midnight"), Length (with end date), "Your pledge $X", then "Nothing is charged now. You pay $X only if you unlock early, delete Pledge or turn off Screen Time access." The Terms and Privacy checkbox shows once per device, in the footer over the button | terms accepted (first time only) |
+| card (skipped when a card is on file) | Put your card down. | Stripe PaymentSheet opens immediately; saving the card continues on its own. If it's closed or fails: "Your card wasn't saved." callout, with "Add a card" and "Back" in the footer | card saved |
 
 Review's button reads "Lock it in", or "Add a card to lock it in" when no
 card is on file. Locking in: backend records the

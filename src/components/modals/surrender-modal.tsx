@@ -2,14 +2,12 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, Alert, Pressable, Modal } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { chargePledge } from "../../services/stripe-api";
 import { syncedIdToken } from "../../services/sendPledgeData";
 import { Pledge } from "../../types";
 import { CURRENCY_SYMBOL } from "../../config";
 import { haptics } from "../../utils/haptics";
 import PillButton from "../ink/pill-button";
-import { Line } from "../ink/line";
 import { color, fonts, glass } from "../../theme/tokens";
 
 interface SurrenderModalProps {
@@ -26,7 +24,6 @@ interface SurrenderModalProps {
  */
 const SurrenderModal: React.FC<SurrenderModalProps> = ({ isVisible, pledge, onClose, onSurrender }) => {
   const [loading, setLoading] = useState(false);
-  const insets = useSafeAreaInsets();
   const { pledgeValue } = pledge;
 
   if (!isVisible) return null;
@@ -56,37 +53,42 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({ isVisible, pledge, onCl
         <Pressable style={StyleSheet.absoluteFill} onPress={loading ? undefined : onClose} />
         <Animated.View
           entering={FadeIn.duration(320)}
-          style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 12) + 20 }]}
+          style={styles.sheet}
         >
           <BlurView intensity={glass.blur} tint="dark" style={[StyleSheet.absoluteFill, styles.blur]} />
-          <Line text="Wait." size="heading" />
+          <View pointerEvents="none" style={styles.rim} />
+          <Text accessibilityRole="header" style={styles.title}>
+            Wait.
+          </Text>
           <Text style={styles.text}>
             Unlocking now means giving up this pledge and paying the {CURRENCY_SYMBOL}
             {pledgeValue}. You've come this far.
           </Text>
-          <View style={styles.actions}>
-            <PillButton text="No, keep going" tone="glass" onPress={onClose} disabled={loading} />
-            <PillButton
-              text={`Pay ${CURRENCY_SYMBOL}${pledgeValue} and unlock`}
-              tone="consequential"
-              onPress={handleSurrender}
-              busy={loading}
-            />
-          </View>
+          <View style={styles.spacer} />
+          <PillButton text="No, keep going" tone="glass" onPress={onClose} disabled={loading} />
+          <PillButton
+            text={`Pay ${CURRENCY_SYMBOL}${pledgeValue} and unlock`}
+            tone="consequential"
+            onPress={handleSurrender}
+            busy={loading}
+          />
         </Animated.View>
       </Animated.View>
     </Modal>
   );
 };
 
+// Values from v2 Paper "D4 Give up" (Scrim and Sheet).
 const styles = StyleSheet.create({
   scrim: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: "flex-end",
-    backgroundColor: color.scrim,
+    backgroundColor: "rgba(10,6,5,0.62)", // D4 Scrim #0A06059E
   },
-  // Dark glass rising from the bottom edge (v2 Paper "D4 Give up").
+  // Dark glass rising from the bottom edge: 344 pt tall in Paper, 32 pt
+  // under the buttons, the space between text and buttons taking the rest.
   sheet: {
+    minHeight: 344,
     backgroundColor: "rgba(36,19,16,0.78)",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
@@ -94,20 +96,22 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,222,196,0.2)",
     paddingHorizontal: 24,
     paddingTop: 28,
+    paddingBottom: 32,
     gap: 12,
     overflow: "hidden",
   },
   blur: { zIndex: -1 },
+  // D4 Sheet inset shadow #FFF0E059 0 1px: a bright line under the top edge.
+  rim: { position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: "rgba(255,240,224,0.35)" },
+  // D4: Inter Medium 30/36, -0.02 em (type.heading is Inter Display).
+  title: { fontFamily: fonts.uiMedium, fontSize: 30, lineHeight: 36, letterSpacing: -0.6, color: color.text },
   text: {
     fontFamily: fonts.ui,
     color: glass.textSecondary,
     fontSize: 16,
     lineHeight: 24,
   },
-  actions: {
-    gap: 12,
-    marginTop: 24,
-  },
+  spacer: { flexGrow: 1 },
 });
 
 export default SurrenderModal;

@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
+import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import InkScreen from "../../components/ink/ink-screen";
 import PillButton from "../../components/ink/pill-button";
 import { Line } from "../../components/ink/line";
-import { Glow } from "../../components/ink/backdrop";
 import GlassSurface from "../../components/ink/glass-surface";
 import Caption from "../../components/ink/caption";
 import UsageBar from "../../components/ink/usage-bar";
@@ -12,10 +12,10 @@ import { breakEndsAt } from "../home/home.controller";
 import { BREAK_MINUTES, BREAK_PRICE } from "../home/home.constants";
 import { usePledgeDetail } from "./use-pledge-detail";
 import { CURRENCY_SYMBOL } from "../../config";
-import { ActivityLabels } from "../../../modules/pledge-activity-labels";
 import { TopApps, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
+import { ActivityNames } from "../../../modules/pledge-activity-labels";
 import { pledgeEndsAt } from "../../services/pledges";
-import { color, fonts, glass } from "../../theme/tokens";
+import { color, fonts, glass, type } from "../../theme/tokens";
 import { track } from "../../services/analytics";
 
 type Props = {
@@ -32,11 +32,43 @@ const DAY = 1000 * 60 * 60 * 24;
 const leftLine = (ms: number) => {
   if (ms <= 0) return "Done.";
   const days = Math.ceil(ms / DAY);
-  if (days > 1) return `${days} days\nleft.`;
+  if (days > 1) return `${days} days left.`;
   const hours = Math.ceil(ms / (1000 * 60 * 60));
-  if (hours > 1) return `${hours} hours\nleft.`;
-  return "Last\nhour.";
+  if (hours > 1) return `${hours} hours left.`;
+  return "Last hour.";
 };
+
+/**
+ * The light behind the card (v2 Paper D1-D4): `radial-gradient(ellipse 70% 28%
+ * at 25% 40% in oklab, #ED602A80, #9F342547 50%, transparent)` over the quiet
+ * ground (whose two edge lights are the artboard's other two gradients). The
+ * oklab blend is sampled into eighths because SVG mixes in sRGB. Drawn in the
+ * ground, under the grain, in screen proportions like Paper's percentages.
+ */
+const CARD_LIGHT: [number, string, number][] = [
+  [0, "#ED602A", 0.502],
+  [0.125, "#E0592A", 0.446],
+  [0.25, "#D15029", 0.39],
+  [0.375, "#BC4428", 0.334],
+  [0.5, "#9F3425", 0.278],
+  [0.625, "#9F3425", 0.209],
+  [0.75, "#9F3425", 0.139],
+  [0.875, "#9F3425", 0.07],
+  [1, "#140C0B", 0],
+];
+
+const CardLight = () => (
+  <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+    <Defs>
+      <RadialGradient id="cardLight" cx="0.25" cy="0.4" rx="0.7" ry="0.28" fx="0.25" fy="0.4">
+        {CARD_LIGHT.map(([offset, stopColor, stopOpacity]) => (
+          <Stop key={offset} offset={offset} stopColor={stopColor} stopOpacity={stopOpacity} />
+        ))}
+      </RadialGradient>
+    </Defs>
+    <Rect x="0" y="0" width="100%" height="100%" fill="url(#cardLight)" />
+  </Svg>
+);
 
 /** One pledge (v2 Paper group "D"): time left, today on glass, and the way out (paying). */
 const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
@@ -76,6 +108,7 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
     <InkScreen
       backLabel="Pledges"
       onBack={() => navigation.goBack()}
+      backdrop={<CardLight />}
       footer={
         <>
           {blocked && breaksLeft > 0 && (
@@ -99,9 +132,7 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
       }
     >
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Glow kind="card" style={styles.glow} opacity={0.8} />
         <Line size="display" text={leftLine(remainingMs)} />
-        <ActivityLabels familyActivitySelection={pledge.selectionEvent?.familyActivitySelection} style={styles.appsRow} />
 
         <GlassSurface style={styles.card}>
           {/* Long press: the hidden enforcement log, kept until enforcement is proven. */}
@@ -111,7 +142,9 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
           {onBreak ? (
             <Text style={styles.value}>
               {lockAgain}
-              <Text style={styles.unit}> when the apps lock again</Text>
+              <Text style={styles.unit}>
+                <Text style={styles.gap}> </Text>when the apps lock again
+              </Text>
             </Text>
           ) : timeValue === 0 ? (
             <Text style={styles.line}>The apps stay blocked for the whole pledge.</Text>
@@ -119,12 +152,23 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
             <>
               <Text style={styles.value}>
                 {used}
-                <Text style={styles.unit}> of {timeValue} min used</Text>
+                <Text style={styles.unit}>
+                  <Text style={styles.gap}> </Text>of {timeValue} min used
+                </Text>
               </Text>
               <UsageBar used={used} limit={timeValue} />
             </>
           )}
           <View style={styles.rows}>
+            {/* Which apps, as plain names (the top caption was removed, owner 9 Nov 2026). */}
+            <View style={styles.row}>
+              <Text style={styles.label}>Apps</Text>
+              <ActivityNames
+                familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
+                style={styles.appNames}
+                align="trailing"
+              />
+            </View>
             <View style={styles.row}>
               <Text style={styles.label}>Your pledge</Text>
               <Text style={styles.strong}>
@@ -132,11 +176,12 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
                 {pledgeValue}, not charged
               </Text>
             </View>
-            <View style={styles.row}>
+            <View style={[styles.row, styles.lastRow]}>
               <Text style={styles.label}>Ends</Text>
               <Text style={styles.text}>{endsOn}</Text>
             </View>
           </View>
+          {/* Today's top three apps, as before the rebrand (Paper shows one). */}
           {isActivityReportAvailable() && (
             <TopApps
               range="today"
@@ -164,20 +209,17 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
   );
 };
 
+// Values from v2 Paper "D Pledge detail" (D1 Active, D2 Blocked, D3 On a break).
 const styles = StyleSheet.create({
-  scroll: { paddingTop: 20, paddingBottom: 24 },
-  glow: { left: -110, top: 60 },
-  appsRow: { height: 48, marginHorizontal: -28, paddingHorizontal: 26, marginTop: 16 },
-  card: { marginTop: 20, padding: 20, gap: 14 },
-  value: {
-    fontFamily: fonts.uiSemibold,
-    fontSize: 44,
-    lineHeight: 48,
-    letterSpacing: -0.9,
-    color: color.text,
-    fontVariant: ["tabular-nums"],
-  },
+  // Paper: the top row ends 56 pt under the status bar and the headline sits
+  // 24 pt below it; InkScreen's row is 44 pt from inset + 8, so 28 here.
+  scroll: { paddingTop: 28, paddingBottom: 24 },
+  // Paper: the card is offset 28 pt under the headline.
+  card: { marginTop: 28, padding: 20, gap: 14 },
+  value: type.value,
   unit: { fontFamily: fonts.ui, fontSize: 16, letterSpacing: 0, color: glass.textSecondary },
+  // Paper: 8 pt between the number and its unit. Inter's space is 4.5 pt at 16.
+  gap: { letterSpacing: 3.5 },
   line: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 22, color: glass.textSecondary },
   rows: { paddingTop: 6 },
   row: {
@@ -187,10 +229,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: glass.rule,
   },
-  label: { fontFamily: fonts.ui, fontSize: 15, color: glass.textSecondary },
-  text: { fontFamily: fonts.ui, fontSize: 15, color: color.text },
-  strong: { fontFamily: fonts.uiSemibold, fontSize: 15, color: color.text },
+  // Paper: the last row has no padding under it; the card's 20 does that.
+  lastRow: { paddingBottom: 0 },
   topApps: { marginTop: 4 },
+  appNames: { flex: 1, height: 18, marginLeft: 24 },
+  label: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 18, color: glass.textSecondary },
+  text: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 18, color: color.text },
+  strong: { fontFamily: fonts.uiSemibold, fontSize: 15, lineHeight: 18, color: color.text },
 });
 
 export default PledgeDetail;

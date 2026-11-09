@@ -11,7 +11,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SelectionInfo } from "../../../types";
 import { ActivityLabels } from "../../../../modules/pledge-activity-labels";
 import PillButton from "../../../components/ink/pill-button";
-import { cream } from "../../../theme/tokens";
+import PressableScale from "../../../components/buttons/pressable-scale";
+import { color, fonts, spacing } from "../../../theme/tokens";
 import { track } from "../../../services/analytics";
 
 interface SetAppsProps {
@@ -112,48 +113,66 @@ const SetApps: React.FC<SetAppsProps> = ({
           ? "Change apps"
           : "Choose apps";
 
+  // Paper B3: the chosen apps, "3 apps chosen", and an underlined "Change
+  // apps" link. Paper B2 drops the hint; it stays (rebrand only: it explains
+  // how picking works), styled as the step's secondary text.
+  if (hasSelection(selectionEvent)) {
+    return (
+      <View style={styles.chosen}>
+        <ActivityLabels familyActivitySelection={selectionEvent?.familyActivitySelection} style={styles.selectedRow} />
+        <Text style={styles.count}>{selected === 1 ? "1 app chosen" : `${selected} apps chosen`}</Text>
+        <PressableScale
+          onPress={onButtonPress}
+          scaleTo={0.98}
+          haptic="tap"
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          style={styles.changeLink}
+        >
+          <Text style={styles.change}>{label}</Text>
+        </PressableScale>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      {hasSelection(selectionEvent) ? (
-        <>
-          <ActivityLabels
-            familyActivitySelection={selectionEvent?.familyActivitySelection}
-            style={styles.selectedRow}
-          />
-          <Text style={styles.count}>
-            {selected === 1 ? "One pick." : `${selected} picks.`}
-          </Text>
-        </>
-      ) : (
-        <Text style={styles.hint}>
-          Pick the apps themselves, like Instagram under Social. A website only counts time in Safari.
-        </Text>
-      )}
-      <PillButton text={label} tone="ghost" onPress={onButtonPress} style={styles.button} />
+    <View style={styles.chosen}>
+      <PillButton text={label} tone="ghost" onPress={onButtonPress} />
+      <Text style={styles.count}>
+        Pick the apps themselves, like Instagram under Social. A website only counts time in Safari.
+      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 16,
+  // Paper B3 "Content": gap 14.
+  chosen: {
+    gap: 14,
   },
+  // Bleeds to the screen edges so the row scrolls under them; the pills
+  // (2 pt row padding of their own) start on the 24 pt margin.
   selectedRow: {
-    height: 52,
-    marginHorizontal: -28,
-    paddingHorizontal: 26,
+    height: 46,
+    marginHorizontal: -spacing.lg,
+    paddingHorizontal: spacing.lg - 2,
   },
   count: {
-    color: cream.muted,
+    fontFamily: fonts.ui,
     fontSize: 15,
+    lineHeight: 18,
+    color: color.textSecondary,
   },
-  hint: {
-    color: cream.muted,
-    fontSize: 15,
-    lineHeight: 21,
+  changeLink: {
+    alignSelf: "flex-start",
   },
-  button: {
-    marginTop: 4,
+  change: {
+    fontFamily: fonts.uiMedium,
+    fontSize: 16,
+    lineHeight: 20,
+    color: color.text,
+    textDecorationLine: "underline",
   },
 });
 

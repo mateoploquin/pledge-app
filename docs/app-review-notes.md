@@ -30,7 +30,7 @@ user agreed to when starting the pledge, not a purchase of digital content
 or a donation, so it is processed outside In-App Purchase. Pledge donates
 its net proceeds from forfeited pledges to charity at its own discretion.
 
-Sign in: Sign in with Apple only (Google and email were dropped on 8 Nov 2026).
+Sign in: Sign in with Apple or Google (email was dropped on 8 Nov 2026).
 The reviewer can use their own Apple ID; check whether a demo account is still
 needed.
 

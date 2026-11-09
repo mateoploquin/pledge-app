@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { StyleSheet, View, Text, StatusBar, Pressable, Animated as RNAnimated } from "react-native";
+import { StyleSheet, View, Text, Image, StatusBar, Pressable, Animated as RNAnimated } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { Dissolve, Line } from "../../components/ink/line";
 import SocialSignInButtons from "../../components/buttons/social-sign-in-buttons";
 import Backdrop, { Glow } from "../../components/ink/backdrop";
-import GlassSurface from "../../components/ink/glass-surface";
 import Lockup from "../../components/ink/lockup";
 import Caption from "../../components/ink/caption";
 import PressableScale from "../../components/buttons/pressable-scale";
@@ -21,6 +20,9 @@ const DARKEN_MS = 700;
 /** The welcome: the title alone, then the second line, then on to the deal. */
 const WELCOME_SECOND_LINE_MS = 2500;
 const WELCOME_MS = 6500;
+
+/** Paper's vignette, laid over the deal's low sun as in "A5 Deal" (the quiet Backdrop has none). */
+const VIGNETTE = require("../../../assets/glow/vignette.png");
 
 /** Where the user is: signing in, being welcomed, or hearing the deal. */
 type OpenerState = "signin" | "welcome" | "deal";
@@ -70,14 +72,10 @@ const Onboarding: React.FC<{ initial?: string }> = () => {
   const endWelcome = () => {
     if (welcomeEnding.current) return;
     welcomeEnding.current = true;
-    RNAnimated.timing(welcomeDark, { toValue: 1, duration: DARKEN_MS, useNativeDriver: true }).start(() => {
-      setBeat(0);
-      setState("deal");
-      setTimeout(
-        () => RNAnimated.timing(welcomeDark, { toValue: 0, duration: 450, useNativeDriver: true }).start(),
-        motion.outMs + 60
-      );
-    });
+    // A cross-dissolve, no dip to black: the words dissolve (Dissolve) while
+    // the deal's ground fades in over the sun.
+    setBeat(0);
+    setState("deal");
   };
 
   /** Each beat of the deal holds, then the next; after the last, the first question. */
@@ -142,24 +140,29 @@ const Onboarding: React.FC<{ initial?: string }> = () => {
 
   const deal = state === "deal";
 
+  const BeatFigure = DEAL_BEATS[beat].Figure;
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       {/* The sun on the horizon for sign-in and the welcome; a low sun for the deal. */}
-      {deal ? (
-        <Animated.View entering={FadeIn.duration(600)} style={StyleSheet.absoluteFill}>
-          <Backdrop variant="quiet" />
-          <Glow kind="lowSun" style={styles.lowSun} opacity={0.85} />
+      {/* The deal's ground dissolves in over the sun, never through black
+          (owner, 9 Nov 2026), so the sun stays underneath while it does. */}
+      <Backdrop variant="brand" />
+      {deal && (
+        <Animated.View entering={FadeIn.duration(1200)} style={[StyleSheet.absoluteFill, styles.dark]}>
+          <Backdrop variant="quiet">
+            <Glow kind="lowSun" style={styles.lowSun} opacity={0.85} />
+            <Image source={VIGNETTE} style={styles.vignette} resizeMode="stretch" />
+          </Backdrop>
         </Animated.View>
-      ) : (
-        <Backdrop variant="brand" />
       )}
       {(state === "welcome" || deal) && (
         <Pressable onPress={state === "welcome" ? endWelcome : nextBeat} style={StyleSheet.absoluteFill} />
       )}
 
       <View
-        style={[styles.inner, { paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 20) + 20 }]}
+        style={[styles.inner, { paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom - 34, 0) + 40 }]}
         pointerEvents={deal || state === "welcome" ? "box-none" : "auto"}
       >
         <View style={styles.header} pointerEvents="none">
@@ -172,7 +175,6 @@ const Onboarding: React.FC<{ initial?: string }> = () => {
         <Dissolve id={state} style={styles.block}>
           {state === "signin" && (
             <>
-              <View style={styles.rule} />
               <Line size="hero" text={"Reclaim\nyour life."} />
               <Text style={styles.sub}>Put money on your screen time. Keep your word and it costs nothing.</Text>
               <View style={styles.actions}>
@@ -185,26 +187,21 @@ const Onboarding: React.FC<{ initial?: string }> = () => {
           )}
 
           {state === "welcome" && (
-            <View pointerEvents="none">
-              <View style={styles.rule} />
+            <View pointerEvents="none" style={styles.lifted}>
               <Line size="hero" text={"Welcome to\nPledge."} />
-              <RNAnimated.Text style={[styles.sub, { opacity: secondLine }]}>
+              <RNAnimated.Text style={[styles.welcomeSub, { opacity: secondLine }]}>
                 It helps you use your phone less.
               </RNAnimated.Text>
             </View>
           )}
 
           {deal && (
-            <View pointerEvents="none">
+            <View pointerEvents="none" style={styles.lifted}>
               <Dissolve id={`beat-${beat}`}>
-                <GlassSurface style={styles.dealCard}>
-                  {DEAL_BEATS[beat].rows.map(([label, value], i) => (
-                    <View key={label} style={[styles.dealRow, i > 0 && styles.dealRowRule]}>
-                      <Text style={styles.dealLabel}>{label}</Text>
-                      <Text style={styles.dealValue}>{value}</Text>
-                    </View>
-                  ))}
-                </GlassSurface>
+                {/* The figure stands on the ground, no card (owner, 9 Nov 2026). */}
+                <View style={styles.dealFigure}>
+                  <BeatFigure key={beat} />
+                </View>
                 <Line size="hero" text={DEAL_BEATS[beat].line} />
               </Dissolve>
               <View style={styles.beats}>
@@ -228,13 +225,16 @@ const Onboarding: React.FC<{ initial?: string }> = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: color.bg },
   dark: { backgroundColor: color.bg },
-  lowSun: { left: -132, bottom: -260 },
+  // Paper "A5 Deal": a 510 circle at left -60, top 640, blur 24; the PNG adds 72 each side.
+  lowSun: { left: -132, bottom: -378 },
+  vignette: { ...StyleSheet.absoluteFillObject, width: undefined, height: undefined },
   inner: { flex: 1, paddingHorizontal: spacing.lg },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   headerCaption: { paddingTop: 11, opacity: 0.82 },
-  // Pinned to the bottom, so the words sit on the same spot in every state.
+  // Pinned to the bottom. Paper measures 40 (sign-in) and 56 (welcome, deal)
+  // from the screen edge of a phone with a 34 pt home indicator.
   block: { flex: 1, justifyContent: "flex-end" },
-  rule: { height: 1, backgroundColor: color.text, opacity: 0.35, marginBottom: 14 },
+  lifted: { marginBottom: 16 },
   sub: {
     marginTop: 14,
     fontFamily: fonts.ui,
@@ -243,15 +243,22 @@ const styles = StyleSheet.create({
     color: color.textSecondary,
     maxWidth: 300,
   },
+  // Paper "A4 Welcome": 17/24, no max width, 24 below.
+  welcomeSub: {
+    marginTop: 14,
+    marginBottom: 24,
+    fontFamily: fonts.ui,
+    fontSize: 17,
+    lineHeight: 24,
+    color: color.textSecondary,
+  },
   actions: { marginTop: 28, gap: 4, alignItems: "stretch" },
   secondary: { minHeight: 48, alignItems: "center", justifyContent: "center" },
-  secondaryText: { fontFamily: fonts.uiMedium, fontSize: 16, color: color.text },
-  dealCard: { paddingHorizontal: 20, paddingVertical: 4, marginBottom: 24 },
-  dealRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingVertical: 14 },
-  dealRowRule: { borderTopWidth: 1, borderTopColor: glass.rule },
-  dealLabel: { fontFamily: fonts.ui, fontSize: 15, color: glass.textSecondary },
-  dealValue: { fontFamily: fonts.uiSemibold, fontSize: 20, color: color.text, fontVariant: ["tabular-nums"] },
-  beats: { flexDirection: "row", gap: 6, marginTop: 28 },
+  secondaryText: { fontFamily: fonts.uiMedium, fontSize: 16, lineHeight: 20, color: color.text },
+  dealFigure: { marginBottom: 24 },
+  // Paper "A5 Deal" labels are #F2E6DA (glass.textSecondary is #E6D8CC).
+  // Paper: 24 gap plus 28 padding above the marks.
+  beats: { flexDirection: "row", gap: 6, marginTop: 52 },
   beatMark: { flex: 1, height: 2, backgroundColor: color.text, opacity: 0.25 },
   beatMarkOn: { opacity: 0.9 },
 });

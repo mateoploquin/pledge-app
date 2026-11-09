@@ -10,7 +10,7 @@ const Caption: React.FC<{ children: string; style?: StyleProp<TextStyle>; tint?:
 }) => (
   <Text
     style={[
-      { fontFamily: fonts.uiMedium, fontSize: 11, lineHeight: 14, letterSpacing: 1.5, textTransform: "uppercase", color: tint },
+      { fontFamily: fonts.uiMedium, fontSize: 11, lineHeight: 14, letterSpacing: 1.54, textTransform: "uppercase", color: tint },
       style,
     ]}
   >

@@ -11,6 +11,9 @@ final class PledgeActivityReportView: ExpoView {
   /// Bumped on every render: a new identity makes SwiftUI create a fresh
   /// report view instead of reviving one the extension may have dropped.
   private var generation = 0
+  /// What the current report was built from; an identical request keeps it
+  /// instead of restarting the sandboxed extension (which could come back blank).
+  private var lastKey: String?
 
   var context = "totalActivity"
   var startMs: Double = 0
@@ -104,6 +107,17 @@ final class PledgeActivityReportView: ExpoView {
         applications: selection?.applicationTokens ?? [],
         categories: selection?.categoryTokens ?? [],
         webDomains: selection?.webDomainTokens ?? [])
+
+    let selectionKey = (try? JSONEncoder().encode(selection)).map { $0.base64EncodedString() } ?? ""
+    let selectionsKey = selections.compactMap { (try? JSONEncoder().encode($0))?.base64EncodedString() }.joined(separator: ",")
+    let key = [context, "\(start.timeIntervalSince1970)", "\(end.timeIntervalSince1970)", segment, selectionKey,
+               selectionsKey, textColor ?? "", mutedColor ?? "", accentColor ?? "", "\(fontSize)", "\(maxApps)", "\(anchorMs)"]
+      .joined(separator: "|")
+    if key == lastKey, host != nil {
+      host?.view.frame = bounds
+      return
+    }
+    lastKey = key
 
     generation += 1
     let root = AnyView(

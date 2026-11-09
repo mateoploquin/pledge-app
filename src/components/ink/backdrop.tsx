@@ -22,11 +22,24 @@ const LIGHT: Record<BackdropVariant, number> = {
 const GRAIN = require("../../../assets/textures/grain.png");
 const VIGNETTE = require("../../../assets/glow/vignette.png");
 
-const Backdrop: React.FC<{ variant?: BackdropVariant }> = ({ variant = "quiet" }) => {
-  const brand = variant === "brand";
+/** Variants that carry the vignette and the stronger grain, as in Paper. */
+const STRONG: BackdropVariant[] = ["brand", "empty"];
+
+/**
+ * `children` are extra lights (a `Glow`), placed in screen coordinates and
+ * drawn under the vignette and the grain, the same stacking as the Paper
+ * artboards. A glow placed in the screen's content instead sits above the
+ * grain, reads too bright, and moves with the content's padding.
+ */
+const Backdrop: React.FC<{ variant?: BackdropVariant; children?: React.ReactNode }> = ({
+  variant = "quiet",
+  children,
+}) => {
+  const brand = STRONG.includes(variant);
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Image source={LIGHT[variant]} style={styles.fill} resizeMode="stretch" />
+      {children}
       {brand && <Image source={VIGNETTE} style={styles.fill} resizeMode="stretch" />}
       <ImageBackground
         source={GRAIN}

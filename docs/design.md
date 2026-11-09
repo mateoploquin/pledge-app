@@ -36,12 +36,24 @@ light, fine grain, edges sinking into dark.
 - **The glow scales with distance from money.** Strongest on the opener, the
   deal, empty Home, "You kept your word" and the launch screen. On Home with a
   pledge, the wizard, Review, give-up and Account, the glow is only a soft
-  light at the top and bottom edges.
+  light at the top and bottom edges. Account and its sub-screens (Paper E1–E4)
+  add one more: a radial gradient (ellipse 70 % × 30 % of the screen at
+  30 %/38 %, solar 42 % → ember 24 % → clear) behind the glass list, drawn in
+  the ground under the grain, not the blurred card glow. Pledge detail (Paper
+  D1–D4) does the same with an ellipse 70 % × 28 % at 25 %/40 %, solar 50 % →
+  ember 28 % at half → clear, behind the Today card.
 - **Glass for cards and the main button (owner, 7 Nov 2026).** The pledge
   card is frosted glass: a faint warm-white fill, background blur, a bright
   1 px rim along the top edge, an orange rim along the bottom, and a soft
   shadow beneath. It needs light behind it to read, so a blurred glow sits
-  behind each glass card. The primary button uses exactly the same glass as the card (same fill,
+  behind each glass card. On Home that glow is part of the ground (passed as
+  `InkScreen`'s `backdrop`, under the grain, fixed to the screen as in Paper
+  C2–C5), not part of the scrolling content. In the app the glass has no
+  system blur (9 Nov 2026): every iOS blur style adds a grey tint that made
+  the cards muddy, and what sits behind glass is already a soft glow. It is
+  Paper's 135° gradient (angle kept true on any card shape), the 1 px border,
+  and the three inset rims drawn as one inner border so they follow the
+  corners (`glass-surface.tsx`). The primary button uses exactly the same glass as the card (same fill,
   rims and blur, radius 24), so it takes its colour only from what is behind
   it. No shine line across the middle, no text shadow, no outer shadow or
   halo, no brand-colour tint: the owner found a tinted gradient pill
@@ -124,14 +136,29 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
 - `InkScreen` is the ground for every screen: ink background, 28 pt side
   padding, safe-area top + 8, optional "‹ Back" top-left, and a `footer`
   slot that pins the buttons above the home indicator (bottom inset + 24).
-- A pledge step is: progress dots (6 pt, 6 gap) → `Line` question → the
-  control vertically centred in the remaining space → footer buttons.
+- A pledge step is: "STEP n OF N" top right → question (24 pt under the
+  top row) → the control at a fixed distance under it, as placed in Paper
+  B1–B8 (28 pt; 120 for the sliders, 160 for the length list, 24 on
+  Review) → footer buttons. Review's footer is the terms checkbox over the
+  button with no quiet Back; the card step's footer is "Add a card" and
+  "Back", shown only after the sheet was closed or failed.
 - Nothing sits on the home indicator. Secondary links get 12/16 padding.
-- The opener's content block is absolutely pinned to the bottom (left/right
-  28) so switching states never changes the buttons' position; the Apple
-  button's slot (62 pt) is reserved before its availability is known. The
-  Apple button is a hand-drawn pill (`ProviderButton`), not Apple's native
-  button, so it keeps the app's type and always reads in English.
+- The opener's content block is pinned to the bottom (sides 24): 40 pt from
+  the screen edge on sign-in, 56 on the welcome and the deal (Paper "A1",
+  "A4", "A5", on a phone with a 34 pt home indicator); the Apple button's
+  slot is reserved before its availability is known. The
+  Apple and Google buttons are one hand-drawn pill (`ProviderButton`, 16 pt
+  glyph, 8 gap), not Apple's native button, so they match and always read in
+  English. The line above the opener and welcome headlines is gone (owner,
+  9 Nov 2026).
+- Rebrand only (owner, 9 Nov 2026): Paper sets the look, never the features.
+  Where an artboard drops something the app does or shows (the apps hint, a
+  Back button, the top three apps, the hours-back mirror), the app keeps it
+  in the new style.
+- Screen Time panels drawn by the report extension use Inter (bundled in
+  `targets/ReportExtension`), never the system or Instrument Serif fonts.
+  Pledge detail names its apps in a native small-caps caption
+  (`ActivityCaption`, top right), as Paper D1 does.
 - Horizontal lists of chosen apps scroll; they never wrap into a wall.
 
 ## Components (`src/components/ink/`, `src/components/buttons/`)
@@ -163,13 +190,14 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
 
 - Screen to screen: `forSoftFade` in `src/navigation/index.tsx`, a 420 ms
   ease-out crossfade with a 12 pt lift; the screen underneath dims to 60 %.
-  Modals (app picker, share sheet) use the native iOS sheet. The surrender
-  card floats 12 pt in from the edges with all four corners at `radius.card`,
-  in an RN `Modal` so its scrim dims the whole screen, footer included.
+  Modals (app picker, share sheet) use the native iOS sheet. The give-up
+  sheet (Paper D4) is dark glass rising from the bottom edge: full width, top
+  corners 28, at least 344 pt tall with 32 pt under its buttons, in an RN
+  `Modal` so its scrim (#0A0605 at 62 %) dims the whole screen, footer included.
 - Within a screen: `Dissolve` only. No slides.
-- The deal beats (`deal-beats.tsx`) use React Native's `Animated` and only
-  fade, fill or count. Figures are drawn in ink, cream and ember: raised
-  ink pills, an ember ring, the serif amount, a miniature of the shield.
+- The deal beats (`deal-beats.tsx`) only dissolve. Each is a glass card of
+  label/value rows (Inter 15 / Inter SemiBold 22) over the low sun, which
+  sits under the vignette and grain like Paper "A5 Deal".
 - Film: `expo-av` Video, looping, muted, cover; the montage is pre-stitched
   with a 0.5 s crossfade at the seam so the loop has no cut.
 - Haptics (`src/utils/haptics.ts`): `tap` light for ordinary taps, `press`
