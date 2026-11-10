@@ -6,6 +6,13 @@ store build differs from the dev build.
 
 ## Current status (10 November 2026)
 
+**Build 29 (1.1.0) is being built for TestFlight** (10 November 2026, EAS
+build 7c5cbc57, submission 6a400e56; confirm once TestFlight shows it
+processed). On top of build 28: the opener with a film behind it
+(`opener-dive.mp4`, a test clip whose rights aren't cleared, not for the
+App Store), "The world awaits", a pulsing "Tap to start" and no buttons;
+sign-in moved to a step after Review, only when nobody is signed in.
+
 **Build 28 (1.1.0) is being built for TestFlight** (10 November 2026, EAS
 build 948590f5, submission 207c2556; confirm once TestFlight shows it
 processed). On top of build 27: no welcome and no deal, sign-in goes
