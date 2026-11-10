@@ -17,6 +17,8 @@ struct ActivityCaptionView: View {
   let fontName: String
   let uppercase: Bool
   let leading: Bool
+  let iconsOnly: Bool
+  let iconSize: CGFloat
 
   private enum Item: Hashable {
     case app(ApplicationToken)
@@ -41,9 +43,48 @@ struct ActivityCaptionView: View {
 
   var body: some View {
     let all = items
+    if iconsOnly {
+      iconRow(all)
+    } else {
+      nameRow(all)
+    }
+  }
+
+  /// App icons at a fixed size (the system can't report a name's width, but
+  /// an icon's is known), as many as fit, then "+N".
+  private func iconRow(_ all: [Item]) -> some View {
+    GeometryReader { geo in
+      let size = iconSize
+      let gap: CGFloat = 6
+      let countRoom: CGFloat = all.count > 1 ? fontSize * 2.6 : 0
+      let fit = max(1, Int((geo.size.width - countRoom + gap) / (size + gap)))
+      let k = min(all.count, maxItems, fit)
+      let rest = all.count - k
+      HStack(spacing: gap) {
+        if !leading { Spacer(minLength: 0) }
+        ForEach(Array(all.prefix(k).enumerated()), id: \.offset) { _, item in
+          label(item)
+            .labelStyle(.iconOnly)
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.23, style: .continuous))
+        }
+        if rest > 0 {
+          Text("+\(rest)")
+            .font(.custom(fontName, size: fontSize))
+            .foregroundColor(color)
+            .fixedSize()
+            .padding(.leading, 2)
+        }
+        if leading { Spacer(minLength: 0) }
+      }
+      .frame(width: geo.size.width, height: geo.size.height, alignment: leading ? .leading : .trailing)
+    }
+  }
+
+  private func nameRow(_ all: [Item]) -> some View {
     let shown = Array(all.prefix(maxItems))
     let rest = all.count - shown.count
-    HStack(spacing: 0) {
+    return HStack(spacing: 0) {
       if !leading { Spacer(minLength: 0) }
       ForEach(Array(shown.enumerated()), id: \.offset) { index, item in
         label(item)
@@ -73,6 +114,8 @@ final class PledgeActivityCaptionView: ExpoView {
   private var fontName = "Inter-Medium"
   private var uppercase = true
   private var leading = false
+  private var iconsOnly = false
+  private var iconSize: CGFloat = 22
 
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
@@ -94,6 +137,8 @@ final class PledgeActivityCaptionView: ExpoView {
   func setFontName(_ v: String?) { fontName = v ?? "Inter-Medium"; render() }
   func setUppercase(_ v: Bool?) { uppercase = v ?? true; render() }
   func setAlign(_ v: String?) { leading = v == "leading"; render() }
+  func setIconsOnly(_ v: Bool?) { iconsOnly = v ?? false; render() }
+  func setIconSize(_ v: Double?) { if let v { iconSize = CGFloat(v) }; render() }
   func setColor(_ hex: String?) {
     if let hex, let rgb = UInt32(hex.trimmingCharacters(in: CharacterSet(charactersIn: "#")), radix: 16) {
       color = Color(
@@ -108,7 +153,8 @@ final class PledgeActivityCaptionView: ExpoView {
     let root = AnyView(
       ActivityCaptionView(
         selection: selection, fontSize: fontSize, tracking: tracking, color: color, maxItems: maxItems,
-        fontName: fontName, uppercase: uppercase, leading: leading))
+        fontName: fontName, uppercase: uppercase, leading: leading,
+        iconsOnly: iconsOnly, iconSize: iconSize))
     if let host {
       host.rootView = root
     } else {
@@ -139,6 +185,8 @@ public class PledgeActivityCaptionModule: Module {
       Prop("fontName") { (view: PledgeActivityCaptionView, v: String?) in view.setFontName(v) }
       Prop("uppercase") { (view: PledgeActivityCaptionView, v: Bool?) in view.setUppercase(v) }
       Prop("align") { (view: PledgeActivityCaptionView, v: String?) in view.setAlign(v) }
+      Prop("iconsOnly") { (view: PledgeActivityCaptionView, v: Bool?) in view.setIconsOnly(v) }
+      Prop("iconSize") { (view: PledgeActivityCaptionView, v: Double?) in view.setIconSize(v) }
     }
   }
 }

@@ -118,6 +118,8 @@ type NativeCaptionProps = {
   fontName?: string;
   uppercase?: boolean;
   align?: "leading" | "trailing";
+  iconsOnly?: boolean;
+  iconSize?: number;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -153,18 +155,20 @@ export const ActivityCaption: React.FC<{
 };
 
 /**
- * The selection's names as plain text on one line, left-aligned
- * ("Instagram, TikTok, YouTube +2"), as on the v2 pledge card. Drawn by the
- * system from the tokens; truncates instead of wrapping.
+ * The selection as a row of small app icons, as many as fit, then "+N".
+ * Icons, not names: the system draws names from tokens but never reports
+ * their width, so names can't be fitted to a row (owner saw them stretched
+ * apart, then cut to a letter, 9 Nov 2026). An icon's size is known.
  */
-export const ActivityNames: React.FC<{
+export const ActivityIcons: React.FC<{
   familyActivitySelection?: string | null;
   style?: StyleProp<ViewStyle>;
   maxItems?: number;
   color?: string;
   fontSize?: number;
+  iconSize?: number;
   align?: "leading" | "trailing";
-}> = ({ familyActivitySelection, style, maxItems = 3, color = "#F8F0E6", fontSize = 15, align = "leading" }) => {
+}> = ({ familyActivitySelection, style, maxItems = 6, color = "#F8F0E6", fontSize = 15, iconSize = 22, align = "leading" }) => {
   if (!NativeCaption || !familyActivitySelection) return React.createElement(View, { style });
   return React.createElement(NativeCaption, {
     familyActivitySelection,
@@ -172,9 +176,11 @@ export const ActivityNames: React.FC<{
     tracking: 0,
     color,
     maxItems,
-    fontName: "Inter-Regular",
+    fontName: "Inter-Medium",
     uppercase: false,
     align,
+    iconsOnly: true,
+    iconSize,
     style,
   });
 };

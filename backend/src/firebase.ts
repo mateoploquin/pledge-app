@@ -48,6 +48,8 @@ export type UserRecord = {
   email?: string;
   displayName?: string;
   stripeCustomerId?: string;
+  /** The live-mode customer; `stripeCustomerId` is the sandbox one. */
+  stripeCustomerIdLive?: string;
   pledgeValue?: number;
   timeValue?: number;
   durationDays?: number;

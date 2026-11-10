@@ -1,50 +1,47 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View, Text, StatusBar } from "react-native";
+import { StyleSheet, View, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
-import { Line } from "../../components/ink/line";
+import { Dissolve, Line } from "../../components/ink/line";
 import SocialSignInButtons from "../../components/buttons/social-sign-in-buttons";
 import Backdrop from "../../components/ink/backdrop";
 import Lockup from "../../components/ink/lockup";
 import Caption from "../../components/ink/caption";
-import PressableScale from "../../components/buttons/pressable-scale";
-import { signInWithApple, SignInCancelled } from "../../services/socialAuth";
+import PillButton from "../../components/ink/pill-button";
+import { loadPledges } from "../../services/pledges";
 import { track } from "../../services/analytics";
-import { color, fonts, spacing } from "../../theme/tokens";
+import { color, spacing } from "../../theme/tokens";
+
+/** Starting fresh, or coming back to an account. */
+type OpenerState = "start" | "returning";
 
 /**
  * The way into Pledge (v2 "last light", Paper "A1 Opener"): the sun on the
- * horizon, "Reclaim your life." and the sign-in buttons. Signing in goes
- * straight to the first pledge step; the welcome and the deal that used to
- * play here were removed (owner, 10 Nov 2026). The `initial` prop of the old
- * Login/Register routes is ignored.
+ * horizon, "Reclaim your life." and one "Start". No account is asked for
+ * here; the pledge steps ask for one just before the card (owner, 10 Nov
+ * 2026). "I already have an account" shows Apple and Google for people
+ * coming back on a new phone or after signing out. The `initial` prop of the
+ * old Login/Register routes is ignored.
  */
 const Onboarding: React.FC<{ initial?: string }> = () => {
   const navigation = useNavigation<NavigationProp<any>>();
   const insets = useSafeAreaInsets();
-  const [busy, setBusy] = useState(false);
+  const [state, setState] = useState<OpenerState>("start");
 
   useEffect(() => {
-    track("opener_state_viewed", { state: "signin" });
-  }, []);
+    track("opener_state_viewed", { state });
+  }, [state]);
 
-  const signedIn = () => navigation.navigate("Instructions");
+  const start = () => {
+    track("opener_started");
+    navigation.navigate("Instructions");
+  };
 
-  /** "I already have an account": Apple signs returning users in the same way. */
-  const signInAgain = async () => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await signInWithApple();
-      track("sign_in_completed", { method: "apple", from: "returning" });
-      signedIn();
-    } catch (error: any) {
-      if (!(error instanceof SignInCancelled)) {
-        track("sign_in_failed", { method: "apple", reason: error?.code ?? "error" });
-      }
-    } finally {
-      setBusy(false);
-    }
+  /** Back in: pledges still on this phone → Home; otherwise make one. */
+  const signedIn = async () => {
+    const pledges = await loadPledges().catch(() => []);
+    if (pledges.length > 0) navigation.reset({ index: 0, routes: [{ name: "Home" }] });
+    else navigation.navigate("Instructions");
   };
 
   return (
@@ -62,12 +59,19 @@ const Onboarding: React.FC<{ initial?: string }> = () => {
 
         <View style={styles.block}>
           <Line size="hero" text={"Reclaim\nyour life."} />
-          <View style={styles.actions}>
-            <SocialSignInButtons tone="dark" onSignedIn={signedIn} />
-            <PressableScale onPress={signInAgain} style={styles.secondary} haptic="tap" disabled={busy}>
-              <Text style={styles.secondaryText}>I already have an account</Text>
-            </PressableScale>
-          </View>
+          <Dissolve id={state} style={styles.actions}>
+            {state === "start" ? (
+              <>
+                <PillButton text="Start" onPress={start} />
+                <PillButton text="I already have an account" tone="quiet" onPress={() => setState("returning")} />
+              </>
+            ) : (
+              <>
+                <SocialSignInButtons tone="dark" onSignedIn={signedIn} />
+                <PillButton text="Back" tone="quiet" onPress={() => setState("start")} />
+              </>
+            )}
+          </Dissolve>
         </View>
       </View>
     </View>
@@ -83,8 +87,6 @@ const styles = StyleSheet.create({
   // home indicator (Paper "A1").
   block: { flex: 1, justifyContent: "flex-end" },
   actions: { marginTop: 28, gap: 4, alignItems: "stretch" },
-  secondary: { minHeight: 48, alignItems: "center", justifyContent: "center" },
-  secondaryText: { fontFamily: fonts.uiMedium, fontSize: 16, lineHeight: 20, color: color.text },
 });
 
 export default Onboarding;

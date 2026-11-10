@@ -156,8 +156,10 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
   in the new style.
 - Screen Time panels drawn by the report extension use Inter (bundled in
   `targets/ReportExtension`), never the system or Instrument Serif fonts.
-  Pledge detail names its apps in a native small-caps caption
-  (`ActivityCaption`, top right), as Paper D1 does.
+  The pledge card and pledge detail's "Apps" row show the apps as small
+  native icons, as many as fit, then "+N" (`ActivityIcons`). Not names: the
+  system draws names from tokens but never reports their width, so a row of
+  names either stretches apart or cuts to one letter (owner, 9 Nov 2026).
 - Horizontal lists of chosen apps scroll; they never wrap into a wall.
 
 ## Components (`src/components/ink/`, `src/components/buttons/`)

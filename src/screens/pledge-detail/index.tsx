@@ -13,7 +13,7 @@ import { BREAK_MINUTES, BREAK_PRICE } from "../home/home.constants";
 import { usePledgeDetail } from "./use-pledge-detail";
 import { CURRENCY_SYMBOL } from "../../config";
 import { TopApps, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
-import { ActivityNames } from "../../../modules/pledge-activity-labels";
+import { ActivityIcons } from "../../../modules/pledge-activity-labels";
 import { pledgeEndsAt } from "../../services/pledges";
 import { color, fonts, glass, type } from "../../theme/tokens";
 import { track } from "../../services/analytics";
@@ -160,10 +160,10 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
             </>
           )}
           <View style={styles.rows}>
-            {/* Which apps, as plain names (the top caption was removed, owner 9 Nov 2026). */}
+            {/* Which apps, as small icons (the top caption was removed, owner 9 Nov 2026). */}
             <View style={styles.row}>
               <Text style={styles.label}>Apps</Text>
-              <ActivityNames
+              <ActivityIcons
                 familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
                 style={styles.appNames}
                 align="trailing"
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   // Paper: the last row has no padding under it; the card's 20 does that.
   lastRow: { paddingBottom: 0 },
   topApps: { marginTop: 4 },
-  appNames: { flex: 1, height: 18, marginLeft: 24 },
+  appNames: { flex: 1, height: 24, marginLeft: 24 },
   label: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 18, color: glass.textSecondary },
   text: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 18, color: color.text },
   strong: { fontFamily: fonts.uiSemibold, fontSize: 15, lineHeight: 18, color: color.text },

@@ -4,6 +4,7 @@ import SetPledge from "./setup/set-pledge";
 import SetTimeLimit from "./setup/set-time-limit";
 import SetDuration from "./setup/set-duration";
 import SetApps from "./setup/set-apps";
+import SocialSignInButtons from "../../components/buttons/social-sign-in-buttons";
 import ScreenTimeMirror from "./setup/screen-time-mirror";
 import Review, { TermsCheck } from "./setup/review";
 import SetPayment from "./setup/set-up-payment";
@@ -21,6 +22,7 @@ const QUESTION: Record<StepName, string> = {
   duration: "For how long?",
   amount: "What's your word worth?",
   review: "Your word, in full.",
+  signin: "Put your name to it.",
   card: "Put your card down.",
 };
 
@@ -35,14 +37,16 @@ const CONTROL_TOP: Record<StepName, number> = {
   duration: 160,
   amount: 120,
   review: 24,
+  signin: 28,
   card: 28,
 };
 
 /**
  * Making a pledge (v2 Paper group "B"): one question per screen, dissolving
  * to the next, solid ivory buttons (owner, 8 Nov 2026). The first pledge
- * opens with the 7-day mirror. Review shows on every pledge; the card step
- * is skipped when a card is already on file.
+ * opens with the 7-day mirror. Review shows on every pledge; sign-in comes
+ * after it only when nobody is signed in; the card step is skipped when a
+ * card is already on file.
  */
 const Instructions: React.FC = () => {
   const w = usePledgeWizard();
@@ -52,7 +56,15 @@ const Instructions: React.FC = () => {
   const [retryCard, setRetryCard] = useState<(() => void) | null>(null);
 
   const continueLabel =
-    step === "review" ? (w.hasCard ? "Lock it in" : "Add a card to lock it in") : w.isLast ? "Lock it in" : "Continue";
+    step === "review"
+      ? !w.signedIn
+        ? "Sign in to lock it in"
+        : w.hasCard
+          ? "Lock it in"
+          : "Add a card to lock it in"
+      : w.isLast
+        ? "Lock it in"
+        : "Continue";
 
   return (
     <InkScreen
@@ -60,7 +72,10 @@ const Instructions: React.FC = () => {
       backLabel={index > 0 ? "Back" : "Cancel"}
       topRight={<Caption>{`Step ${index + 1} of ${steps.length}`}</Caption>}
       footer={
-        step === "card" ? (
+        step === "signin" ? (
+          // The provider buttons are the step's action; only Back sits here.
+          <PillButton text="Back" tone="quiet" onPress={w.onBack} />
+        ) : step === "card" ? (
           retryCard ? (
             <>
               <PillButton text="Add a card" onPress={retryCard} />
@@ -115,6 +130,8 @@ const Instructions: React.FC = () => {
               durationDays={w.durationDays}
               pledgeValue={w.pledgeValue}
             />
+          ) : step === "signin" ? (
+            w.starting ? null : <SocialSignInButtons tone="dark" onSignedIn={w.onSignedIn} />
           ) : step === "card" ? (
             <SetPayment
               setIsButtonDisabled={w.setIsButtonDisabled}

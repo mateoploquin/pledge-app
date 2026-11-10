@@ -13,17 +13,21 @@ import { haptics } from "../../utils/haptics";
 import { addPledge, hasAcceptedTerms, loadPledges, markTermsAccepted, newPledgeId } from "../../services/pledges";
 import { sendPledgeData } from "../../services/sendPledgeData";
 import { fetchHasCard } from "../../services/stripe-api";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "../../firebaseConfig";
 import { registerDevice } from "../../services/devices";
 import { track } from "../../services/analytics";
 
-export type StepName = "mirror" | "apps" | "limit" | "duration" | "amount" | "review" | "card";
+export type StepName = "mirror" | "apps" | "limit" | "duration" | "amount" | "review" | "signin" | "card";
 
 /**
  * The state of making a pledge: which steps apply, what's been chosen, when
  * Continue is allowed, and starting the pledge. The start order matters:
  * backend, then Screen Time schedule, then local storage, then Home. Steps
  * must mount one at a time, because the mirror and card steps act on mount.
+ * No account is needed until the pledge is about to cost something: the
+ * sign-in step comes after Review, only when nobody is signed in (owner,
+ * 10 Nov 2026).
  */
 export const usePledgeWizard = () => {
   const navigation = useNavigation<any>();
@@ -38,6 +42,10 @@ export const usePledgeWizard = () => {
   // Unknown until checked; while unknown we assume the step is needed.
   const [termsDone, setTermsDone] = useState(false);
   const [hasCard, setHasCard] = useState(false);
+  // "ready" once someone is signed in and we know whether they have a card.
+  // Both land together, so the card step never mounts (and opens Stripe)
+  // for someone who already has one.
+  const [account, setAccount] = useState<"unknown" | "signedOut" | "ready">("unknown");
   // The mirror step is for the first pledge only; after that Home shows the number.
   const [firstPledge, setFirstPledge] = useState(true);
 
@@ -54,9 +62,10 @@ export const usePledgeWizard = () => {
       "amount",
       // Review shows on every pledge; its terms checkbox only until accepted.
       "review",
+      ...(account === "ready" ? [] : (["signin"] as StepName[])),
       ...(hasCard ? [] : (["card"] as StepName[])),
     ],
-    [firstPledge, hasCard]
+    [firstPledge, account, hasCard]
   );
   const [index, setIndex] = useState(0);
   const step = steps[Math.min(index, steps.length - 1)];
@@ -77,16 +86,25 @@ export const usePledgeWizard = () => {
     loadPledges()
       .then((list) => setFirstPledge(list.length === 0))
       .catch(() => {});
-    (async () => {
-      try {
-        const user = auth.currentUser;
-        if (!user) return;
-        setHasCard(await fetchHasCard(await user.getIdToken()));
-      } catch (e) {
-        console.warn("Could not check for a saved card:", e);
-      }
-    })();
+    return onAuthStateChanged(auth, (user) => {
+      if (user) refreshAccount(user);
+      else setAccount("signedOut");
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** Learns whether the signed-in user has a card, then marks the account ready. */
+  const refreshAccount = async (user: User): Promise<boolean> => {
+    let card = false;
+    try {
+      card = await fetchHasCard(await user.getIdToken());
+    } catch (e) {
+      console.warn("Could not check for a saved card:", e);
+    }
+    setHasCard(card);
+    setAccount("ready");
+    return card;
+  };
 
   /** Records the pledge, registers its Screen Time schedule and opens Home. */
   const startPledge = useCallback(async () => {
@@ -137,6 +155,20 @@ export const usePledgeWizard = () => {
     }
   }, [starting, selectionEvent, pledgeValue, timeValue, durationDays, termsAccepted, firstPledge, navigation]);
 
+  /**
+   * Signed in on the sign-in step. With a card on file the pledge starts
+   * now; otherwise the steps drop "signin" and the card step takes its place.
+   */
+  const onSignedIn = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    if (await refreshAccount(user)) {
+      // Signin and card both drop out; stay on Review while it starts.
+      setIndex(steps.indexOf("review"));
+      await startPledge();
+    }
+  };
+
   const isLast = index >= steps.length - 1;
 
   const onContinue = async () => {
@@ -160,6 +192,7 @@ export const usePledgeWizard = () => {
     (step === "apps" && !selectionEvent?.familyActivitySelection) ||
     (step === "amount" && pledgeValue < 1) ||
     (step === "review" && !termsDone && !termsAccepted) ||
+    step === "signin" ||
     (step === "card" && !paymentSetupComplete);
 
   const canLeave = index > 0 || navigation.canGoBack();
@@ -194,5 +227,7 @@ export const usePledgeWizard = () => {
     setIsButtonDisabled,
     termsDone,
     hasCard,
+    signedIn: account === "ready",
+    onSignedIn,
   };
 };

@@ -54,14 +54,17 @@ npx eas-cli@latest build --platform ios --profile production --auto-submit --non
 
 ## Working rules
 
-- Branch `make-device-activity-work` is the live branch. Commit and push
-  there when asked; the owner reviews on GitHub (mateoploquin/pledge-app).
+- `master` is the only working branch (owner, 10 Nov 2026; the old
+  `make-device-activity-work` was merged and deleted). Commit and push to
+  `master` when asked; the owner reviews on GitHub (mateoploquin/pledge-app).
   Commit as the owner: `git -c user.name=mateoploquin -c
   user.email=mateoploquina@gmail.com commit ...`.
 - Node 20: `export PATH="/opt/homebrew/opt/node@20/bin:$PATH"` before any
-  `npx`. This Mac has no Xcode (7 Nov 2026), so iOS builds run on EAS,
-  which is pinned to Xcode 26.6. The dev client comes from the `development`
-  profile.
+  `npx`. This Mac has Xcode 26.6 (10 Nov 2026), the same version EAS is
+  pinned to, with an iPhone 17 Pro simulator: `npx expo run:ios --device
+  "iPhone 17 Pro"` builds the dev client there (Screen Time steps won't
+  work in it). Store and phone builds run on EAS; the phone's dev client
+  comes from the `development` profile.
 - `ios/` is generated (gitignored). Native changes go through
   `npx expo prebuild --platform ios --no-install && (cd ios && pod install)`,
   with `--clean` when a target's structure changes. Never hand-edit `ios/`.

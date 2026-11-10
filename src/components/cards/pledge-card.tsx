@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import PressableScale from "../buttons/pressable-scale";
-import { ActivityNames } from "../../../modules/pledge-activity-labels";
+import { ActivityIcons } from "../../../modules/pledge-activity-labels";
 import { Pledge } from "../../types";
 import { DailyUsage, isOnBreak } from "../../screens/home/home.controller";
 import { CURRENCY_SYMBOL } from "../../config";
@@ -74,8 +74,8 @@ const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
         )}
 
         <View style={[styles.row, styles.bottom]}>
-          {/* Paper C2/C3: the apps as plain names, the stake on the right. */}
-          <ActivityNames
+          {/* The apps as small icons (names can't be fitted), the stake on the right. */}
+          <ActivityIcons
             familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
             style={styles.apps}
           />
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   unit: { fontFamily: fonts.ui, fontSize: 16, lineHeight: 20, letterSpacing: 0, color: glass.textSecondary },
   line: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 22, color: glass.textSecondary },
   small: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 18, color: glass.textSecondary },
-  apps: { flex: 1, height: 20 },
+  apps: { flex: 1, height: 24, marginRight: 12 },
   stake: { fontFamily: fonts.uiSemibold, fontSize: 15, lineHeight: 18, color: color.text },
 });
 

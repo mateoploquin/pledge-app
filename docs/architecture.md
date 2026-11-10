@@ -215,7 +215,7 @@ and app properties; storage falls back to AsyncStorage (no
 - Every event carries `build: dev | release`; filter `release` for real
   numbers.
 - Named events (the `AnalyticsEvent` union) mark funnel steps: opener
-  states, sign-up/in by method, `pledge_step_viewed` per
+  states, `opener_started`, sign-up/in by method, `pledge_step_viewed` per
   wizard step (the steps are one screen, so screen tracking can't see them),
   Screen Time authorization, apps selected, terms, card, pledge started or
   failed, breaks, surrender, completion, forfeit.

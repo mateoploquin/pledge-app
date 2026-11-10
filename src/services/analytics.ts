@@ -22,8 +22,10 @@ posthog.register({ build: __DEV__ ? "dev" : "release" });
 
 /** Every named event, so a typo cannot start a new event in PostHog. */
 export type AnalyticsEvent =
-  // Opener: film, sign-up / sign-in, the deal told after sign-in.
+  // Opener ("Start" or "I already have an account") and sign-in, which the
+  // pledge steps ask for just before the card.
   | "opener_state_viewed"
+  | "opener_started"
   | "sign_up_completed"
   | "sign_in_completed"
   | "sign_in_failed"

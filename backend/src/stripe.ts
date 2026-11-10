@@ -19,11 +19,24 @@ export const CURRENCY = (process.env.PLEDGE_CURRENCY ?? "usd").toLowerCase();
 export const EPHEMERAL_KEY_API_VERSION =
   process.env.STRIPE_EPHEMERAL_API_VERSION ?? "2024-06-20";
 
+/**
+ * Sandbox and live Stripe are separate worlds: a customer made with test keys
+ * doesn't exist in live mode. The mode follows the secret key, and each mode
+ * keeps its own customer id on the user, so switching keys never points a
+ * user at a customer the current mode can't see.
+ */
+export const STRIPE_LIVE = /^(sk|rk)_live_/.test(process.env.STRIPE_SECRET_KEY ?? "");
+
+export function customerIdOf(user?: UserRecord | null): string | undefined {
+  return STRIPE_LIVE ? user?.stripeCustomerIdLive : user?.stripeCustomerId;
+}
+
 export async function ensureCustomer(
   decoded: DecodedIdToken,
   user?: UserRecord
 ): Promise<string> {
-  if (user?.stripeCustomerId) return user.stripeCustomerId;
+  const existing = customerIdOf(user);
+  if (existing) return existing;
 
   const customer = await stripe().customers.create(
     {
@@ -33,7 +46,7 @@ export async function ensureCustomer(
     },
     { idempotencyKey: `customer-${decoded.uid}` }
   );
-  await upsertUser(decoded, { stripeCustomerId: customer.id });
+  await upsertUser(decoded, STRIPE_LIVE ? { stripeCustomerIdLive: customer.id } : { stripeCustomerId: customer.id });
   return customer.id;
 }
 
@@ -89,13 +102,13 @@ export async function chargePledge(
   pledge: PledgeRecord,
   mode: { status: "surrendered" | "forfeited"; reason?: string } = { status: "surrendered" }
 ): Promise<ChargeOutcome> {
-  if (!user.stripeCustomerId) {
+  if (!customerIdOf(user)) {
     throw Object.assign(new Error("No payment method on file"), { status: 400 });
   }
   if (pledge.status === "completed") {
     throw Object.assign(new Error("This pledge was already completed"), { status: 400 });
   }
-  const paymentMethod = await latestPaymentMethod(user.stripeCustomerId);
+  const paymentMethod = await latestPaymentMethod(customerIdOf(user)!);
   if (!paymentMethod) {
     throw Object.assign(new Error("No saved card found"), { status: 400 });
   }
@@ -109,7 +122,7 @@ export async function chargePledge(
       {
         amount,
         currency: CURRENCY,
-        customer: user.stripeCustomerId,
+        customer: customerIdOf(user)!,
         payment_method: paymentMethod,
         off_session: true,
         confirm: true,
@@ -164,10 +177,10 @@ export const BREAKS_PER_DAY = 3;
  * given back if the card does not go through.
  */
 export async function chargeBreak(user: UserRecord, pledgeId: string, day: string): Promise<ChargeOutcome & { breaksToday: number }> {
-  if (!user.stripeCustomerId) {
+  if (!customerIdOf(user)) {
     throw Object.assign(new Error("No payment method on file"), { status: 400 });
   }
-  const paymentMethod = await latestPaymentMethod(user.stripeCustomerId);
+  const paymentMethod = await latestPaymentMethod(customerIdOf(user)!);
   if (!paymentMethod) {
     throw Object.assign(new Error("No saved card found"), { status: 400 });
   }
@@ -195,7 +208,7 @@ export async function chargeBreak(user: UserRecord, pledgeId: string, day: strin
       {
         amount: BREAK_AMOUNT_CENTS,
         currency: CURRENCY,
-        customer: user.stripeCustomerId,
+        customer: customerIdOf(user)!,
         payment_method: paymentMethod,
         off_session: true,
         confirm: true,
@@ -241,8 +254,8 @@ export async function chargeBreak(user: UserRecord, pledgeId: string, day: strin
 
 /** Brand and last four digits of the saved card, for Account ("Visa 4242"). */
 export async function cardSummary(user?: UserRecord): Promise<{ brand: string; last4: string } | null> {
-  if (!user?.stripeCustomerId) return null;
-  const id = await latestPaymentMethod(user.stripeCustomerId);
+  if (!customerIdOf(user)) return null;
+  const id = await latestPaymentMethod(customerIdOf(user)!);
   if (!id) return null;
   const method = await stripe().paymentMethods.retrieve(id);
   return method.card ? { brand: method.card.brand, last4: method.card.last4 } : null;
@@ -250,6 +263,6 @@ export async function cardSummary(user?: UserRecord): Promise<{ brand: string; l
 
 /** Whether the customer has any saved card. */
 export async function hasPaymentMethod(user?: UserRecord): Promise<boolean> {
-  if (!user?.stripeCustomerId) return false;
-  return !!(await latestPaymentMethod(user.stripeCustomerId));
+  if (!customerIdOf(user)) return false;
+  return !!(await latestPaymentMethod(customerIdOf(user)!));
 }

@@ -24,15 +24,16 @@ minus a small fee (wording still open, see decisions).
 One screen, no film (v2 "last light", owner 8 Nov 2026): the sun on the
 horizon, the logo lockup and "THE WORLD IS STILL HERE" on top, "RECLAIM
 YOUR LIFE." at the bottom (the subline under it was removed, owner 9 Nov
-2026), two solid ivory buttons, "Continue with Apple" and "Continue with
-Google" (Google re-added 9 Nov 2026, owner), and a quiet "I already have an
-account", which runs the same Apple sign-in. Email sign-in was dropped on
-8 Nov 2026.
+2026), a solid ivory "Start" and a quiet "I already have an account".
 
-Signing in goes straight to the first pledge step. The welcome ("Welcome
-to Pledge.") and the four-beat deal that used to play between sign-in and
-the first question were removed (owner, 10 Nov 2026). "Cancel" on the first
-step comes back to this screen.
+No account is asked for here (owner, 10 Nov 2026): "Start" goes straight
+to the first pledge step, and sign-in waits until just before the card
+(see below). "I already have an account" swaps the two buttons for
+"Continue with Apple" and "Continue with Google" (Google re-added 9 Nov
+2026) and a quiet "Back"; once signed in, pledges still on the phone open
+Home, otherwise the first pledge step. Email sign-in was dropped on 8 Nov
+2026. The welcome and the four-beat deal that used to follow sign-in were
+removed on 10 Nov 2026. "Cancel" on the first step comes back here.
 
 ### Making a pledge (`src/screens/onboarding/instructions.tsx`)
 
@@ -48,10 +49,11 @@ dissolving between steps (v2, owner 8 Nov 2026). Steps, in order:
 | duration | For how long? | 7 / 15 / 30 days | always |
 | amount | What's your word worth? | slider 0–20 with ticks 0/5/10/15/20, presets 5/10/20 | amount ≥ 1 |
 | review (every pledge) | Your word, in full. | Apps (counts, since Apple hides app names), Daily limit ("resets at midnight"), Length (with end date), "Your pledge $X", then "Nothing is charged now. You pay $X only if you unlock early, delete Pledge or turn off Screen Time access." The Terms and Privacy checkbox shows once per device, in the footer over the button | terms accepted (first time only) |
+| signin (only when nobody is signed in) | Put your name to it. | "Continue with Apple" and "Continue with Google"; only a quiet "Back" in the footer. Signing in moves on by itself: to the card step, or straight to starting the pledge when that account already has a card | signed in |
 | card (skipped when a card is on file) | Put your card down. | Stripe PaymentSheet opens immediately; saving the card continues on its own. If it's closed or fails: "Your card wasn't saved." callout, with "Add a card" and "Back" in the footer | card saved |
 
-Review's button reads "Lock it in", or "Add a card to lock it in" when no
-card is on file. Locking in: backend records the
+Review's button reads "Sign in to lock it in" when nobody is signed in,
+"Add a card to lock it in" when no card is on file, otherwise "Lock it in". Locking in: backend records the
 pledge (`POST /pledge`), the Screen Time schedule starts, the pledge is
 saved locally, device is registered for push, success haptic, Home.
 
@@ -175,7 +177,8 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 
 - Opener film is the owner's own montage (`assets/video/montage.mp4`),
   stitched into a seamless loop. Not the earlier generated clip, not stock.
-- No welcome and no deal between sign-in and the first pledge step (owner,
+- No sign-in on the first screen, no welcome and no deal before the first
+  pledge step (owner,
   10 Nov 2026). It used to be told after sign-in as a welcome plus four
   beats (29 Oct 2026, after testers said they did not know what they were
   signing up for); the review step's sentence about when money moves now

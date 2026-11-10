@@ -5,7 +5,7 @@ import { db, devicesRef, firebaseApp, getPledge, getUser, pledgesRef, upsertUser
 import { getAuth } from "firebase-admin/auth";
 import { checkDevices, forfeitActivePledges } from "./forfeit.js";
 import { apnsConfigured } from "./apns.js";
-import { cardSummary, chargeBreak, chargePledge, createPaymentSheetParams, ensureCustomer, hasPaymentMethod, stripe } from "./stripe.js";
+import { cardSummary, chargeBreak, chargePledge, createPaymentSheetParams, customerIdOf, ensureCustomer, hasPaymentMethod, stripe } from "./stripe.js";
 import { privacyHtml, termsHtml } from "./legal.js";
 
 type Env = { Variables: { user: DecodedIdToken } };
@@ -264,9 +264,9 @@ app.delete("/account", async (c) => {
       }
     }
   }
-  if (user?.stripeCustomerId) {
+  if (customerIdOf(user)) {
     try {
-      await stripe().customers.del(user.stripeCustomerId);
+      await stripe().customers.del(customerIdOf(user)!);
     } catch (err: any) {
       if (err?.code !== "resource_missing") throw err;
     }
