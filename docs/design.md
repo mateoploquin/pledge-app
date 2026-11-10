@@ -33,8 +33,8 @@ light, fine grain, edges sinking into dark.
   banding.
 - **Vignette on brand moments.** The edges darken to near-black so the light
   seems to come from inside the frame.
-- **The glow scales with distance from money.** Strongest on the opener, the
-  deal, empty Home, "You kept your word" and the launch screen. On Home with a
+- **The glow scales with distance from money.** Strongest on the opener, empty
+  Home, "You kept your word" and the launch screen. On Home with a
   pledge, the wizard, Review, give-up and Account, the glow is only a soft
   light at the top and bottom edges. Account and its sub-screens (Paper E1–E4)
   add one more: a radial gradient (ellipse 70 % × 30 % of the screen at
@@ -144,12 +144,11 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
   "Back", shown only after the sheet was closed or failed.
 - Nothing sits on the home indicator. Secondary links get 12/16 padding.
 - The opener's content block is pinned to the bottom (sides 24): 40 pt from
-  the screen edge on sign-in, 56 on the welcome and the deal (Paper "A1",
-  "A4", "A5", on a phone with a 34 pt home indicator); the Apple button's
+  the screen edge (Paper "A1", on a phone with a 34 pt home indicator); the Apple button's
   slot is reserved before its availability is known. The
   Apple and Google buttons are one hand-drawn pill (`ProviderButton`, 16 pt
   glyph, 8 gap), not Apple's native button, so they match and always read in
-  English. The line above the opener and welcome headlines is gone (owner,
+  English. The line above the opener headline is gone (owner,
   9 Nov 2026).
 - Rebrand only (owner, 9 Nov 2026): Paper sets the look, never the features.
   Where an artboard drops something the app does or shows (the apps hint, a
@@ -195,9 +194,6 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
   corners 28, at least 344 pt tall with 32 pt under its buttons, in an RN
   `Modal` so its scrim (#0A0605 at 62 %) dims the whole screen, footer included.
 - Within a screen: `Dissolve` only. No slides.
-- The deal beats (`deal-beats.tsx`) only dissolve. Each is a glass card of
-  label/value rows (Inter 15 / Inter SemiBold 22) over the low sun, which
-  sits under the vignette and grain like Paper "A5 Deal".
 - Film: `expo-av` Video, looping, muted, cover; the montage is pre-stitched
   with a 0.5 s crossfade at the seam so the loop has no cut.
 - Haptics (`src/utils/haptics.ts`): `tap` light for ordinary taps, `press`

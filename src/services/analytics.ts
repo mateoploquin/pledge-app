@@ -27,7 +27,6 @@ export type AnalyticsEvent =
   | "sign_up_completed"
   | "sign_in_completed"
   | "sign_in_failed"
-  | "deal_finished"
   // Account.
   | "signed_out"
   | "account_deleted"

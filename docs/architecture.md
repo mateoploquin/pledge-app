@@ -31,7 +31,7 @@ Apple lets us do, how to build, and the traps already walked into.
 ```
 App.tsx                      font load, splash, navigator
 src/navigation/index.tsx     routes + soft crossfade
-src/screens/onboarding/      opener (film + sign-in), instructions (pledge steps), setup/* steps
+src/screens/onboarding/      opener (sign-in), instructions (pledge steps), setup/* steps
 src/screens/home/            Home list; home.controller.ts = Screen Time schedules + shield payload
 src/screens/pledge-detail/   countdown, usage, surrender
 src/screens/select-apps/     Apple's FamilyActivityPicker in a modal
@@ -215,7 +215,7 @@ and app properties; storage falls back to AsyncStorage (no
 - Every event carries `build: dev | release`; filter `release` for real
   numbers.
 - Named events (the `AnalyticsEvent` union) mark funnel steps: opener
-  states, sign-up/in by method, `deal_finished`, `pledge_step_viewed` per
+  states, sign-up/in by method, `pledge_step_viewed` per
   wizard step (the steps are one screen, so screen tracking can't see them),
   Screen Time authorization, apps selected, terms, card, pledge started or
   failed, breaks, surrender, completion, forfeit.

@@ -21,30 +21,18 @@ minus a small fee (wording still open, see decisions).
 
 ### Opener (`src/screens/onboarding/onboarding.tsx`)
 
-One screen, three states, no film (v2 "last light", owner 8 Nov 2026). The
-sun sits on the horizon behind sign-in and the welcome; the deal has a low
-sun.
+One screen, no film (v2 "last light", owner 8 Nov 2026): the sun on the
+horizon, the logo lockup and "THE WORLD IS STILL HERE" on top, "RECLAIM
+YOUR LIFE." at the bottom (the subline under it was removed, owner 9 Nov
+2026), two solid ivory buttons, "Continue with Apple" and "Continue with
+Google" (Google re-added 9 Nov 2026, owner), and a quiet "I already have an
+account", which runs the same Apple sign-in. Email sign-in was dropped on
+8 Nov 2026.
 
-1. **signin**: the logo lockup and "THE WORLD IS STILL HERE" on top;
-   "RECLAIM YOUR LIFE." and "Put money on your screen time. Keep your word
-   and it costs nothing." at the bottom; two solid ivory buttons, "Continue
-   with Apple" and "Continue with Google" (Google re-added 9 Nov 2026,
-   owner); a quiet "I already have an account", which runs the same Apple
-   sign-in. Email sign-in was dropped on 8 Nov 2026.
-2. **welcome** (first time in, when no pledge is stored on the device):
-   "WELCOME TO PLEDGE." on the same sun, then "It helps you use your phone
-   less." fades in after 2.5 s; at 6.5 s it cross-dissolves into the deal: the words dissolve while the deal's low-sun ground fades in over the sun (1.2 s), never through black (owner, 9 Nov 2026).
-3. **deal**: four beats that play on their own, 3.4 s each, one caps line
-   and a small glass card of plain figures per beat (`deal-beats.tsx`):
-   "Pick your apps." (Your apps); "Set a limit. Put money on it." (Daily
-   limit 30 min, Your pledge $10); "Hit it, and they lock." (Locked until
-   midnight); "Unlock early? You lose it." ($10 charged). Beat marks along
-   the bottom. After the last beat the screen darkens (700 ms) and the first
-   question comes up. A tap skips ahead; "Cancel" on the first question goes
-   back, still signed in, and plays the welcome and the deal again.
-
-Signed in with pledges → Instructions straight away (Home when the app
-launches already signed in). Signed in without → the deal, then Instructions.
+Signing in goes straight to the first pledge step. The welcome ("Welcome
+to Pledge.") and the four-beat deal that used to play between sign-in and
+the first question were removed (owner, 10 Nov 2026). "Cancel" on the first
+step comes back to this screen.
 
 ### Making a pledge (`src/screens/onboarding/instructions.tsx`)
 
@@ -187,12 +175,11 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 
 - Opener film is the owner's own montage (`assets/video/montage.mp4`),
   stitched into a seamless loop. Not the earlier generated clip, not stock.
-- The deal is told once, on plain ink after sign-in, as four beats that play
-  on their own (29 Oct 2026, after testers said they did not know what they
-  were signing up for; cut from six to four short lines on 30 Oct 2026; the
-  film behind the beats was dropped the same day as too much noise). Before
-  it, a welcome on the New York film says what Pledge is for, so the how
-  has a why (owner, 31 Oct 2026; at least 8 s). Not as a step, not as a carousel to swipe. Still no
+- No welcome and no deal between sign-in and the first pledge step (owner,
+  10 Nov 2026). It used to be told after sign-in as a welcome plus four
+  beats (29 Oct 2026, after testers said they did not know what they were
+  signing up for); the review step's sentence about when money moves now
+  carries that. Not a carousel to swipe either. Still no
   slide-to-unlock splash, no separate payment page, no progress bar on Home, no failure screen after surrender, no hint
   texts under controls.
 - The whole app is in the ink/cream/serif style (see `docs/design.md`).
