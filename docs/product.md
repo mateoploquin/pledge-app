@@ -21,19 +21,15 @@ minus a small fee (wording still open, see decisions).
 
 ### Opener (`src/screens/onboarding/onboarding.tsx`)
 
-One screen, no film (v2 "last light", owner 8 Nov 2026): the sun on the
-horizon, the logo lockup and "THE WORLD IS STILL HERE" on top, "RECLAIM
-YOUR LIFE." at the bottom (the subline under it was removed, owner 9 Nov
-2026), a solid ivory "Start" and a quiet "I already have an account".
-
-No account is asked for here (owner, 10 Nov 2026): "Start" goes straight
-to the first pledge step, and sign-in waits until just before the card
-(see below). "I already have an account" swaps the two buttons for
-"Continue with Apple" and "Continue with Google" (Google re-added 9 Nov
-2026) and a quiet "Back"; once signed in, pledges still on the phone open
-Home, otherwise the first pledge step. Email sign-in was dropped on 8 Nov
-2026. The welcome and the four-beat deal that used to follow sign-in were
-removed on 10 Nov 2026. "Cancel" on the first step comes back here.
+One screen (owner, 10 Nov 2026): a film loops behind it, muted, under the
+shade, vignette and grain (`assets/video/opener-dive.mp4`, a test clip;
+`OPENER_FILM` in the file switches back to the still sun). The logo lockup
+and "THE WORLD AWAITS" on top, "RECLAIM YOUR LIFE." at the bottom, and "TAP TO
+START" centred at the bottom, apart from it, in spaced caps, fading slowly in and out (still with
+Reduce Motion); a tap anywhere on the screen starts. No button, no sign-in buttons and no "I already have an account":
+the pledge steps ask for an account just before the card, and that step
+signs returning users in. "Cancel" on the first step comes back here. The
+welcome and the four-beat deal that used to follow sign-in were removed.
 
 ### Making a pledge (`src/screens/onboarding/instructions.tsx`)
 
