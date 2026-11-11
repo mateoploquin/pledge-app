@@ -50,7 +50,6 @@ export const usePledgeWizard = () => {
   const [firstPledge, setFirstPledge] = useState(true);
 
   const [paymentSetupComplete, setPaymentSetupComplete] = useState(false);
-  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [starting, setStarting] = useState(false);
 
   const steps = useMemo<StepName[]>(
@@ -124,7 +123,6 @@ export const usePledgeWizard = () => {
     };
     try {
       setStarting(true);
-      setIsButtonDisabled(true);
       const user = auth.currentUser;
       if (!user) throw new Error("You are signed out. Sign in again to start a pledge.");
       await sendPledgeData({ id: pledge.id, pledgeValue, timeValue, durationDays }, await user.getIdToken());
@@ -151,7 +149,6 @@ export const usePledgeWizard = () => {
       );
     } finally {
       setStarting(false);
-      setIsButtonDisabled(false);
     }
   }, [starting, selectionEvent, pledgeValue, timeValue, durationDays, termsAccepted, firstPledge, navigation]);
 
@@ -186,8 +183,10 @@ export const usePledgeWizard = () => {
     }
   };
 
+  // Only the current step decides, so going Back never leaves a step's
+  // button off (a shared "disabled" flag set by the card step used to).
   const continueDisabled =
-    isButtonDisabled ||
+    starting ||
     (step === "mirror" && authorizationStatus !== AuthorizationStatus.approved) ||
     (step === "apps" && !selectionEvent?.familyActivitySelection) ||
     (step === "amount" && pledgeValue < 1) ||
@@ -224,7 +223,6 @@ export const usePledgeWizard = () => {
     setAuthorizationStatus,
     paymentSetupComplete,
     setPaymentSetupComplete,
-    setIsButtonDisabled,
     termsDone,
     hasCard,
     signedIn: account === "ready",

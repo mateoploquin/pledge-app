@@ -9,7 +9,6 @@ import { color, cream, radius } from "../../../theme/tokens";
 import { track } from "../../../services/analytics";
 
 interface SetPaymentProps {
-  setIsButtonDisabled: (disabled: boolean) => void;
   paymentSetupComplete: boolean;
   setPaymentSetupComplete: (complete: boolean) => void;
   pledgeValue: number;
@@ -29,7 +28,6 @@ const describeError = (err: any) =>
 
 /** Step: the card. Opens Stripe's sheet at once; this step has no content of its own. */
 const SetPayment: React.FC<SetPaymentProps> = ({
-  setIsButtonDisabled,
   paymentSetupComplete,
   setPaymentSetupComplete,
   pledgeValue,
@@ -122,10 +120,6 @@ const SetPayment: React.FC<SetPaymentProps> = ({
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    setIsButtonDisabled(!paymentSetupComplete);
-  }, [paymentSetupComplete, setIsButtonDisabled]);
 
   useEffect(() => {
     if (!paymentSetupComplete) handleSetUpPayment();

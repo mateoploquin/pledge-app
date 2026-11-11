@@ -134,7 +134,6 @@ const Instructions: React.FC = () => {
             w.starting ? null : <SocialSignInButtons tone="dark" onSignedIn={w.onSignedIn} />
           ) : step === "card" ? (
             <SetPayment
-              setIsButtonDisabled={w.setIsButtonDisabled}
               paymentSetupComplete={w.paymentSetupComplete}
               setPaymentSetupComplete={w.setPaymentSetupComplete}
               pledgeValue={w.pledgeValue}
