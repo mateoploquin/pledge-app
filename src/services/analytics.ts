@@ -38,6 +38,8 @@ export type AnalyticsEvent =
   | "pledge_cancelled"
   | "screen_time_authorization"
   | "apps_selected"
+  | "purpose_set"
+  | "purpose_skipped"
   | "terms_accepted"
   | "card_added"
   | "card_failed"
@@ -49,7 +51,10 @@ export type AnalyticsEvent =
   | "surrender_opened"
   | "pledge_surrendered"
   | "pledge_completed"
-  | "pledge_forfeited";
+  | "pledge_forfeited"
+  // The coach (never the words, only lengths and moments).
+  | "coach_opened"
+  | "coach_message_sent";
 
 export function track(event: AnalyticsEvent, properties?: Record<string, string | number | boolean | null>) {
   try {

@@ -7,6 +7,7 @@ import { Pledge } from "../../types";
 import {
   DailyUsage,
   UNLOCK_ACTION,
+  COACH_ACTION,
   configureShield,
   reassertBlocks,
   getTodayUsage,
@@ -181,6 +182,8 @@ export const useHome = (navigation: Interfaces.HomeScreenProps["navigation"]) =>
     const fromResponse = (r: Notifications.NotificationResponse | null) => {
       const data = r?.notification.request.content.data as any;
       if (data?.action === UNLOCK_ACTION) openSurrender(data.pledgeId);
+      // The monitor offers the coach at the limit (home.controller).
+      else if (data?.action === COACH_ACTION) navigation.navigate("Coach", { context: data.context ?? "home" });
     };
     const fromUrl = (url: string | null) => {
       if (!url || !/unlock/i.test(url)) return;

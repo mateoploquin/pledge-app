@@ -1,5 +1,5 @@
 import React from "react";
-import { StatusBar, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
+import { KeyboardAvoidingView, Platform, StatusBar, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PressableScale from "../buttons/pressable-scale";
@@ -38,7 +38,8 @@ const InkScreen: React.FC<InkScreenProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   return (
-    <View style={styles.ground}>
+    // The keyboard pushes the footer up, so a step with a text field keeps its button in view.
+    <KeyboardAvoidingView style={styles.ground} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <StatusBar barStyle="light-content" />
       <Backdrop variant={variant}>{backdrop}</Backdrop>
       <View style={[styles.body, { paddingTop: insets.top + 8 }, style]}>
@@ -75,7 +76,7 @@ const InkScreen: React.FC<InkScreenProps> = ({
       ) : (
         <View style={{ height: insets.bottom }} />
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

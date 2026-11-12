@@ -17,6 +17,8 @@ import { CURRENCY_SYMBOL } from "../../config";
 import * as Notifications from "expo-notifications";
 
 export const UNLOCK_ACTION = "unlock";
+/** Notification action that opens the coach (`userInfo.context` says why). */
+export const COACH_ACTION = "coach";
 
 /** Needed so the shield's "Unlock" button can reach the user via a notification. */
 export async function ensureNotificationPermission(): Promise<boolean> {
@@ -81,11 +83,30 @@ export function configureLimitActions(pledge: Pick<Pledge, "id" | "timeValue">) 
   const { activityName, selectionId, shieldId } = pledgeNames(pledge.id);
   for (const event of scheduleEvents(limit)) {
     if (!event.blocks) continue;
+    // Block first. At the limit itself (not the retries past it) the
+    // extension also offers the coach, once a day.
+    const offerCoach = event.name === LIMIT_EVENT_NAME;
     DeviceActivity.configureActions({
       activityName,
       callbackName: "eventDidReachThreshold",
       eventName: event.name,
-      actions: [{ type: "blockSelection", familyActivitySelectionId: selectionId, shieldId }],
+      actions: [
+        { type: "blockSelection", familyActivitySelectionId: selectionId, shieldId },
+        ...(offerCoach
+          ? [
+              {
+                type: "sendNotification",
+                payload: {
+                  title: "That's your limit for today.",
+                  body: "Want to talk it through? Your coach is here.",
+                  interruptionLevel: "active",
+                  identifier: `pledge-coach-${pledge.id}`,
+                  userInfo: { action: COACH_ACTION, context: "limit", pledgeId: pledge.id },
+                },
+              } as any,
+            ]
+          : []),
+      ],
     });
   }
 }

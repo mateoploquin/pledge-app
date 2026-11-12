@@ -4,7 +4,14 @@ How a build gets from this repo to TestFlight and the App Store, and where
 things stand. Keep this file current; it is the one place that says why a
 store build differs from the dev build.
 
-## Current status (10 November 2026)
+## Current status (11 November 2026)
+
+**Not built yet: the purpose step and the coach (v1, text).** Before a
+build that includes them, the owner adds `ANTHROPIC_API_KEY` to Vercel
+production (Sensitive) and deploys the backend; without the key the coach
+answers 503 ("The coach is not set up yet.") right after every new
+pledge. Also new: the heartbeat sends today's minutes, and the privacy
+policy (effective 11 November 2026) says so and names Anthropic.
 
 **Build 29 (1.1.0) is being built for TestFlight** (10 November 2026, EAS
 build 7c5cbc57, submission 6a400e56; confirm once TestFlight shows it
@@ -149,7 +156,9 @@ and that the built app has `Extensions/ReportExtension.appex`.
 - [ ] Paid breaks: decide IAP vs Stripe for "5 minutes for $1" (see
       `docs/product.md`, open decisions), add breaks to the terms and the
       rules step, and update `docs/app-review-notes.md`.
-- [ ] App Privacy questionnaire in App Store Connect.
+- [ ] App Privacy questionnaire in App Store Connect. Include the coach:
+      user content (messages, purpose) and product interaction (daily
+      minutes), linked to the user, not used for tracking.
 - [ ] Screenshots from a real device.
 - [ ] App Review notes pasted from `docs/app-review-notes.md`, with a demo
       account filled in.

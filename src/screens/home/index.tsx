@@ -84,7 +84,12 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
         accessOff ? (
           <PillButton text="Open Settings" tone="glass" onPress={() => Linking.openSettings()} />
         ) : (
-          <PillButton text="New pledge" tone="glass" onPress={() => navigation.navigate("Instructions")} />
+          <>
+            <PillButton text="New pledge" tone="glass" onPress={() => navigation.navigate("Instructions")} />
+            {pledges.length > 0 && (
+              <PillButton text="Talk to your coach" tone="quiet" onPress={() => navigation.navigate("Coach")} />
+            )}
+          </>
         )
       }
     >

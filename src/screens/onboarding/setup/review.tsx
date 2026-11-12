@@ -12,6 +12,7 @@ interface ReviewProps {
   timeValue: number;
   durationDays: number;
   pledgeValue: number;
+  purpose?: string;
 }
 
 /** "3 apps, 1 category": Apple keeps the app names out of Pledge's own views. */
@@ -34,12 +35,13 @@ const endDate = (days: number) =>
  * one sentence of when money moves. The terms checkbox is `TermsCheck`, in
  * the footer over the button.
  */
-const Review: React.FC<ReviewProps> = ({ selection, timeValue, durationDays, pledgeValue }) => {
+const Review: React.FC<ReviewProps> = ({ selection, timeValue, durationDays, pledgeValue, purpose }) => {
   const amount = `${CURRENCY_SYMBOL}${pledgeValue}`;
   const rows: [string, string][] = [
     ["Apps", appsLabel(selection)],
     ["Daily limit", timeValue === 0 ? "Blocked all day" : `${timeValue} min, resets at midnight`],
     ["Length", `${durationDays} days, ends ${endDate(durationDays)}`],
+    ...(purpose?.trim() ? ([["For", purpose.trim()]] as [string, string][]) : []),
   ];
   return (
     <View style={styles.container}>

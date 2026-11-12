@@ -5,6 +5,8 @@ import { Platform } from "react-native";
 import { getAuthorizationStatus, AuthorizationStatus } from "react-native-device-activity";
 import { API_URL } from "../config";
 import { auth } from "../firebaseConfig";
+import { getTodayUsage } from "../screens/home/home.controller";
+import { loadPledges } from "./pledges";
 
 /**
  * Deletion and revocation detection.
@@ -14,6 +16,9 @@ import { auth } from "../firebaseConfig";
  *   daily and forfeits the user's pledges when every device is gone.
  * - A heartbeat reports whether Screen Time access is still granted. Turning
  *   it off while a pledge runs forfeits the pledge, under the terms.
+ * - The heartbeat also carries today's minutes per pledge (5-min steps, from
+ *   the monitor's ticks), so the coach knows how the day went. Per-app totals
+ *   never leave the report extension (Apple).
  */
 
 const BACKGROUND_TASK = "pledge-heartbeat";
@@ -46,6 +51,26 @@ export async function registerDevice(): Promise<void> {
   }
 }
 
+export type UsageReport = { pledgeId: string; date: string; minutes: number; limit: number; limitReached: boolean };
+
+/** The phone's local date, YYYY-MM-DD. */
+const localDate = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** Today's use of each pledge on this phone. Empty if anything fails. */
+async function todayUsage(): Promise<UsageReport[]> {
+  try {
+    const date = localDate();
+    return (await loadPledges()).map((p) => {
+      const u = getTodayUsage(p.id, p.timeValue);
+      return { pledgeId: p.id, date, minutes: u.usedMinutes, limit: p.timeValue, limitReached: u.limitReached };
+    });
+  } catch (e) {
+    console.warn("Could not read today's usage:", e);
+    return [];
+  }
+}
+
 export type HeartbeatResult = { forfeited: string[]; active: string[] } | undefined;
 
 /** Reports in. Returns the ids the backend forfeited, if any. */
@@ -55,7 +80,7 @@ export async function sendHeartbeat(): Promise<HeartbeatResult> {
     if (!headers) return undefined;
     const { data } = await axios.post(
       `${API_URL}/heartbeat`,
-      { screenTimeAuthorized: isScreenTimeAuthorized() },
+      { screenTimeAuthorized: isScreenTimeAuthorized(), usage: await todayUsage() },
       { headers }
     );
     return { forfeited: data?.forfeited ?? [], active: data?.active ?? [] };

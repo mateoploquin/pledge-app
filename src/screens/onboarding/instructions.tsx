@@ -4,6 +4,7 @@ import SetPledge from "./setup/set-pledge";
 import SetTimeLimit from "./setup/set-time-limit";
 import SetDuration from "./setup/set-duration";
 import SetApps from "./setup/set-apps";
+import SetPurpose from "./setup/set-purpose";
 import SocialSignInButtons from "../../components/buttons/social-sign-in-buttons";
 import ScreenTimeMirror from "./setup/screen-time-mirror";
 import Review, { TermsCheck } from "./setup/review";
@@ -18,6 +19,7 @@ import { StepName, usePledgeWizard } from "./use-pledge-wizard";
 const QUESTION: Record<StepName, string> = {
   mirror: "Your last seven days.",
   apps: "Which apps take the most from you?",
+  purpose: "What's this time for?",
   limit: "How much is enough a day?",
   duration: "For how long?",
   amount: "What's your word worth?",
@@ -33,6 +35,7 @@ const QUESTION: Record<StepName, string> = {
 const CONTROL_TOP: Record<StepName, number> = {
   mirror: 28,
   apps: 28,
+  purpose: 40,
   limit: 120,
   duration: 160,
   amount: 120,
@@ -62,9 +65,11 @@ const Instructions: React.FC = () => {
         : w.hasCard
           ? "Lock it in"
           : "Add a card to lock it in"
-      : w.isLast
-        ? "Lock it in"
-        : "Continue";
+      : step === "purpose" && !w.purpose.trim()
+        ? "Skip for now"
+        : w.isLast
+          ? "Lock it in"
+          : "Continue";
 
   return (
     <InkScreen
@@ -117,6 +122,8 @@ const Instructions: React.FC = () => {
               setSelectionEvent={w.setSelectionEvent}
               onSelectionComplete={() => w.setIndex(steps.indexOf("apps") + 1)}
             />
+          ) : step === "purpose" ? (
+            <SetPurpose purpose={w.purpose} setPurpose={w.setPurpose} />
           ) : step === "limit" ? (
             <SetTimeLimit timeValue={w.timeValue} setTimeValue={w.setTimeValue} />
           ) : step === "duration" ? (
@@ -129,6 +136,7 @@ const Instructions: React.FC = () => {
               timeValue={w.timeValue}
               durationDays={w.durationDays}
               pledgeValue={w.pledgeValue}
+              purpose={w.purpose}
             />
           ) : step === "signin" ? (
             w.starting ? null : <SocialSignInButtons tone="dark" onSignedIn={w.onSignedIn} />

@@ -12,6 +12,7 @@ import DetailsScreen from "../screens/details";
 import LoginScreen from "../screens/onboarding/login";
 import RegisterScreen from "../screens/onboarding/register";
 import Instructions from "../screens/onboarding/instructions";
+import Coach from "../screens/coach";
 import SharePledge from "../screens/onboarding/share-pledge";
 import ChallengeCompleted from "../screens/challenge-completed";
 import PledgeDetail from "../screens/pledge-detail";
@@ -92,6 +93,7 @@ const AppNavigator = ({ initialRouteName }) => {
       <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Instructions" component={Instructions} />
+      <Stack.Screen name="Coach" component={Coach} />
       <Stack.Screen name="Details" component={DetailsScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />

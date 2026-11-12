@@ -128,3 +128,40 @@ export async function upsertUser(
   await ref.set(data, { merge: true });
   return { uid: decoded.uid, ...existing, ...data };
 }
+
+/** One day of one pledge's use, as the phone saw it (5-min steps). */
+export type UsageDay = { minutes: number; limit: number; limitReached: boolean; updatedAt: string };
+
+export const usageRef = (uid: string) =>
+  db().collection("users").doc(uid).collection("usage");
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const PLEDGE_ID_RE = /^[a-z0-9]{6,32}$/;
+
+/**
+ * Stores today's minutes per pledge from a heartbeat, in
+ * `users/<uid>/usage/<YYYY-MM-DD>` keyed by pledge id. The coach reads it.
+ * Bad entries are dropped, never rejected: the heartbeat must not fail.
+ */
+export async function saveUsage(uid: string, usage: unknown): Promise<void> {
+  if (!Array.isArray(usage)) return;
+  const byDate = new Map<string, Record<string, UsageDay>>();
+  const now = new Date().toISOString();
+  for (const u of usage.slice(0, 20)) {
+    if (!u || typeof u !== "object") continue;
+    const { pledgeId, date, minutes, limit, limitReached } = u as Record<string, unknown>;
+    if (typeof pledgeId !== "string" || !PLEDGE_ID_RE.test(pledgeId)) continue;
+    if (typeof date !== "string" || !DATE_RE.test(date)) continue;
+    const m = Number(minutes);
+    const l = Number(limit);
+    if (!Number.isFinite(m) || m < 0 || m > 1440 || !Number.isFinite(l)) continue;
+    const day = byDate.get(date) ?? {};
+    day[pledgeId] = { minutes: Math.round(m), limit: Math.round(l), limitReached: limitReached === true, updatedAt: now };
+    byDate.set(date, day);
+  }
+  try {
+    await Promise.all([...byDate].map(([date, day]) => usageRef(uid).doc(date).set(day, { merge: true })));
+  } catch (e) {
+    console.warn("Could not save usage:", e);
+  }
+}

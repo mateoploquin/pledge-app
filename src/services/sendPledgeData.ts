@@ -9,6 +9,8 @@ interface PledgeData {
   pledgeValue: number;
   timeValue: number;
   durationDays: number;
+  /** What the time is for; optional. */
+  purpose?: string;
   /** ISO date; lets a pledge created earlier (migrated) keep its real end date. */
   startedAt?: string;
 }

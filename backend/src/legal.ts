@@ -1,7 +1,7 @@
 // Terms of Service and Privacy Policy served as plain HTML pages.
 // Review the bracketed items with a lawyer before launch.
 
-const EFFECTIVE_DATE = "3 November 2026";
+const EFFECTIVE_DATE = "11 November 2026";
 const CONTACT_EMAIL = "mateoploquina@gmail.com";
 const CHARITY = "Make-A-Wish";
 const JURISDICTION = "Spain";
@@ -88,9 +88,10 @@ export const privacyHtml = page(
 <h2>1. What we collect</h2>
 <ul>
   <li><strong>Account data:</strong> your email address, your name if you provide it or your Apple/Google account shares it, and a user ID. Stored with Google Firebase Authentication.</li>
-  <li><strong>Challenge data:</strong> the pledge amount and daily time limit you chose, when the challenge started, and whether and when a pledge was charged. Stored in Google Cloud Firestore.</li>
+  <li><strong>Challenge data:</strong> the pledge amount and daily time limit you chose, what the time is for if you write it, when the challenge started, and whether and when a pledge was charged. Stored in Google Cloud Firestore.</li>
   <li><strong>Payment data:</strong> your card is saved directly with Stripe. We store only Stripe's customer identifier and the status of charges. We never receive your full card number or security code.</li>
-  <li><strong>Screen Time data stays on your device.</strong> Which apps you selected and how long you use them is processed by Apple's Screen Time framework on the phone. Apple only gives the app opaque tokens, so we cannot see which apps you chose, and no usage data is sent to our servers.</li>
+  <li><strong>Screen Time data stays on your device.</strong> Which apps you selected and how long you use them is processed by Apple's Screen Time framework on the phone. Apple only gives the app opaque tokens, so we cannot see which apps you chose or how long you used any one app. While a pledge runs, the app sends us one number a day per pledge: the minutes used on that pledge's apps together, in 5-minute steps, and whether the limit was reached. Your coach uses it.</li>
+  <li><strong>Coach:</strong> the messages you exchange with your coach and the short notes it keeps about you (such as what your time is for and what helps). Stored in Google Cloud Firestore and sent to Anthropic to write the coach's replies. Deleted with your account.</li>
   <li><strong>In-app activity:</strong> which screens of Pledge you open and which buttons you tap, steps such as signing in, adding a card or starting a pledge, and your device model, iOS version, app version, language and time zone. Linked to your user ID and email. We do not record what you type, and no Screen Time data is included.</li>
   <li><strong>Technical data:</strong> standard server logs (IP address, time, request path) kept briefly by our hosting provider for security.</li>
 </ul>
@@ -103,6 +104,7 @@ export const privacyHtml = page(
   <li><strong>Google Firebase</strong> (authentication and database)</li>
   <li><strong>Stripe</strong> (payments)</li>
   <li><strong>Vercel</strong> (hosting of our server)</li>
+  <li><strong>Anthropic</strong> (writes the coach's replies from your messages, pledges, daily minutes and coach notes; hosted in the United States; does not train its models on this data)</li>
   <li><strong>PostHog</strong> (product analytics for in-app activity, hosted in the United States)</li>
   <li><strong>Apple</strong> (Sign in with Apple, Apple Pay and Screen Time, under Apple's own policies)</li>
 </ul>

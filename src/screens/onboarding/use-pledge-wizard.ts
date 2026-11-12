@@ -18,7 +18,7 @@ import { auth } from "../../firebaseConfig";
 import { registerDevice } from "../../services/devices";
 import { track } from "../../services/analytics";
 
-export type StepName = "mirror" | "apps" | "limit" | "duration" | "amount" | "review" | "signin" | "card";
+export type StepName = "mirror" | "apps" | "purpose" | "limit" | "duration" | "amount" | "review" | "signin" | "card";
 
 /**
  * The state of making a pledge: which steps apply, what's been chosen, when
@@ -36,6 +36,8 @@ export const usePledgeWizard = () => {
   const [timeValue, setTimeValue] = useState(30);
   const [durationDays, setDurationDays] = useState(CHALLENGE_DURATION);
   const [pledgeValue, setPledgeValue] = useState(10);
+  // What the time is for, in their words. Optional; feeds the coach.
+  const [purpose, setPurpose] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatusType>();
 
@@ -56,6 +58,7 @@ export const usePledgeWizard = () => {
     () => [
       ...(firstPledge && isActivityReportAvailable() ? (["mirror"] as StepName[]) : []),
       "apps",
+      "purpose",
       "limit",
       "duration",
       "amount",
@@ -120,12 +123,16 @@ export const usePledgeWizard = () => {
       durationDays,
       startedAt: new Date().toISOString(),
       synced: true,
+      ...(purpose.trim() ? { purpose: purpose.trim() } : {}),
     };
     try {
       setStarting(true);
       const user = auth.currentUser;
       if (!user) throw new Error("You are signed out. Sign in again to start a pledge.");
-      await sendPledgeData({ id: pledge.id, pledgeValue, timeValue, durationDays }, await user.getIdToken());
+      await sendPledgeData(
+        { id: pledge.id, pledgeValue, timeValue, durationDays, purpose: pledge.purpose },
+        await user.getIdToken()
+      );
       await startPledgeMonitoring(pledge, { fresh: true });
       await addPledge(pledge);
       if (termsAccepted) await markTermsAccepted();
@@ -135,9 +142,11 @@ export const usePledgeWizard = () => {
         duration_days: durationDays,
         pledge_value: pledgeValue,
         first_pledge: firstPledge,
+        has_purpose: !!pledge.purpose,
       });
       haptics.success();
-      navigation.reset({ index: 0, routes: [{ name: "Home" }] });
+      // Home, with the coach on top: it reflects the purpose back (owner, 11 Nov 2026).
+      navigation.reset({ index: 1, routes: [{ name: "Home" }, { name: "Coach", params: { context: "pledge_started" } }] });
     } catch (error: any) {
       console.error("Could not start the pledge:", error);
       track("pledge_start_failed", {
@@ -150,7 +159,7 @@ export const usePledgeWizard = () => {
     } finally {
       setStarting(false);
     }
-  }, [starting, selectionEvent, pledgeValue, timeValue, durationDays, termsAccepted, firstPledge, navigation]);
+  }, [starting, selectionEvent, pledgeValue, timeValue, durationDays, purpose, termsAccepted, firstPledge, navigation]);
 
   /**
    * Signed in on the sign-in step. With a card on file the pledge starts
@@ -169,6 +178,8 @@ export const usePledgeWizard = () => {
   const isLast = index >= steps.length - 1;
 
   const onContinue = async () => {
+    // Only the length goes to analytics, never the words.
+    if (step === "purpose") track(purpose.trim() ? "purpose_set" : "purpose_skipped", { length: purpose.trim().length });
     if (isLast) await startPledge();
     else setIndex(index + 1);
   };
@@ -217,6 +228,8 @@ export const usePledgeWizard = () => {
     setDurationDays,
     pledgeValue,
     setPledgeValue,
+    purpose,
+    setPurpose,
     termsAccepted,
     setTermsAccepted,
     authorizationStatus,

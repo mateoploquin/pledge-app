@@ -41,6 +41,7 @@ dissolving between steps (v2, owner 8 Nov 2026). Steps, in order:
 | --- | --- | --- | --- |
 | mirror (first pledge only, and only when the report extension is bundled) | Your last seven days. | Asks Screen Time access immediately, then the system-drawn last 7 days: the bars rise, the social-media part of each breaks off, and it adds up to "Xh back" a week (`SocialCut`, Inter, solar accent) | Screen Time access approved |
 | apps | Which apps take the most from you? | "Choose apps" opens Apple's picker (never on its own, owner 31 Oct 2026); after, the chosen apps, "N apps chosen" and an underlined "Change apps" | at least one app, category or site chosen |
+| purpose (every pledge, owner 11 Nov 2026) | What's this time for? | One free-text field (280 chars), placeholder "Reading to my kids. Finishing the novel. Sleep." The button reads "Skip for now" while it's empty. Shown on Review as "For"; sent with the pledge; only the coach reads it (analytics gets only its length) | always |
 | limit | How much is enough a day? | slider 0–120 min with ticks 0/30/60/90/120, presets 30/60/90; 0 means blocked all day | always |
 | duration | For how long? | 7 / 15 / 30 days | always |
 | amount | What's your word worth? | slider 0–20 with ticks 0/5/10/15/20, presets 5/10/20 | amount ≥ 1 |
@@ -51,7 +52,28 @@ dissolving between steps (v2, owner 8 Nov 2026). Steps, in order:
 Review's button reads "Sign in to lock it in" when nobody is signed in,
 "Add a card to lock it in" when no card is on file, otherwise "Lock it in". Locking in: backend records the
 pledge (`POST /pledge`), the Screen Time schedule starts, the pledge is
-saved locally, device is registered for push, success haptic, Home.
+saved locally, device is registered for push, success haptic, Home with
+the coach opened on top (`context: "pledge_started"`).
+
+### Coach (`src/screens/coach/index.tsx`, v1 text; owner 11 Nov 2026)
+
+Pledge's mission is helping people live closer to their purpose; the coach
+is how each person's purpose gets in. A quiet chat on the ink ground: the
+coach's words sit on the ground, the user's on a solid surface, a text box
+and "Send" in the footer, "YOUR COACH" top right. Opened:
+
+- right after a pledge locks in: it speaks first and reflects the purpose
+  back (or asks what the time is for);
+- from Home, "Talk to your coach" under "New pledge" (only with pledges);
+- from the notification the monitor posts at a pledge's daily limit
+  ("That's your limit for today." / "Want to talk it through? Your coach
+  is here."): it speaks first about that moment.
+
+It knows the pledges (with purpose), the last week of minutes per pledge
+and the conversation, and keeps its own notes per user (profile, purpose,
+notes). It cannot change pledges or touch money, and it never sees which
+apps or per-app times (Apple). 40 messages a day per user. Voice
+(LiveKit) comes later on the same backend.
 
 ### Home (`src/screens/home/index.tsx`)
 
@@ -205,7 +227,8 @@ Legal pages are served by the backend at `/terms` and `/privacy`
   terms (`backend/src/legal.ts`) or the rules step. Revisit before App Review.
 - Shield look: an animation is impossible; options offered were solid ink
   with a cream "p" icon, ember accent, or a still from the montage. No pick.
-- Voice coach: planned (LiveKit full-duplex talker + Claude as the thinker,
+- Voice coach: text v1 shipped 11 Nov 2026 (see Coach above); voice still
+  planned (LiveKit full-duplex talker + Claude as the thinker,
   per-user folder, triggered from the shield and a daily check-in, free,
   English only). Design artifact: https://claude.ai/artifact/5ZYnYWAo4MGoUB1Y7tgEC2. Not started.
 - Dynamic limits from a coach/agent: the phone enforces, so an agent can

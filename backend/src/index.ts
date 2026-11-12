@@ -1,12 +1,13 @@
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import type { DecodedIdToken } from "firebase-admin/auth";
-import { db, devicesRef, firebaseApp, getPledge, getUser, pledgesRef, upsertUser, verifyIdToken, type PledgeRecord } from "./firebase.js";
+import { db, devicesRef, firebaseApp, getPledge, getUser, pledgesRef, saveUsage, upsertUser, verifyIdToken, type PledgeRecord } from "./firebase.js";
 import { getAuth } from "firebase-admin/auth";
 import { checkDevices, forfeitActivePledges } from "./forfeit.js";
 import { apnsConfigured } from "./apns.js";
 import { cardSummary, chargeBreak, chargePledge, createPaymentSheetParams, customerIdOf, ensureCustomer, hasPaymentMethod, stripe } from "./stripe.js";
 import { privacyHtml, termsHtml } from "./legal.js";
+import { COACH_CONTEXTS, CoachLimitError, coachConfigured, coachTurn, listMessages, type CoachContext } from "./coach.js";
 
 type Env = { Variables: { user: DecodedIdToken } };
 
@@ -82,6 +83,10 @@ app.use("/account", async (c, next) => {
   c.set("user", await verifyIdToken(c.req.header("authorization")));
   await next();
 });
+app.use("/coach/*", async (c, next) => {
+  c.set("user", await verifyIdToken(c.req.header("authorization")));
+  await next();
+});
 
 app.post("/auth/firebase/signup", async (c) => {
   const decoded = c.get("user");
@@ -146,6 +151,7 @@ app.post("/heartbeat", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const screenTimeAuthorized = body.screenTimeAuthorized !== false;
   await upsertUser(decoded, { lastHeartbeatAt: new Date().toISOString(), screenTimeAuthorized });
+  await saveUsage(decoded.uid, body.usage);
 
   let forfeited: string[] = [];
   if (!screenTimeAuthorized) {
@@ -168,6 +174,7 @@ app.get("/cron/check-devices", async (c) => {
 });
 
 const ID_RE = /^[a-z0-9]{6,32}$/;
+const PURPOSE_MAX = 280;
 
 /** Creates a pledge. Several may be active at once, one per selection of apps. */
 app.post("/pledge", async (c) => {
@@ -180,6 +187,9 @@ app.post("/pledge", async (c) => {
   const id = typeof body.id === "string" ? body.id : Math.random().toString(36).slice(2, 12);
 
   if (!ID_RE.test(id)) return c.json({ error: "id must be 6-32 lowercase letters or digits" }, 400);
+  // What the time is for, in the user's words; optional, read by the coach.
+  const purpose = typeof body.purpose === "string" ? body.purpose.trim() : "";
+  if (purpose.length > PURPOSE_MAX) return c.json({ error: `purpose must be at most ${PURPOSE_MAX} characters` }, 400);
   if (!Number.isFinite(pledgeValue) || pledgeValue < PLEDGE_MIN || pledgeValue > PLEDGE_MAX) {
     return c.json({ error: `pledgeValue must be between ${PLEDGE_MIN} and ${PLEDGE_MAX}` }, 400);
   }
@@ -206,6 +216,7 @@ app.post("/pledge", async (c) => {
     status: "active" as const,
     createdAt: startedAt.toISOString(),
     endsAt: new Date(startedAt.getTime() + durationDays * 86400000).toISOString(),
+    ...(purpose ? { purpose } : {}),
   };
   await ref.set(record);
   return c.json({ id, ...record });
@@ -322,6 +333,32 @@ app.post("/stripe/break", async (c) => {
   const outcome = await chargeBreak(user, body.pledgeId, day);
   const httpStatus = outcome.status === "succeeded" || outcome.status === "processing" ? 200 : 402;
   return c.json(outcome, httpStatus);
+});
+
+/** The conversation so far, oldest first, without the hidden context notes. */
+app.get("/coach/messages", async (c) => {
+  const messages = await listMessages(c.get("user").uid);
+  return c.json({ messages: messages.filter((m) => !m.hidden) });
+});
+
+/**
+ * One coach turn. `text` may be empty when the app opens the coach at a
+ * moment (`context`), so the coach speaks first. Returns the reply.
+ */
+app.post("/coach/message", async (c) => {
+  if (!coachConfigured()) return c.json({ error: "The coach is not set up yet." }, 503);
+  const body = await c.req.json().catch(() => ({}));
+  const text = typeof body.text === "string" ? body.text : "";
+  const context: CoachContext = COACH_CONTEXTS.includes(body.context) ? body.context : "home";
+  if (!text.trim() && context === "home") return c.json({ error: "text is required" }, 400);
+  try {
+    const reply = await coachTurn(c.get("user").uid, text, context);
+    return c.json({ reply });
+  } catch (e) {
+    if (e instanceof CoachLimitError) return c.json({ error: e.message }, 429);
+    console.error("Coach turn failed:", e);
+    return c.json({ error: "Your coach couldn't answer just now. Try again in a minute." }, 502);
+  }
 });
 
 export default app;
