@@ -83,3 +83,9 @@ npx eas-cli@latest build --platform ios --profile production --auto-submit --non
   touching any screen; don't argue brand principles, build what they pick.
 - Keep docs current. When you change a flow, a rule, a token or the build
   procedure, update the matching file in `docs/` in the same commit.
+- Keep the Paper design file current too (owner, 12 Nov 2026): Paper file
+  "Pledge — Design System", page "04 All screens (v2, what ships)", the "v2 …"
+  artboards. Any change to a screen, its copy or a flow gets drawn there in
+  the same piece of work. Delete frames for screens the app no longer has
+  (owner, 12 Nov 2026: only what ships stays), keep the "Step n of N"
+  counters right, and move artboards apart if one grows into another.

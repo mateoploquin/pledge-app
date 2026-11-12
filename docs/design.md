@@ -14,7 +14,7 @@
 
 The owner picked this after seeing v2 in Paper ("I'm really liking this
 vibe"). Source: their Pinterest board `pledge-20-uxuix`, and the v2 row at the
-top of the "04 All screens + v2" page in the Paper file. Every screen rebuilt
+top of the "04 All screens (v2, what ships)" page in the Paper file. Every screen rebuilt
 from here on follows it.
 
 The feel: a sun at the horizon seen through haze, on film. Big soft fields of
