@@ -248,7 +248,7 @@ struct SocialCutView: View {
   /// The life, said slowly (owner, 18 Nov 2026: "In your life. Pause. Give a
   /// person time to understand what that means. That's 13. Pause. Years on
   /// your phone."): "In your life." alone, then "That's", the number, then
-  /// "Years" in script (capital Y), then "on your phone."
+  /// "Years" big (capital Y), then "on your phone."
   private func lifeWords(_ b: Beat) -> some View {
     let unit = b.unit.prefix(1).uppercased() + b.unit.dropFirst()
     return VStack(alignment: .leading, spacing: 4) {
@@ -273,9 +273,10 @@ struct SocialCutView: View {
             .minimumScaleFactor(0.5)
         }
         reveal(phase >= .years) {
-          // The one handwritten word (Great Vibes).
+          // Inter like the rest of the page (owner, 18 Nov 2026), big.
           Text(unit)
-            .font(.custom("GreatVibes-Regular", size: 92))
+            .font(.custom("Inter-SemiBold", size: 64))
+            .tracking(-1.9)
             .foregroundColor(cream)
             .fixedSize()
         }
@@ -424,17 +425,21 @@ struct Pile {
     return exp(a + (b - a) * e)
   }
 
-  /// Square size and the square drawn in it. The life's square shrinks as
-  /// the view pulls back (z), snapped to pixels, the gap at least a pixel.
+  /// Square size and the square drawn in it. The life's square shrinks
+  /// smoothly as the view pulls back (z); at the end the gap is whole pixels.
   func cell(_ e: Double, z: Double) -> (square: Double, cell: Double) {
     guard beat == last else {
       let s = square(e)
       return (s, s * (1 - 0.16))
     }
+    // Not snapped while pulling back: snapped, the size only had a few steps
+    // to take and the zoom jumped (owner, 18 Nov 2026: "it needs to be
+    // smooth"). The gap widens from the flood's share to whole pixels at the
+    // end, so it lands sharp. Same as Pile in screen-time-mirror.tsx.
     let end = zoomGrid.square
-    let pulled = exp(log(lifeSquare) + (log(end) - log(lifeSquare)) * z)
-    let s = z <= 0 ? lifeSquare : z >= 1 ? end : (pulled / pixel).rounded() * pixel
-    return (s, s - max(1, (s / pixel * 0.16).rounded()) * pixel)
+    let s = z >= 1 ? end : exp(log(lifeSquare) + (log(end) - log(lifeSquare)) * z)
+    let endGap = max(1, (end / pixel * 0.16).rounded()) * pixel / end
+    return (s, s * (1 - (0.16 + (endGap - 0.16) * z)))
   }
 
   /// Square size: each beat's pile fits the box, snapped to pixels, zooming

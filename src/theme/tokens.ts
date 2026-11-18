@@ -36,8 +36,6 @@ export const color = {
 export const fonts = {
   /** Brand moments only: uppercase, never money, forms or terms. */
   display: "NotoSerifDisplay-Regular",
-  /** One handwritten word only: the unit of the mirror's last number, "13 years" (owner, 18 Nov 2026). */
-  script: "GreatVibes-Regular",
   /** Functional titles. */
   title: "Inter-Medium",
   ui: "Inter-Regular",

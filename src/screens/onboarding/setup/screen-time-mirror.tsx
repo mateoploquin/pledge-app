@@ -200,15 +200,12 @@ const styles = StyleSheet.create({
   },
   unit: { fontFamily: fonts.uiSemibold, fontSize: 44, letterSpacing: -0.88 },
   // "13 years": the number, then the one handwritten word on its baseline.
-  // Pulled in top and bottom: the script's tall line box (below) would
-  // otherwise push the lines around it away.
-  lifeRow: { flexDirection: "row", alignItems: "baseline", gap: 14, marginVertical: -24 },
-  // Great Vibes' capitals and loops rise above its ascent and its y falls
-  // well below: a tall line box so nothing is cut.
-  script: {
-    fontFamily: fonts.script,
-    fontSize: 92,
-    lineHeight: 150,
+  lifeRow: { flexDirection: "row", alignItems: "baseline", gap: 12 },
+  // "Years": Inter like the rest of the page (owner, 18 Nov 2026), big.
+  lifeUnit: {
+    fontFamily: fonts.uiSemibold,
+    fontSize: 64,
+    letterSpacing: -1.9,
     color: color.text,
   },
   tail: {
@@ -277,7 +274,7 @@ const STORY = {
    * The life is said slowly, with pauses (owner, 18 Nov 2026: "In your
    * life. Pause. Give a person time to understand what that means. That's
    * 13. Pause. Years on your phone."): "In your life." alone, then
-   * "That's", the number, then "years" in script, then "on your phone."
+   * "That's", the number, then "Years" big, then "on your phone."
    */
   life: { thatAfterMs: 2200, countAfterMs: 600, yearsAfterMs: 1800, yearsInMs: 1100, tailAfterMs: 1200 },
 };
@@ -453,7 +450,7 @@ const AverageStory: React.FC<{ onEnd: () => void }> = ({ onEnd }) => {
                 inMs={STORY.life.yearsInMs}
               >
                 {/* "Years", capital Y (owner, 18 Nov 2026). */}
-                <Text style={styles.script}>
+                <Text style={styles.lifeUnit}>
                   {b.unit.charAt(0).toUpperCase() + b.unit.slice(1)}
                 </Text>
               </Reveal>
@@ -686,11 +683,17 @@ const Pile: React.FC<{
     let s: number;
     let cell: number;
     if (beat === last) {
-      const pulled = Math.exp(
-        Math.log(raw) + (Math.log(zoomSquare) - Math.log(raw)) * z
-      );
-      s = z <= 0 ? raw : z >= 1 ? zoomSquare : Math.round(pulled * px) / px;
-      cell = s - Math.max(1, Math.round(s * px * gap)) / px;
+      // Not snapped while pulling back: snapped, the size only had a few
+      // steps to take and the zoom jumped from one to the next (owner,
+      // 18 Nov 2026: "it needs to be smooth"). The gap widens from the
+      // flood's share to whole pixels at the end, so it lands sharp.
+      s =
+        z >= 1
+          ? zoomSquare
+          : Math.exp(Math.log(raw) + (Math.log(zoomSquare) - Math.log(raw)) * z);
+      const endGap =
+        Math.max(1, Math.round(zoomSquare * px * gap)) / px / zoomSquare;
+      cell = s * (1 - (gap + (endGap - gap) * z));
     } else {
       s = Math.max(Math.round(raw * px) / px, minSquare);
       cell = s * (1 - gap);

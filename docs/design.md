@@ -148,13 +148,10 @@ Native code uses the same values: the shield as RGB 0–255
 ## Type
 
 Two families: **Inter** (Regular, Medium, SemiBold) and **Noto Serif
-Display** Regular, for brand moments in the app only, plus **Great Vibes**
-for one handwritten word: "Years" in the mirror's last line, "13 *Years*",
-92 pt ivory on the number's baseline (owner, 18 Nov 2026: "make it really
-impactful"; `fonts.script`, OFL, bundled in the app and the report
-extension). Nowhere else. The rest of the mirror's story is Inter (owner,
-18 Nov 2026: one font, the time frame and the unit big). Great Vibes' swash
-capitals rise far above its ascent: give it a tall line box (150 at 92 pt). No system font in the app's own UI (the shield can't set
+Display** Regular, for brand moments in the app only. The mirror's story is
+Inter only (owner, 18 Nov 2026: one font, the time frame and the unit big;
+a script "Years" was tried in build 33 and dropped: "the same font as the
+rest of the text in that page"); the report extension bundles Inter alone. No system font in the app's own UI (the shield can't set
 a font; that is Apple's).
 
 | style (`type.*`) | font | size / line | use |

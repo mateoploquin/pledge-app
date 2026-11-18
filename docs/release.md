@@ -6,6 +6,12 @@ store build differs from the dev build.
 
 ## Current status (18 November 2026)
 
+**Build 34 (1.1.0) is being built for TestFlight** (18 November 2026). On
+top of build 33: "Years" in Inter like the rest of the page (Great Vibes
+removed again, app and extension); the life's pull back is smooth (the
+square no longer snaps to whole pixels while zooming, which made it jump
+between a few sizes). Check the zoom on the phone.
+
 **Build 33 (1.1.0) is being built for TestFlight** (18 November 2026, EAS build b3a8c401, submission 13a38951; confirm once TestFlight shows it processed). On
 top of build 32: the seal as a full-bleed poster (the sunset film sets as
 you hold, `seal-idle.mp4`/`seal-set.mp4` from the owner's footage; no ring,
