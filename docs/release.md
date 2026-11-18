@@ -6,7 +6,7 @@ store build differs from the dev build.
 
 ## Current status (18 November 2026)
 
-**Build 33 (1.1.0) is being built for TestFlight** (18 November 2026). On
+**Build 33 (1.1.0) is being built for TestFlight** (18 November 2026, EAS build b3a8c401, submission 13a38951; confirm once TestFlight shows it processed). On
 top of build 32: the seal as a full-bleed poster (the sunset film sets as
 you hold, `seal-idle.mp4`/`seal-set.mp4` from the owner's footage; no ring,
 no logo, Inter only); the mirror's life pulls back until every hour shows,
