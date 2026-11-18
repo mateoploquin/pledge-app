@@ -1,5 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useReducedMotion } from "react-native-reanimated";
+import Reanimated, {
+  Easing as REasing,
+  runOnJS,
+  useAnimatedProps,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from "react-native-reanimated";
 import {
   View,
   Text,
@@ -9,6 +18,8 @@ import {
   Animated,
   Easing,
   useWindowDimensions,
+  PixelRatio,
+  TextInput,
 } from "react-native";
 import {
   requestAuthorization,
@@ -23,7 +34,15 @@ import {
   isActivityReportAvailable,
 } from "../../../../modules/pledge-activity-report";
 import PillButton from "../../../components/ink/pill-button";
-import Svg, { Defs, Pattern, Rect } from "react-native-svg";
+import Svg, {
+  Defs,
+  G,
+  LinearGradient,
+  Mask,
+  Path,
+  Rect,
+  Stop,
+} from "react-native-svg";
 import { color, fonts, type } from "../../../theme/tokens";
 import { track } from "../../../services/analytics";
 
@@ -133,43 +152,38 @@ const styles = StyleSheet.create({
   overview: {
     alignSelf: "stretch",
   },
-  zoomOrigin: { transformOrigin: "left center" },
-  story: { height: SOCIAL_CUT_HEIGHT, alignSelf: "stretch", paddingTop: 16 },
-  beatArea: { flex: 1, gap: 4 },
-  pile: { gap: 10 },
-  pileBox: { height: 128, overflow: "visible" }, // PILE_HEIGHT
-  pileSvg: { position: "absolute", top: 0, left: 0 },
+  story: { height: SOCIAL_CUT_HEIGHT, alignSelf: "stretch", paddingTop: 8 },
   pileCaption: type.caption,
+  // The count is a read-only TextInput so the UI thread can set its text.
+  pileCount: { padding: 0, margin: 0 },
+  pileBox: { height: 160, marginTop: 10, overflow: "visible" }, // PILE_BOX
+  pileSvg: { position: "absolute", top: 0, left: 0 },
+  words: { marginTop: 18, gap: 4 },
+  // Inter only, one shape for every beat (owner, 18 Nov 2026): a sentence
+  // to the user that opens on the time frame, the number with its unit,
+  // "on your phone."
+  // A sentence to the user, the time frame in it bold and bright.
   lead: {
+    fontFamily: fonts.ui,
+    fontSize: 26,
+    lineHeight: 32,
+    letterSpacing: -0.39,
+    color: color.textSecondary,
+  },
+  frame: { fontFamily: fonts.uiSemibold, color: color.text },
+  value: {
+    fontFamily: fonts.uiSemibold,
+    fontSize: 96,
+    lineHeight: 108,
+    letterSpacing: -4.8,
+    color: color.text,
+  },
+  unit: { fontFamily: fonts.uiSemibold, fontSize: 44, letterSpacing: -0.88 },
+  tail: {
     fontFamily: fonts.ui,
     fontSize: 20,
     lineHeight: 26,
     color: color.textSecondary,
-  },
-  value: {
-    fontFamily: fonts.uiSemibold,
-    fontSize: 112,
-    lineHeight: 128,
-    letterSpacing: -5.6,
-    color: color.text,
-  },
-  unit: { fontFamily: fonts.uiMedium, fontSize: 36, letterSpacing: -0.72 },
-  // Great Vibes' capital L rises to 1.15 em, well above its 0.85 em ascent;
-  // a tall line box keeps the top of the L from being cut off.
-  lifeLine: {
-    fontFamily: fonts.display,
-    fontSize: 30,
-    lineHeight: 96,
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
-    color: color.text,
-  },
-  lifeWord: {
-    fontFamily: fonts.script,
-    fontSize: 60,
-    letterSpacing: 0,
-    textTransform: "none",
-    color: color.text,
   },
 });
 
@@ -178,7 +192,7 @@ const styles = StyleSheet.create({
  * over an 80-year life. Keep in sync with averageDayHours and lifeYears in
  * targets/ReportExtension/SocialCut.swift, which draws the same thing.
  */
-const AVERAGE_DAY_HOURS = 3.75;
+export const AVERAGE_DAY_HOURS = 3.75;
 const LIFE_YEARS = 80;
 
 const hoursParts = (h: number) => {
@@ -194,7 +208,7 @@ const daysParts = (h: number) => {
   const d = Math.round(h / 24);
   return { value: d, unit: d === 1 ? "day" : "days" };
 };
-const lifeParts = (h: number) => {
+export const lifeParts = (h: number) => {
   const years = (h / 24) * LIFE_YEARS;
   if (years >= 1) {
     const y = Math.round(years);
@@ -204,12 +218,42 @@ const lifeParts = (h: number) => {
   return { value: m, unit: m === 1 ? "month" : "months" };
 };
 
-/** About 3.2 s a beat, as in SocialCut.swift; the last one stays. */
-const BEAT_MS = 3200;
+/**
+ * The story's timings (owner, 18 Nov 2026: "dots, phrase, number, so that
+ * the human can read it"). Each beat: the last words go, the squares grow,
+ * then the phrase, then the number. Keep in sync with play() in
+ * SocialCut.swift.
+ */
+const STORY = {
+  /** After the screen has slid in, before the first squares. */
+  startDelayMs: 300,
+  outMs: 350,
+  /** Squares growing to each beat: a week, a month, a year, a life. */
+  growMs: [1600, 1700, 1700, 4500],
+  /** After the life has flooded: a pause to take it in, then the squares fade. */
+  lifePauseMs: 900,
+  lifeFadeMs: 1200,
+  inMs: 500,
+  /** From the phrase to the number. */
+  numberAfterMs: 800,
+  /** The number stays this long before the next beat starts. */
+  holdMs: 2600,
+};
+
+/** Gap between squares, as a share of a square. */
+const PILE_GAP = 0.16;
+/** The pile's box above the words; a week is drawn at most 6 squares across. */
+const PILE_BOX = 160;
+const PILE_MIN_SIDE = 6;
+/** The view stops pulling back at this square size, about a year in the box. */
+const PILE_MIN_SQUARE = 4;
+
+type Phase = "out" | "grow" | "lead" | "number";
 
 /**
  * The mirror's story (SocialCut.swift) told about most people, with the
- * average: a week, a month, a year, then a lifetime "OF YOUR Life."
+ * average: a week, a month, a year, then a lifetime "OF YOUR Life." The
+ * squares tell it first, then the words.
  */
 const AverageStory: React.FC = () => {
   const reduceMotion = useReducedMotion();
@@ -218,292 +262,345 @@ const AverageStory: React.FC = () => {
   const month = daysParts(h * 30);
   const year = daysParts(h * 365);
   const life = lifeParts(h);
+  // Told to the user, straight (owner, 18 Nov 2026: "look at the user dead
+  // straight and show him his problem"; readers have no attention to spare).
+  // Every beat opens on its time frame and ends "on your phone." Without
+  // Screen Time data the numbers are the average.
+  const tail = "on your phone.";
   const beats = [
-    { lead: "Most people spend", ...week, tail: "a week on their phone." },
-    { lead: "In a month, that's", ...month, tail: "looking down." },
-    { lead: "In a year, it adds up to", ...year, tail: "" },
-    // No lead on the last beat (owner, 18 Nov 2026): the number speaks.
-    { lead: "", ...life, tail: "" },
+    { frame: "This week", rest: ", you spent", ...week, tail },
+    { frame: "This month", rest: ", you'll spend", ...month, tail },
+    { frame: "This year", rest: ", you'll spend", ...year, tail },
+    { frame: "In your life", rest: ", you'll spend", ...life, tail },
   ];
+  // Hours on the phone at each beat: a week, 30 days, 365 days, a life.
+  const pile = [h * 7, h * 30, h * 365, h * 365 * LIFE_YEARS].map(Math.round);
   const last = beats.length - 1;
+
   const [beat, setBeat] = useState(reduceMotion ? last : 0);
+  const [phase, setPhase] = useState<Phase>(reduceMotion ? "number" : "grow");
+
+  // grow → (squares call onGrown) → lead → number → hold → out → next beat.
   useEffect(() => {
-    if (beat >= last) return;
-    const t = setTimeout(() => setBeat(beat + 1), BEAT_MS);
-    return () => clearTimeout(t);
+    if (reduceMotion) return;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    if (phase === "lead")
+      t = setTimeout(() => setPhase("number"), STORY.numberAfterMs);
+    else if (phase === "number" && beat < last)
+      t = setTimeout(() => setPhase("out"), STORY.holdMs);
+    else if (phase === "out")
+      t = setTimeout(() => {
+        setBeat((b) => b + 1);
+        setPhase("grow");
+      }, STORY.outMs);
+    return () => t && clearTimeout(t);
+  }, [phase, beat, last, reduceMotion]);
+
+  // The life's squares fade away before its words; then the pile makes way,
+  // so the last words sit where the squares were, not under an empty box.
+  const [pileGone, setPileGone] = useState(reduceMotion);
+  const onGrown = useCallback(() => {
+    if (beat === last) setPileGone(true);
+    setPhase("lead");
   }, [beat, last]);
   const b = beats[beat];
-  // Hours on the phone at each beat: a week, 30 days, 365 days, a life.
-  const pile = [h * 7, h * 30, h * 365, h * 365 * LIFE_YEARS];
+  const showLead = phase === "lead" || phase === "number";
+  const showNumber = phase === "number";
+
   return (
     <View style={styles.story}>
-      <ZoomOut id={beat} reduceMotion={reduceMotion} style={styles.beatArea}>
-        {/* A blank lead keeps the number where the other beats put it. */}
-        <Text style={styles.lead}>{b.lead || " "}</Text>
-        {/* One Text, so the unit sits on the number's baseline. */}
-        <Text style={styles.value}>
-          {b.value}
-          <Text style={styles.unit}>{` ${b.unit}`}</Text>
-        </Text>
-        {beat === last ? (
-          // "Life." in manuscript, ivory (owner, 18 Nov 2026); one Text so it shares the baseline.
-          <Text style={styles.lifeLine}>
-            {"Of your "}
-            <Text style={styles.lifeWord}>Life.</Text>
+      {!pileGone && (
+        <Pile
+          counts={pile}
+          beat={beat}
+          duration={STORY.growMs[beat]}
+          life={beat === last}
+          reduceMotion={reduceMotion}
+          onGrown={onGrown}
+        />
+      )}
+      <View style={styles.words}>
+        <Reveal shown={showLead} reduceMotion={reduceMotion}>
+          <Text style={styles.lead}>
+            <Text style={styles.frame}>{b.frame}</Text>
+            {b.rest}
           </Text>
-        ) : b.tail ? (
-          <Text style={styles.lead}>{b.tail}</Text>
-        ) : null}
-      </ZoomOut>
-      <Pile
-        hours={pile[beat]}
-        duration={beat === last ? PILE_LIFE_MS : PILE_MS}
-        reduceMotion={reduceMotion}
-      />
+        </Reveal>
+        <Reveal shown={showNumber} reduceMotion={reduceMotion}>
+          {/* One Text, so the unit sits on the number's baseline. */}
+          <Text style={styles.value}>
+            {b.value}
+            <Text style={styles.unit}>{` ${b.unit}`}</Text>
+          </Text>
+          <Text style={styles.tail}>{b.tail}</Text>
+        </Reveal>
+      </View>
     </View>
   );
 };
 
-/** How long the pile takes to grow to a beat (the life takes longer); as in SocialCut.swift. */
-const PILE_MS = 1700;
-const PILE_LIFE_MS = 5000;
-/** After the life has grown: a beat to take it in, then the squares fade away. */
-const PILE_FADE_DELAY_MS = 900;
-const PILE_FADE_MS = 1400;
-/** Gap between squares, as a share of a square. */
-const PILE_GAP = 0.16;
-/** The pile's box; a week is drawn at most 6 squares across. */
-const PILE_HEIGHT = 128;
-const PILE_MIN_SIDE = 6;
-/** The camera stops pulling back when a square is this small (about a year in the box). */
-const PILE_MIN_SQUARE = 5;
-
 /**
- * The time, drawn (owner, 18 Nov 2026): one square per hour on the phone,
- * in rows of a near-square, filled like a calendar. Through the week, the month and the year the view pulls back to
- * fit the pile in its box. Then it stops, squares still visible, and the
- * life keeps growing past the box, down and off the screen (owner: "the
- * point is that we feel, wow, that's a lot"; a solid block undersold it).
- * Grows in log steps. Drawn as at most two rectangles filled with a
- * one-square pattern, so a hundred thousand squares cost no more than ten.
- * Same drawing as PileShape in SocialCut.swift.
+ * Words that fade up when it's their turn and away when the beat ends. RN
+ * Animated on the native driver, like Dissolve (ink/line.tsx). With Reduce
+ * Motion the words simply show.
  */
-const Pile: React.FC<{
-  hours: number;
-  duration: number;
+const Reveal: React.FC<{
+  shown: boolean;
   reduceMotion: boolean;
-}> = ({ hours, duration, reduceMotion }) => {
-  const [n, setN] = useState(hours);
-  const nRef = useRef(hours);
-  const [width, setWidth] = useState(0);
-  const screen = useWindowDimensions();
-  const life = duration === PILE_LIFE_MS;
-  // Once the life has grown, the squares and their count fade away and the words stay
-  // (owner, 18 Nov 2026: the full screen of squares was a weird place to end).
-  const fade = useRef(new Animated.Value(1)).current;
-  const fadeAway = useCallback(
-    (now: boolean) => {
-      if (now) fade.setValue(0);
-      else
-        Animated.timing(fade, {
-          toValue: 0,
-          delay: PILE_FADE_DELAY_MS,
-          duration: PILE_FADE_MS,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }).start();
-    },
-    [fade]
-  );
-
+  children: React.ReactNode;
+}> = ({ shown, reduceMotion, children }) => {
+  const v = useRef(new Animated.Value(shown ? 1 : 0)).current;
   useEffect(() => {
-    const from = nRef.current;
-    if (reduceMotion || from === hours || from <= 0) {
-      nRef.current = hours;
-      setN(hours);
-      if (life) fadeAway(true);
+    if (reduceMotion) {
+      v.setValue(shown ? 1 : 0);
       return;
     }
-    const t0 = Date.now();
-    let raf = 0;
-    const tick = () => {
-      const x = Math.min((Date.now() - t0) / duration, 1);
-      // The life starts slow and speeds up, so the screen fills over a few
-      // seconds and the count then races on past what can be shown.
-      const e =
-        duration === PILE_LIFE_MS
-          ? x * x
-          : x < 0.5
-          ? 4 * x * x * x
-          : 1 - Math.pow(-2 * x + 2, 3) / 2;
-      const v = Math.exp(
-        Math.log(from) + (Math.log(hours) - Math.log(from)) * e
-      );
-      nRef.current = v;
-      setN(v);
-      if (x < 1) raf = requestAnimationFrame(tick);
-      else if (life) fadeAway(false);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [hours, duration, life, reduceMotion, fadeAway]);
-
-  const whole = Math.max(1, Math.floor(n));
-  const side = Math.max(Math.sqrt(whole), PILE_MIN_SIDE);
-  // Whole points only: at fractional sizes the SVG pattern's tiles drift
-  // against the rectangles' edges and leave slivers of squares at the edges.
-  const s =
-    width > 0
-      ? Math.max(
-          Math.floor(Math.min(width / side, PILE_HEIGHT / side)),
-          PILE_MIN_SQUARE
-        )
-      : 0;
-  // Rows of a near-square, filled left to right like a calendar: only the
-  // last row is ever short (owner, 18 Nov 2026: squares sticking out on the
-  // side looked broken).
-  const cols = Math.ceil(Math.sqrt(whole));
-  const fullRows = Math.floor(whole / cols);
-  const rest = whole - fullRows * cols;
-  const cell = s * (1 - PILE_GAP);
-  const rounded = Math.round(n).toLocaleString("en-US");
-
+    Animated.timing(v, {
+      toValue: shown ? 1 : 0,
+      duration: shown ? STORY.inMs : STORY.outMs,
+      easing: shown ? Easing.out(Easing.cubic) : Easing.in(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [shown, reduceMotion, v]);
+  const translateY = v.interpolate({
+    inputRange: [0, 1],
+    outputRange: [10, 0],
+  });
   return (
-    <Animated.View style={[styles.pile, { opacity: fade }]}>
-      <Text style={styles.pileCaption}>
-        {rounded} {rounded === "1" ? "hour" : "hours"} · one square, one hour
-      </Text>
-      <View
-        style={styles.pileBox}
-        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-      >
-        {/* Big enough to run off the bottom and right of the screen. */}
-        <View style={styles.pileSvg} pointerEvents="none">
-          <Svg width={screen.width} height={screen.height} pointerEvents="none">
-            <Defs>
-              <Pattern
-                id="hour"
-                patternUnits="userSpaceOnUse"
-                x={0}
-                y={0}
-                width={s}
-                height={s}
-              >
-                <Rect
-                  width={cell}
-                  height={cell}
-                  rx={Math.min(cell * 0.2, 3)}
-                  fill={color.solar}
-                />
-              </Pattern>
-            </Defs>
-            {s > 0 && (
-              <>
-                <Rect
-                  x={0}
-                  y={0}
-                  width={cols * s}
-                  height={fullRows * s}
-                  fill="url(#hour)"
-                />
-                {rest > 0 && (
-                  <Rect
-                    x={0}
-                    y={fullRows * s}
-                    width={rest * s}
-                    height={s}
-                    fill="url(#hour)"
-                  />
-                )}
-              </>
-            )}
-          </Svg>
-        </View>
-      </View>
+    <Animated.View style={{ opacity: v, transform: [{ translateY }] }}>
+      {children}
     </Animated.View>
   );
 };
 
-/** Zoom-out timings; keep in sync with play() in SocialCut.swift. */
-const ZOOM = { outMs: 450, inMs: 800, from: 1.3, to: 0.7, drift: 0.95 };
+/**
+ * Where the squares are, as row lengths. Each beat's pile is laid out in
+ * rows of `cols[k]` squares (a near-square); the beat before it is a block
+ * in its top-left corner, and the new squares fill the free cells row by
+ * row. Every row is always a run from the left edge, so a row is one line,
+ * and a square never moves once placed (owner, 18 Nov 2026: flawless).
+ * Same function as pileRows in SocialCut.swift.
+ */
+export const pileRows = (
+  counts: number[],
+  cols: number[],
+  k: number,
+  n: number,
+  maxRows: number
+): number[] => {
+  "worklet";
+  const rows: number[] = [];
+  // The block left by beat k - 1: rows of cols[k - 1], the last one short.
+  if (k > 0) {
+    let left = counts[k - 1];
+    for (let y = 0; left > 0 && y < maxRows; y++) {
+      rows.push(Math.min(left, cols[k - 1]));
+      left -= cols[k - 1];
+    }
+  }
+  let add = Math.max(0, Math.floor(n) - (k > 0 ? counts[k - 1] : 0));
+  for (let y = 0; add > 0 && y < maxRows; y++) {
+    const have = rows[y] ?? 0;
+    const take = Math.min(cols[k] - have, add);
+    rows[y] = have + take;
+    add -= take;
+  }
+  return rows;
+};
 
 /**
- * The story pulls back like a camera (owner, 18 Nov 2026: "keep zooming
- * out"): each beat drifts smaller while it's read, then shrinks away as the
- * next one arrives from bigger, a week, a month, a year, a life. Scaled from
- * the left edge, where the text starts. The first beat is visible from the
- * first frame (see Dissolve in ink/line.tsx for why); Reduce Motion cuts.
+ * The time, drawn (owner, 18 Nov 2026): one ivory square per hour on the
+ * phone. A beat's squares fill in around the last beat's, row by row, while
+ * the view pulls back to fit them in the box. At 4 pt it stops pulling back
+ * and the life floods down past the box, over where the words were, fading
+ * before the bottom ("we feel, wow, that's a lot"); then the squares fade
+ * away and the words come. Square sizes snap to the screen's pixels. Drawn
+ * as one dashed line per row, only the rows on screen. Same drawing as
+ * PileShape in SocialCut.swift.
  */
-const ZoomOut: React.FC<{
-  id: number;
+const AnimatedPath = Reanimated.createAnimatedComponent(Path);
+const AnimatedCount = Reanimated.createAnimatedComponent(TextInput);
+
+const Pile: React.FC<{
+  counts: number[];
+  beat: number;
+  duration: number;
+  life: boolean;
   reduceMotion: boolean;
-  style?: any;
-  children: React.ReactNode;
-}> = ({ id, reduceMotion, style, children }) => {
-  const scale = useRef(new Animated.Value(1)).current;
-  const opacity = useRef(new Animated.Value(1)).current;
-  const [shown, setShown] = useState(id);
-  // The outgoing beat stays on screen, frozen, while it shrinks away.
-  const content = useRef(children);
-  if (shown === id) content.current = children;
+  onGrown: () => void;
+}> = ({ counts, beat, duration, life, reduceMotion, onGrown }) => {
+  const [width, setWidth] = useState(0);
+  const screen = useWindowDimensions();
+  const fade = useRef(new Animated.Value(reduceMotion && life ? 0 : 1)).current;
+  // How far this beat's growth has got, 0 to 1. Animated on the UI thread
+  // (Reanimated), and the squares are drawn there too: driven from JS, the
+  // updates reached the screen in bursts and the count looked stuck, then
+  // jumped (owner, 18 Nov 2026: flawless).
+  const e = useSharedValue(reduceMotion ? 1 : 0);
 
-  const drift = useCallback(
-    () =>
-      Animated.timing(scale, {
-        toValue: ZOOM.drift,
-        duration: BEAT_MS,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }),
-    [scale]
-  );
-
-  useEffect(() => {
-    if (!reduceMotion) drift().start();
-  }, [drift, reduceMotion]);
-
-  useEffect(() => {
-    if (id === shown) return;
-    if (reduceMotion) {
-      setShown(id);
+  const finish = useCallback(() => {
+    if (!life) {
+      onGrown();
       return;
     }
-    let stale = false;
-    const out = {
-      duration: ZOOM.outMs,
-      easing: Easing.in(Easing.quad),
+    Animated.timing(fade, {
+      toValue: 0,
+      delay: STORY.lifePauseMs,
+      duration: STORY.lifeFadeMs,
+      easing: Easing.inOut(Easing.quad),
       useNativeDriver: true,
-    };
-    Animated.parallel([
-      Animated.timing(scale, { toValue: ZOOM.to, ...out }),
-      Animated.timing(opacity, { toValue: 0, ...out }),
-    ]).start(() => {
-      if (stale) return;
-      setShown(id);
-      scale.setValue(ZOOM.from);
-      const into = {
-        duration: ZOOM.inMs,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      };
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(scale, { toValue: 1, ...into }),
-          Animated.timing(opacity, { toValue: 1, ...into }),
-        ]),
-        drift(),
-      ]).start();
+    }).start(() => onGrown());
+  }, [life, onGrown, fade]);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    e.value = 0;
+    // The week's squares come one by one at a steady beat (an eased count
+    // lands most of them in one lump in the middle). The life starts slow
+    // and speeds up, so the screen fills over a few seconds and the count
+    // then races on. The others grow in log steps, eased.
+    const easing =
+      beat === 0
+        ? REasing.linear
+        : life
+        ? REasing.in(REasing.quad)
+        : REasing.inOut(REasing.cubic);
+    const grow = withTiming(1, { duration, easing }, (done) => {
+      if (done) runOnJS(finish)();
     });
-    return () => {
-      stale = true;
+    // The first beat waits for the screen to finish sliding in.
+    e.value = beat === 0 ? withDelay(STORY.startDelayMs + 400, grow) : grow;
+  }, [beat, duration, life, reduceMotion, finish, e]);
+
+  const px = PixelRatio.get();
+  const snap = (v: number) =>
+    Math.max(Math.round(v * px) / px, PILE_MIN_SQUARE);
+  // Each beat's square size: its pile, a near-square, fits the box, at least
+  // 6 squares across.
+  const near = counts.map((c) => Math.ceil(Math.sqrt(c)));
+  const fits = near.map((c, k) =>
+    width > 0
+      ? Math.min(
+          width / Math.max(c, PILE_MIN_SIDE),
+          PILE_BOX / Math.max(Math.ceil(counts[k] / c), PILE_MIN_SIDE)
+        )
+      : 0
+  );
+  // The life keeps the year's square size (it stops zooming there) and its
+  // rows span exactly the content's width, so the flood ends flush on both
+  // sides (owner, 18 Nov 2026: a gap opened on the right as squares shrank).
+  const last = counts.length - 1;
+  const maxCols = width > 0 ? Math.floor(width / snap(fits[last - 1])) : 1;
+  const lifeSquare = width > 0 ? width / maxCols : 0;
+  const cols = near.map((c) => Math.min(c, maxCols));
+  const sizes = fits.map((f, k) => (k === last ? lifeSquare : f));
+  const floodH = SOCIAL_CUT_HEIGHT;
+  const screenW = screen.width;
+  const minSquare = PILE_MIN_SQUARE;
+  const gap = PILE_GAP;
+
+  const hoursAt = (t: number) => {
+    "worklet";
+    // Exact at the end (exp/log can land a hair under, 1,368 for 1,369).
+    if (t >= 1) return counts[beat];
+    if (beat === 0) return counts[0] * t;
+    const a = Math.log(counts[beat - 1]);
+    return Math.exp(a + (Math.log(counts[beat]) - a) * t);
+  };
+
+  const pathProps = useAnimatedProps(() => {
+    const t = e.value;
+    if (width <= 0) return { d: "", strokeWidth: 0, strokeDasharray: [1, 1] };
+    const raw =
+      beat === 0 || beat === last
+        ? sizes[beat]
+        : Math.exp(
+            Math.log(sizes[beat - 1]) +
+              (Math.log(sizes[beat]) - Math.log(sizes[beat - 1])) * t
+          );
+    // Square sizes snap to the screen's pixels so edges stay sharp.
+    const s =
+      beat === last ? raw : Math.max(Math.round(raw * px) / px, minSquare);
+    const cell = s * (1 - gap);
+    const visibleCols = Math.ceil(screenW / s);
+    const rows = pileRows(
+      counts,
+      cols,
+      beat,
+      hoursAt(t),
+      Math.ceil(floodH / s)
+    );
+    // Each row of squares is one dashed line, a dash per square: the dashes
+    // start exactly where the row starts, so no square is ever cut.
+    let d = "";
+    for (let y = 0; y < rows.length; y++) {
+      const count = Math.min(rows[y], visibleCols);
+      if (count > 0) d += `M0 ${y * s + cell / 2}H${count * s - (s - cell)}`;
+    }
+    return {
+      d: d || "M0 0",
+      strokeWidth: d ? cell : 0,
+      strokeDasharray: [cell, s - cell],
     };
-  }, [id, shown, reduceMotion, scale, opacity, drift]);
+  });
+
+  const countProps = useAnimatedProps(() => {
+    const n = Math.floor(hoursAt(e.value));
+    const digits = String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return {
+      text: `${digits} ${n === 1 ? "HOUR" : "HOURS"} · ONE SQUARE, ONE HOUR`,
+    } as any;
+  });
+
+  // Hidden until the first square.
+  const countStyle = useAnimatedStyle(() => ({
+    opacity: hoursAt(e.value) >= 1 ? 1 : 0,
+  }));
 
   return (
-    <Animated.View
-      style={[style, styles.zoomOrigin, { opacity, transform: [{ scale }] }]}
-    >
-      <React.Fragment key={shown}>{content.current}</React.Fragment>
+    <Animated.View style={{ opacity: fade }}>
+      <AnimatedCount
+        editable={false}
+        pointerEvents="none"
+        defaultValue=""
+        style={[styles.pileCaption, styles.pileCount, countStyle]}
+        animatedProps={countProps}
+      />
+      <View
+        style={styles.pileBox}
+        onLayout={(ev) => setWidth(ev.nativeEvent.layout.width)}
+      >
+        <View style={styles.pileSvg} pointerEvents="none">
+          <Svg width={screen.width} height={floodH}>
+            <Defs>
+              <LinearGradient id="floodFade" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0.55" stopColor="#fff" stopOpacity={1} />
+                <Stop offset="0.95" stopColor="#fff" stopOpacity={0} />
+              </LinearGradient>
+              <Mask
+                id="flood"
+                maskUnits="userSpaceOnUse"
+                x={0}
+                y={0}
+                width={screen.width}
+                height={floodH}
+              >
+                <Rect
+                  x={0}
+                  y={0}
+                  width={screen.width}
+                  height={floodH}
+                  fill="url(#floodFade)"
+                />
+              </Mask>
+            </Defs>
+            {/* The fade mask only for the life's flood. */}
+            <G mask={life ? "url(#flood)" : undefined}>
+              <AnimatedPath animatedProps={pathProps} stroke={color.text} />
+            </G>
+          </Svg>
+        </View>
+      </View>
     </Animated.View>
   );
 };

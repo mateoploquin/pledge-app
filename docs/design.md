@@ -143,9 +143,9 @@ Native code uses the same values: the shield as RGB 0–255
 ## Type
 
 Two families: **Inter** (Regular, Medium, SemiBold) and **Noto Serif
-Display** Regular, plus **Great Vibes** for one manuscript word, "Life." with a
-big swash L, on the mirror, in ivory like the words around it (owner, 17–18 Nov 2026; `fonts.script`,
-bundled in the app and the report extension, OFL). Nowhere else. No system font in the app's own UI (the shield can't set
+Display** Regular, for brand moments in the app only. The mirror's story is
+Inter only (owner, 18 Nov 2026: one font, the time frame and the unit big);
+the report extension bundles Inter alone. No system font in the app's own UI (the shield can't set
 a font; that is Apple's).
 
 | style (`type.*`) | font | size / line | use |
@@ -232,18 +232,26 @@ a font; that is Apple's).
   corners 28, at least 344 pt tall with 32 pt under its buttons, in an RN
   `Modal` so its scrim (#0A0605 at 62 %) dims the whole screen, footer included.
 - Within a screen: `Dissolve` only. No slides.
-  One exception, the mirror's story (owner, 18 Nov 2026: "keep zooming
-  out"): each beat drifts from 100 % to 95 % while it's read, shrinks to
-  70 % and fades in 450 ms, and the next arrives from 130 % in 800 ms (ease
-  out cubic), scaled from the left edge; a beat every 3.2 s. `ZoomOut` in
-  `screen-time-mirror.tsx` and `play()` in `SocialCut.swift`, same timings.
-  Under it, the pile: one #ED602A square per hour (16 % gap), growing from
-  rows of a near-square filled like a calendar (only the last row short), in log steps over 1.7 s (ease in-out)
-  per beat. The view fits the pile in a 128 pt box (at least 6 squares
-  across) until squares reach 5 pt, then stops; the life grows over 5 s
-  (ease in), past the box and off the screen, then after 0.9 s the pile
-  and its count fade out over 1.4 s. Reduce Motion ends on the words alone.
-  `Pile` in `screen-time-mirror.tsx`, `PileShape` in `SocialCut.swift`.
+  One exception, the mirror's story (owner, 18 Nov 2026: "dots, phrase,
+  number"). Each beat: the words fade out (350 ms), the squares grow, the
+  sentence fades up 10 pt (500 ms, ease out cubic; Inter 26, its time frame
+  SemiBold ivory, the rest #E6D8CC), the number 800 ms later (Inter SemiBold
+  96, unit 44, then "on your phone." Inter 20), then 2.6 s to read. The
+  squares: one ivory square per hour, 16 % gap, square corners, each row
+  one dashed line so no square is ever cut, a square never moves once
+  placed (a beat's squares fill in around the last beat's block, row by
+  row). The week's 26 come one by one, linear, 1.6 s, after the screen has
+  settled; month and year grow in log steps (ease in-out cubic, 1.7 s) while
+  the view pulls back, square sizes snapped to pixels; the life keeps the
+  year's size, rows exactly the content's width, and floods down over the
+  words' place for 4.5 s (ease in), masked to fade from 55 % to 95 % of the
+  story's height; after 0.9 s it fades out over 1.2 s and the last words
+  move up into its place. The growth and the drawing run on the UI thread
+  (Reanimated animated props on an SVG path, the count in a read-only
+  TextInput): driven from JS they reached the screen in bursts. Reduce
+  Motion shows the last words only. `AverageStory`, `Reveal`, `Pile` and
+  `pileRows` in `screen-time-mirror.tsx`; `play()`, `Pile` and `PileShape`
+  in `SocialCut.swift`, same timings.
 - Launch (owner, 17 Nov 2026): the static splash comes to life as a sunset
   (`src/components/ink/launch-sunset.tsx`, mounted over everything in
   `App.tsx`). It starts as an exact copy of `assets/splash.png` (measured:

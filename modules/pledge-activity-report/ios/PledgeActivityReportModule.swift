@@ -29,6 +29,10 @@ final class PledgeActivityReportView: ExpoView {
   /// "recovered" only: the first pledge's start, and every pledge's selection.
   var anchorMs: Double = 0
   var selections: [FamilyActivitySelection] = []
+  /// "timeBack" only: the daily limit being set. Not part of the report's
+  /// identity: the extension reads it from the App Group as it changes, so
+  /// moving the slider never restarts the report.
+  var limitMinutes: Int = -1
 
   private static let appGroup =
     Bundle.main.object(forInfoDictionaryKey: "REACT_NATIVE_DEVICE_ACTIVITY_APP_GROUP") as? String
@@ -73,6 +77,9 @@ final class PledgeActivityReportView: ExpoView {
     d.set(accentColor, forKey: "pledgeReport.accentColor")
     d.set(fontSize, forKey: "pledgeReport.fontSize")
     d.set(maxApps, forKey: "pledgeReport.maxApps")
+    if limitMinutes >= 0 {
+      d.set(limitMinutes, forKey: "pledgeReport.limitMinutes")
+    }
     if context == "recovered" {
       d.set(anchorMs, forKey: "pledgeReport.recovered.anchorMs")
       d.set(try? JSONEncoder().encode(unionOfSelections()), forKey: "pledgeReport.recovered.selection")
@@ -195,6 +202,9 @@ public class PledgeActivityReportModule: Module {
       }
       Prop("familyActivitySelections") { (view: PledgeActivityReportView, value: [String]?) in
         view.setSelections(value)
+      }
+      Prop("limitMinutes") { (view: PledgeActivityReportView, value: Int?) in
+        view.limitMinutes = value ?? -1
       }
       OnViewDidUpdateProps { (view: PledgeActivityReportView) in
         view.render()

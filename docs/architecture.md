@@ -255,6 +255,12 @@ and app properties; storage falls back to AsyncStorage (no
   both the pledged apps and the phone's total. Report views start in their
   final state and only reset for the animation in `onAppear`: a view that
   never animates must still show its numbers.
+- The `timeBack` context (the limit step) needs a value that changes while
+  it's on screen: the daily limit. `limitMinutes` is written to
+  `pledgeReport.limitMinutes` on every prop update but kept out of the
+  render key, so the report isn't restarted; `TimeBackView` reads it in a
+  `TimelineView` ten times a second. App to extension only, as ever: the
+  limit goes in, nothing comes out.
 
 ## Dev loop
 

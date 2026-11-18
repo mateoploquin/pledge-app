@@ -6,7 +6,7 @@ import { Platform, StyleProp, View, ViewStyle } from "react-native";
 export type ReportRange = "today" | "yesterday" | "week";
 
 type NativeProps = {
-  context: "totalActivity" | "topApps" | "overview" | "socialCut" | "recovered";
+  context: "totalActivity" | "topApps" | "overview" | "socialCut" | "recovered" | "timeBack";
   startMs: number;
   endMs: number;
   segment: "hourly" | "daily" | "weekly";
@@ -18,6 +18,7 @@ type NativeProps = {
   maxApps?: number;
   anchorMs?: number;
   familyActivitySelections?: string[];
+  limitMinutes?: number;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -218,6 +219,39 @@ export const TimeRecovered: React.FC<{
     ...interval,
     anchorMs,
     familyActivitySelections: selections,
+    textColor,
+    mutedColor,
+    accentColor,
+    style: [{ height }, style],
+  });
+};
+
+/** Height the extension's TimeBackView lays out in. */
+export const TIME_BACK_HEIGHT = 230;
+
+/**
+ * The limit step: last week's daily time on the chosen apps as squares (one
+ * per 15 minutes), the limit's share dim and the rest lit as time back, then
+ * that time back a day and over a life. Drawn by the system from the user's
+ * real Screen Time; the limit reaches the extension through the App Group as
+ * it changes, so the picture follows the slider without restarting.
+ */
+export const TimeBack: React.FC<{
+  familyActivitySelection?: string | null;
+  limitMinutes: number;
+  textColor?: string;
+  mutedColor?: string;
+  accentColor?: string;
+  style?: StyleProp<ViewStyle>;
+}> = ({ familyActivitySelection, limitMinutes, textColor, mutedColor, accentColor, style }) => {
+  const interval = useMemo(() => rangeToInterval("week"), []);
+  const height = TIME_BACK_HEIGHT;
+  if (!NativeReport) return React.createElement(View, { style: [{ height }, style] });
+  return React.createElement(NativeReport, {
+    context: "timeBack",
+    ...interval,
+    familyActivitySelection,
+    limitMinutes,
     textColor,
     mutedColor,
     accentColor,

@@ -19,12 +19,14 @@ import { StepName, usePledgeWizard } from "./use-pledge-wizard";
 const QUESTION: Record<StepName, string> = {
   // Then the report tells it as a story, a week to a lifetime (owner, 17 Nov 2026).
   mirror: "Let's look at your screen time.",
-  apps: "Which apps take the most from you?",
+  // One story from the mirror to the seal (owner, 18 Nov 2026), told to the
+  // user straight: the time, what it's for, who takes it, how much they get.
+  apps: "Which apps take it from you?",
   // After the mirror it answers the number on it (owner, 17 Nov 2026: the
   // onboarding as a story). Without a mirror, PURPOSE_ALONE.
   purpose: "What would you do with that time back?",
-  limit: "How much is enough a day?",
-  duration: "For how long?",
+  limit: "How much will you give them a day?",
+  duration: "How long will you hold that?",
   amount: "What's your word worth?",
   signin: "Put your name to it.",
   card: "Put your card down.",
@@ -43,7 +45,7 @@ const CONTROL_TOP: Record<StepName, number> = {
   mirror: 40,
   apps: 28,
   purpose: 40,
-  limit: 120,
+  limit: 40,
   duration: 160,
   amount: 120,
   signin: 28,
@@ -139,7 +141,11 @@ const Instructions: React.FC = () => {
               setReason={w.setReason}
             />
           ) : step === "limit" ? (
-            <SetTimeLimit timeValue={w.timeValue} setTimeValue={w.setTimeValue} />
+            <SetTimeLimit
+              timeValue={w.timeValue}
+              setTimeValue={w.setTimeValue}
+              familyActivitySelection={w.selectionEvent?.familyActivitySelection ?? null}
+            />
           ) : step === "duration" ? (
             <SetDuration durationDays={w.durationDays} setDurationDays={w.setDurationDays} />
           ) : step === "amount" ? (

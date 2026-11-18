@@ -11,5 +11,6 @@ struct ReportExtension: DeviceActivityReportExtension {
     OverviewReport { OverviewView(model: $0) }
     SocialCutReport { SocialCutView(model: $0) }
     RecoveredReport { RecoveredView(model: $0) }
+    TimeBackReport { TimeBackView(model: $0) }
   }
 }
