@@ -6,8 +6,8 @@ store build differs from the dev build.
 
 ## Current status (18 November 2026)
 
-**Build 32 (1.1.0) is being built for TestFlight** (18 November 2026; EAS
-ids below once submitted). On top of build 31: the mirror retold as
+**Build 32 (1.1.0) is being built for TestFlight** (18 November 2026, EAS
+build 440743d8, submission c05b2847; confirm once TestFlight shows it processed). On top of build 31: the mirror retold as
 "dots, phrase, number" in Inter only ("**This week**, you spent 36 hours on
 your phone." … "**In your life**, you'll spend 17 years"), ivory squares
 drawn on the UI thread (no stutter, none ever cut, flush to the edges);
