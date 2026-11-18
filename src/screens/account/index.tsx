@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator, Linking } from "react-native";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { AuthorizationStatus, getAuthorizationStatus } from "react-native-device-activity";
-import * as WebBrowser from "expo-web-browser";
 import InkScreen from "../../components/ink/ink-screen";
 import PillButton from "../../components/ink/pill-button";
 import { Line } from "../../components/ink/line";
@@ -34,7 +33,21 @@ import { color, fonts, glass, type } from "../../theme/tokens";
  */
 
 // The contact address the legal pages already publish (backend/src/legal.ts).
-const HELP_URL = "mailto:mateoploquina@gmail.com";
+const HELP_EMAIL = "mateoploquina@gmail.com";
+
+/**
+ * Help opens Mail with a message to us. It used to go through the in-app
+ * browser, which only takes web links, so a mailto: did nothing (testers,
+ * build 32). Without a mail app, the address is shown instead.
+ */
+const openHelp = async () => {
+  const url = `mailto:${HELP_EMAIL}?subject=${encodeURIComponent("Pledge help")}`;
+  try {
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert("Write to us", HELP_EMAIL);
+  }
+};
 
 const day = (iso?: string) =>
   iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
@@ -154,7 +167,7 @@ export const AccountScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
           <Row label="Screen Time access" value={screenTime} />
           <Row label="Terms" onPress={() => openLegal("terms")} />
           <Row label="Privacy" onPress={() => openLegal("privacy")} />
-          <Row label="Help" onPress={() => WebBrowser.openBrowserAsync(HELP_URL).catch(() => {})} />
+          <Row label="Help" onPress={openHelp} />
         </Sheet>
         <View style={styles.fill} />
         {/* E1: 32 from the screen's bottom edge; InkScreen already keeps the home-indicator inset. */}

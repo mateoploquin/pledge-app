@@ -36,6 +36,8 @@ export const color = {
 export const fonts = {
   /** Brand moments only: uppercase, never money, forms or terms. */
   display: "NotoSerifDisplay-Regular",
+  /** One handwritten word only: the unit of the mirror's last number, "13 years" (owner, 18 Nov 2026). */
+  script: "GreatVibes-Regular",
   /** Functional titles. */
   title: "Inter-Medium",
   ui: "Inter-Regular",
@@ -70,20 +72,6 @@ export const radius = {
   glass: 24,
   /** Old name; everything that was a pill is now a control. */
   pill: 12,
-};
-
-/**
- * The liquid glass of the seal's hold ring (owner, 14 Nov 2026, from the
- * owner's reference of smoked glass cards; buttons went solid 17 Nov 2026): a blur, a warm dark smoke, a sheen from
- * the top, a light hairline with a brighter top rim.
- */
-export const liquidGlass = {
-  radius: 18,
-  blur: 28,
-  smoke: "rgba(34,16,12,0.34)",
-  sheen: ["rgba(255,240,228,0.13)", "rgba(255,240,228,0.03)", "rgba(255,240,228,0.00)"] as const,
-  edge: "rgba(255,232,214,0.20)",
-  rimTop: "rgba(255,244,234,0.42)",
 };
 
 /** Laid over film so the words read on any frame. */

@@ -49,6 +49,8 @@ import { track } from "../../../services/analytics";
 interface ScreenTimeMirrorProps {
   authorizationStatus: AuthorizationStatusType;
   setAuthorizationStatus: (status: AuthorizationStatusType) => void;
+  /** The story has told its last number; Continue waits for it (owner, 18 Nov 2026). */
+  onStoryEnd: () => void;
 }
 
 /**
@@ -60,8 +62,26 @@ interface ScreenTimeMirrorProps {
 const ScreenTimeMirror: React.FC<ScreenTimeMirrorProps> = ({
   authorizationStatus,
   setAuthorizationStatus,
+  onStoryEnd,
 }) => {
   const [isRequesting, setIsRequesting] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const drawnBySystem = isActivityReportAvailable() && Device.isDevice;
+  const approvedNow = authorizationStatus === AuthorizationStatus.approved;
+
+  // The system's report can't tell the app when its story ends, so on a
+  // phone Continue opens when it should have: the story's length from now,
+  // plus a second for iOS to start the extension. The app's own story
+  // (AverageStory) says so itself.
+  useEffect(() => {
+    if (!approvedNow || !drawnBySystem) return;
+    if (reduceMotion) {
+      onStoryEnd();
+      return;
+    }
+    const t = setTimeout(onStoryEnd, storyLengthMs() + 1000);
+    return () => clearTimeout(t);
+  }, [approvedNow, drawnBySystem, reduceMotion, onStoryEnd]);
   const asked = useRef(false);
 
   const requestAccess = useCallback(async () => {
@@ -131,7 +151,7 @@ const ScreenTimeMirror: React.FC<ScreenTimeMirrorProps> = ({
   // Where iOS can't draw one (no extension, the simulator), the app draws the
   // average week itself, the same layout the extension uses when Screen Time
   // has no data (owner, 17 Nov 2026: never an empty page).
-  if (!isActivityReportAvailable() || !Device.isDevice) return <AverageStory />;
+  if (!drawnBySystem) return <AverageStory onEnd={onStoryEnd} />;
 
   return (
     <View style={styles.container}>
@@ -179,6 +199,18 @@ const styles = StyleSheet.create({
     color: color.text,
   },
   unit: { fontFamily: fonts.uiSemibold, fontSize: 44, letterSpacing: -0.88 },
+  // "13 years": the number, then the one handwritten word on its baseline.
+  // Pulled in top and bottom: the script's tall line box (below) would
+  // otherwise push the lines around it away.
+  lifeRow: { flexDirection: "row", alignItems: "baseline", gap: 14, marginVertical: -24 },
+  // Great Vibes' capitals and loops rise above its ascent and its y falls
+  // well below: a tall line box so nothing is cut.
+  script: {
+    fontFamily: fonts.script,
+    fontSize: 92,
+    lineHeight: 150,
+    color: color.text,
+  },
   tail: {
     fontFamily: fonts.ui,
     fontSize: 20,
@@ -230,14 +262,45 @@ const STORY = {
   outMs: 350,
   /** Squares growing to each beat: a week, a month, a year, a life. */
   growMs: [1600, 1700, 1700, 4500],
-  /** After the life has flooded: a pause to take it in, then the squares fade. */
-  lifePauseMs: 900,
+  /** Then the view pulls back until every hour of the life is on screen
+   * (owner, 18 Nov 2026: "zoom out and see the magnitude of the dots"). */
+  lifeZoomMs: 2400,
+  /** A pause to take it in, then the squares fade. */
+  lifePauseMs: 1200,
   lifeFadeMs: 1200,
   inMs: 500,
   /** From the phrase to the number. */
   numberAfterMs: 800,
   /** The number stays this long before the next beat starts. */
   holdMs: 2600,
+  /**
+   * The life is said slowly, with pauses (owner, 18 Nov 2026: "In your
+   * life. Pause. Give a person time to understand what that means. That's
+   * 13. Pause. Years on your phone."): "In your life." alone, then
+   * "That's", the number, then "years" in script, then "on your phone."
+   */
+  life: { thatAfterMs: 2200, countAfterMs: 600, yearsAfterMs: 1800, yearsInMs: 1100, tailAfterMs: 1200 },
+};
+
+/**
+ * From the story's start to its last number fully in: the four beats of
+ * STORY, as play() in SocialCut.swift runs them.
+ */
+const storyLengthMs = () => {
+  const s = STORY;
+  const last = s.growMs.length - 1;
+  let ms = s.startDelayMs;
+  s.growMs.forEach((grow, i) => {
+    if (i > 0) ms += s.outMs;
+    ms += grow;
+    if (i === last) ms += s.lifeZoomMs + s.lifePauseMs + s.lifeFadeMs;
+    if (i < last) ms += s.numberAfterMs + s.inMs + s.holdMs;
+    else {
+      const l = s.life;
+      ms += l.thatAfterMs + l.countAfterMs + l.yearsAfterMs + l.tailAfterMs + s.inMs;
+    }
+  });
+  return ms;
 };
 
 /** Gap between squares, as a share of a square. */
@@ -247,15 +310,45 @@ const PILE_BOX = 160;
 const PILE_MIN_SIDE = 6;
 /** The view stops pulling back at this square size, about a year in the box. */
 const PILE_MIN_SQUARE = 4;
+/** The life's whole pile, pulled back, fits this tall under the caption. */
+const PILE_ZOOM_HEIGHT = 400;
 
-type Phase = "out" | "grow" | "lead" | "number";
+/**
+ * The life's grid: its columns and its square once pulled back so all `n`
+ * squares fit `width` × PILE_ZOOM_HEIGHT. The square is whole pixels, as
+ * big as fits, and never under 1 pt (2 px), so the squares stay squares and
+ * don't run into a solid block. No pulling back when even the flood's
+ * square fits (`flood`, its columns `floodCols`). Same as Pile.zoomGrid in
+ * SocialCut.swift.
+ */
+export const zoomGrid = (
+  n: number,
+  width: number,
+  px: number,
+  flood: number,
+  floodCols: number
+) => {
+  const w = Math.round(width * px);
+  const minP = Math.max(2, Math.round(px));
+  let best = minP;
+  for (let p = minP; p < flood * px; p++) {
+    const c = Math.floor(w / p);
+    if (Math.ceil(n / c) * p <= PILE_ZOOM_HEIGHT * px) best = p;
+  }
+  if (best >= flood * px) return { cols: floodCols, square: flood };
+  const cols = Math.floor(w / best);
+  return { cols, square: width / cols };
+};
+
+/** The life adds three stops between its phrase and its last words. */
+type Phase = "out" | "grow" | "lead" | "that" | "count" | "years" | "number";
 
 /**
  * The mirror's story (SocialCut.swift) told about most people, with the
  * average: a week, a month, a year, then a lifetime "OF YOUR Life." The
  * squares tell it first, then the words.
  */
-const AverageStory: React.FC = () => {
+const AverageStory: React.FC<{ onEnd: () => void }> = ({ onEnd }) => {
   const reduceMotion = useReducedMotion();
   const h = AVERAGE_DAY_HOURS;
   const week = hoursParts(h * 7);
@@ -271,7 +364,7 @@ const AverageStory: React.FC = () => {
     { frame: "This week", rest: ", you spent", ...week, tail },
     { frame: "This month", rest: ", you'll spend", ...month, tail },
     { frame: "This year", rest: ", you'll spend", ...year, tail },
-    { frame: "In your life", rest: ", you'll spend", ...life, tail },
+    { frame: "In your life", rest: ".", ...life, tail },
   ];
   // Hours on the phone at each beat: a week, 30 days, 365 days, a life.
   const pile = [h * 7, h * 30, h * 365, h * 365 * LIFE_YEARS].map(Math.round);
@@ -284,7 +377,16 @@ const AverageStory: React.FC = () => {
   useEffect(() => {
     if (reduceMotion) return;
     let t: ReturnType<typeof setTimeout> | undefined;
-    if (phase === "lead")
+    const L = STORY.life;
+    if (phase === "lead" && beat === last)
+      t = setTimeout(() => setPhase("that"), L.thatAfterMs);
+    else if (phase === "that")
+      t = setTimeout(() => setPhase("count"), L.countAfterMs);
+    else if (phase === "count")
+      t = setTimeout(() => setPhase("years"), L.yearsAfterMs);
+    else if (phase === "years")
+      t = setTimeout(() => setPhase("number"), L.tailAfterMs);
+    else if (phase === "lead")
       t = setTimeout(() => setPhase("number"), STORY.numberAfterMs);
     else if (phase === "number" && beat < last)
       t = setTimeout(() => setPhase("out"), STORY.holdMs);
@@ -296,6 +398,13 @@ const AverageStory: React.FC = () => {
     return () => t && clearTimeout(t);
   }, [phase, beat, last, reduceMotion]);
 
+  // The last number has come in: the story is told.
+  useEffect(() => {
+    if (beat !== last || phase !== "number") return;
+    const t = setTimeout(onEnd, reduceMotion ? 0 : STORY.inMs);
+    return () => clearTimeout(t);
+  }, [beat, last, phase, reduceMotion, onEnd]);
+
   // The life's squares fade away before its words; then the pile makes way,
   // so the last words sit where the squares were, not under an empty box.
   const [pileGone, setPileGone] = useState(reduceMotion);
@@ -304,7 +413,9 @@ const AverageStory: React.FC = () => {
     setPhase("lead");
   }, [beat, last]);
   const b = beats[beat];
-  const showLead = phase === "lead" || phase === "number";
+  const order: Phase[] = ["lead", "that", "count", "years", "number"];
+  const reached = (p: Phase) => order.indexOf(phase) >= order.indexOf(p);
+  const showLead = reached("lead");
   const showNumber = phase === "number";
 
   return (
@@ -326,14 +437,41 @@ const AverageStory: React.FC = () => {
             {b.rest}
           </Text>
         </Reveal>
-        <Reveal shown={showNumber} reduceMotion={reduceMotion}>
-          {/* One Text, so the unit sits on the number's baseline. */}
-          <Text style={styles.value}>
-            {b.value}
-            <Text style={styles.unit}>{` ${b.unit}`}</Text>
-          </Text>
-          <Text style={styles.tail}>{b.tail}</Text>
-        </Reveal>
+        {beat === last ? (
+          // The life, said slowly: "That's" … 13 … years … on your phone.
+          <>
+            <Reveal shown={reached("that")} reduceMotion={reduceMotion}>
+              <Text style={styles.lead}>That's</Text>
+            </Reveal>
+            <View style={styles.lifeRow}>
+              <Reveal shown={reached("count")} reduceMotion={reduceMotion}>
+                <Text style={styles.value}>{b.value}</Text>
+              </Reveal>
+              <Reveal
+                shown={reached("years")}
+                reduceMotion={reduceMotion}
+                inMs={STORY.life.yearsInMs}
+              >
+                {/* "Years", capital Y (owner, 18 Nov 2026). */}
+                <Text style={styles.script}>
+                  {b.unit.charAt(0).toUpperCase() + b.unit.slice(1)}
+                </Text>
+              </Reveal>
+            </View>
+            <Reveal shown={showNumber} reduceMotion={reduceMotion}>
+              <Text style={styles.tail}>{b.tail}</Text>
+            </Reveal>
+          </>
+        ) : (
+          <Reveal shown={showNumber} reduceMotion={reduceMotion}>
+            {/* One Text, so the unit sits on the number's baseline. */}
+            <Text style={styles.value}>
+              {b.value}
+              <Text style={styles.unit}>{` ${b.unit}`}</Text>
+            </Text>
+            <Text style={styles.tail}>{b.tail}</Text>
+          </Reveal>
+        )}
       </View>
     </View>
   );
@@ -347,8 +485,10 @@ const AverageStory: React.FC = () => {
 const Reveal: React.FC<{
   shown: boolean;
   reduceMotion: boolean;
+  /** How long it takes to come in (STORY.inMs unless said). */
+  inMs?: number;
   children: React.ReactNode;
-}> = ({ shown, reduceMotion, children }) => {
+}> = ({ shown, reduceMotion, inMs = STORY.inMs, children }) => {
   const v = useRef(new Animated.Value(shown ? 1 : 0)).current;
   useEffect(() => {
     if (reduceMotion) {
@@ -357,11 +497,11 @@ const Reveal: React.FC<{
     }
     Animated.timing(v, {
       toValue: shown ? 1 : 0,
-      duration: shown ? STORY.inMs : STORY.outMs,
+      duration: shown ? inMs : STORY.outMs,
       easing: shown ? Easing.out(Easing.cubic) : Easing.in(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [shown, reduceMotion, v]);
+  }, [shown, reduceMotion, inMs, v]);
   const translateY = v.interpolate({
     inputRange: [0, 1],
     outputRange: [10, 0],
@@ -419,6 +559,7 @@ export const pileRows = (
  * PileShape in SocialCut.swift.
  */
 const AnimatedPath = Reanimated.createAnimatedComponent(Path);
+const AnimatedRect = Reanimated.createAnimatedComponent(Rect);
 const AnimatedCount = Reanimated.createAnimatedComponent(TextInput);
 
 const Pile: React.FC<{
@@ -437,12 +578,10 @@ const Pile: React.FC<{
   // updates reached the screen in bursts and the count looked stuck, then
   // jumped (owner, 18 Nov 2026: flawless).
   const e = useSharedValue(reduceMotion ? 1 : 0);
+  // The life's pull back, 0 (the flood) to 1 (every hour on screen).
+  const zoom = useSharedValue(0);
 
-  const finish = useCallback(() => {
-    if (!life) {
-      onGrown();
-      return;
-    }
+  const fadeAway = useCallback(() => {
     Animated.timing(fade, {
       toValue: 0,
       delay: STORY.lifePauseMs,
@@ -450,7 +589,23 @@ const Pile: React.FC<{
       easing: Easing.inOut(Easing.quad),
       useNativeDriver: true,
     }).start(() => onGrown());
-  }, [life, onGrown, fade]);
+  }, [onGrown, fade]);
+
+  const finish = useCallback(() => {
+    if (!life) {
+      onGrown();
+      return;
+    }
+    // The flood has filled the screen and the count has run to the end:
+    // pull back until all of it is there, then let it go.
+    zoom.value = withTiming(
+      1,
+      { duration: STORY.lifeZoomMs, easing: REasing.inOut(REasing.cubic) },
+      (done) => {
+        if (done) runOnJS(fadeAway)();
+      }
+    );
+  }, [life, onGrown, fadeAway, zoom]);
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -492,8 +647,15 @@ const Pile: React.FC<{
   const last = counts.length - 1;
   const maxCols = width > 0 ? Math.floor(width / snap(fits[last - 1])) : 1;
   const lifeSquare = width > 0 ? width / maxCols : 0;
-  const cols = near.map((c) => Math.min(c, maxCols));
+  // The life is laid out on the grid it ends on, pulled back; the flood
+  // shows its top-left corner, so pulling back moves no square.
+  const grid =
+    width > 0
+      ? zoomGrid(counts[last], width, px, lifeSquare, maxCols)
+      : { cols: maxCols, square: lifeSquare };
+  const cols = near.map((c, k) => (k === last ? grid.cols : Math.min(c, maxCols)));
   const sizes = fits.map((f, k) => (k === last ? lifeSquare : f));
+  const zoomSquare = grid.square;
   const floodH = SOCIAL_CUT_HEIGHT;
   const screenW = screen.width;
   const minSquare = PILE_MIN_SQUARE;
@@ -518,10 +680,21 @@ const Pile: React.FC<{
             Math.log(sizes[beat - 1]) +
               (Math.log(sizes[beat]) - Math.log(sizes[beat - 1])) * t
           );
-    // Square sizes snap to the screen's pixels so edges stay sharp.
-    const s =
-      beat === last ? raw : Math.max(Math.round(raw * px) / px, minSquare);
-    const cell = s * (1 - gap);
+    // Square sizes snap to the screen's pixels so edges stay sharp. The
+    // life's square shrinks as the view pulls back, the gap at least a pixel.
+    const z = zoom.value;
+    let s: number;
+    let cell: number;
+    if (beat === last) {
+      const pulled = Math.exp(
+        Math.log(raw) + (Math.log(zoomSquare) - Math.log(raw)) * z
+      );
+      s = z <= 0 ? raw : z >= 1 ? zoomSquare : Math.round(pulled * px) / px;
+      cell = s - Math.max(1, Math.round(s * px * gap)) / px;
+    } else {
+      s = Math.max(Math.round(raw * px) / px, minSquare);
+      cell = s * (1 - gap);
+    }
     const visibleCols = Math.ceil(screenW / s);
     const rows = pileRows(
       counts,
@@ -543,6 +716,12 @@ const Pile: React.FC<{
       strokeDasharray: [cell, s - cell],
     };
   });
+
+  // Pulling back, the flood's fade at the bottom slides away so the whole
+  // pile shows.
+  const maskProps = useAnimatedProps(() => ({
+    height: floodH * (1 + 3 * zoom.value),
+  }));
 
   const countProps = useAnimatedProps(() => {
     const n = Math.floor(hoursAt(e.value));
@@ -585,12 +764,13 @@ const Pile: React.FC<{
                 width={screen.width}
                 height={floodH}
               >
-                <Rect
+                <AnimatedRect
                   x={0}
                   y={0}
                   width={screen.width}
                   height={floodH}
                   fill="url(#floodFade)"
+                  animatedProps={maskProps}
                 />
               </Mask>
             </Defs>

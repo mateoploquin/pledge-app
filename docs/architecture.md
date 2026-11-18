@@ -258,8 +258,10 @@ and app properties; storage falls back to AsyncStorage (no
 - The `timeBack` context (the limit step) needs a value that changes while
   it's on screen: the daily limit. `limitMinutes` is written to
   `pledgeReport.limitMinutes` on every prop update but kept out of the
-  render key, so the report isn't restarted; `TimeBackView` reads it in a
-  `TimelineView` ten times a second. App to extension only, as ever: the
+  render key, so the report isn't restarted (and written only when it
+  changed); `TimeBackView` checks it ten times a second and redraws only on
+  a change. A `TimelineView` that rebuilt the view every tick made the
+  report blink out on the owner's phone (build 32). App to extension only, as ever: the
   limit goes in, nothing comes out.
 
 ## Dev loop

@@ -59,19 +59,25 @@ light, fine grain, edges sinking into dark.
   sheet's "No, keep going") is the solid ivory `PillButton` tone `primary`:
   `#F8F0E6` fill, espresso Inter SemiBold, radius 12, like the words around
   it. Tried and dropped the same day: liquid glass buttons and a black pill
-  ("off brand"). The glass left is the cards and the seal's hold ring.
-- **The seal's hold ring is liquid glass (owner, 14 Nov 2026).** Smoked
+  ("off brand"). The glass left is the cards.
+- **The seal's hold ring was liquid glass (owner, 14 Nov 2026; removed 18
+  Nov 2026 as "vibe coded"; the whole screen is held now).** Smoked
   glass after the owner's reference of dark glass status cards: a real blur
   (`BlurView`, dark, intensity 28) under a warm dark smoke
   `rgba(34,16,12,0.34)`, a soft sheen falling from the top edge, a light
   hairline all round with a brighter top rim, radius 18
-  (`liquid-glass.tsx`, `liquidGlass` tokens). Cards keep the clear glass.
+  (`liquid-glass.tsx` and its tokens, deleted with it). Cards keep the clear glass.
 - **Three brand moments carried over from the v3 poster (owner, 16 Nov
   2026), redrawn in last light** (Paper "v2.1 B Making a pledge"): the
-  mirror's daylight line and the seal's oath are Noto Serif caps, numbers
+  mirror's daylight line and the seal's oath were Noto Serif caps, numbers
   stay Inter; "What's this time for?" and the seal have films behind them
   (the reason's clip, the sunrise), each under a shade that is dark where
-  words sit. The rest of the v3 poster (Anton, Oswald, mono, full-screen
+  words sit. Since 18 Nov 2026 the mirror and the seal's oath are Inter
+  only and ivory (owner: the serif caps and orange were "off brand"); the
+  sun stays, it is the point of the seal: since 18 Nov 2026 a sunset into
+  the sea that sets as you hold, full bleed like a poster with the oath on the sea at the
+  bottom, two sizes of Inter, and no control drawn over it: the whole
+  screen is held (a logo over the sunset looked "weird", owner). The rest of the v3 poster (Anton, Oswald, mono, full-screen
   posters) is not used; it is kept on the branch `v3-poster`.
 - **Making a pledge uses solid buttons (owner, 8 Nov 2026).** In the wizard
   and the card step, the main button and the selected chip are solid
@@ -124,14 +130,13 @@ sizes, six secondary-text colours and four oranges in use.
 | `color.textTertiary` | #A89488 | captions, slider ticks, disabled labels |
 | `color.divider` / `controlEdge` | #6F5549 / #A89488 | hairlines / outlines of controls |
 | `color.onAction` | #241310 espresso | the label on every ivory button (and the shield's) |
-| `color.solar` | #ED602A, the icon's orange | **the one accent**: the name on the seal, the hold ring, labels like "SOCIAL MEDIA", usage bars, "back.", the launch sun, glows. Never a button fill |
+| `color.solar` | #ED602A, the icon's orange | **the one accent**: labels like "SOCIAL MEDIA", usage bars, "back.", the launch sun, glows. Never a button fill |
 | `color.ember` / `oxblood` | #9F3425 / #551A20 | light only: glows, film grades. Never text or bars |
 
 No light orange (#F4A052 or #FFD1A3) anywhere: the owner finds it ugly
 (17 Nov 2026).
 | `color.success` / `warning` / `error` | #8FBF9A / #E8B65C / #F2908F | status dots, callouts, "Delete account" |
 | `glass.*` | see file | the card glass (fill, rims, `rule` hairline) |
-| `liquidGlass.*` | see file | the seal's hold ring only |
 | `radius.control` / `card` / `glass` | 12 / 18 / 24 | buttons and rows / cards / glass cards |
 | `shade` | ink gradient 10 → 35 → 88 % | laid over film so words read |
 | `motion.dissolveMs` / `outMs` | 450 / 160 | fade-through timings |
@@ -143,16 +148,20 @@ Native code uses the same values: the shield as RGB 0–255
 ## Type
 
 Two families: **Inter** (Regular, Medium, SemiBold) and **Noto Serif
-Display** Regular, for brand moments in the app only. The mirror's story is
-Inter only (owner, 18 Nov 2026: one font, the time frame and the unit big);
-the report extension bundles Inter alone. No system font in the app's own UI (the shield can't set
+Display** Regular, for brand moments in the app only, plus **Great Vibes**
+for one handwritten word: "Years" in the mirror's last line, "13 *Years*",
+92 pt ivory on the number's baseline (owner, 18 Nov 2026: "make it really
+impactful"; `fonts.script`, OFL, bundled in the app and the report
+extension). Nowhere else. The rest of the mirror's story is Inter (owner,
+18 Nov 2026: one font, the time frame and the unit big). Great Vibes' swash
+capitals rise far above its ascent: give it a tall line box (150 at 92 pt). No system font in the app's own UI (the shield can't set
 a font; that is Apple's).
 
 | style (`type.*`) | font | size / line | use |
 | --- | --- | --- | --- |
 | `hero` | Noto Serif Display caps, −0.025 em | 48/50 | the opener's line |
 | `display` | Noto Serif Display caps, −0.025 em | 42/46 | brand moments: "You kept your word." |
-| seal oath | Noto Serif Display caps | 64/66 | "I, MATEO, PLEDGE." only |
+| seal oath | Inter SemiBold, −0.025 em | 40/46 | "I, Mateo, pledge" only; the promise under it Inter 22/29 ivory; "Press and hold to seal" Inter SemiBold 16, the legal line Inter 12 |
 | `heading` | Inter Medium, −0.02 em | 30/36 | every screen title: wizard questions, Home, pledge detail, Account, the give-up sheet |
 | `value` | Inter SemiBold, −0.02 em | 44/48 | time and money |
 | `row` | Inter Regular (SemiBold for amounts) | 16/20 | list rows, options, units next to a value, buttons |
@@ -161,7 +170,7 @@ a font; that is Apple's).
 | `caption` | Inter Medium caps, 0.14 em | 11/14 | `Caption`: step counters, section labels, "HOLD TO SEAL" |
 
 - Serif caps are for brand moments only (owner, 17 Nov 2026): the opener,
-  the mirror's daylight line, the seal, "You kept your word." Functional
+  "You kept your word." Functional
   screens (Home, pledge detail, wizard, Account) use `heading`.
 - Numbers are always Inter, never the serif.
 - Big numbers stay at 44 (168 for the mirror's hours). Don't make them

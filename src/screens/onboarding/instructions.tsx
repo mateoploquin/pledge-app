@@ -25,8 +25,10 @@ const QUESTION: Record<StepName, string> = {
   // After the mirror it answers the number on it (owner, 17 Nov 2026: the
   // onboarding as a story). Without a mirror, PURPOSE_ALONE.
   purpose: "What would you do with that time back?",
-  limit: "How much will you give them a day?",
-  duration: "How long will you hold that?",
+  // An instruction, not a riddle (owner, 18 Nov 2026: "How much will you give
+  // them a day?" was confusing).
+  limit: "Set your daily limit.",
+  duration: "How long will you uphold that for?",
   amount: "What's your word worth?",
   signin: "Put your name to it.",
   card: "Put your card down.",
@@ -67,7 +69,7 @@ const Instructions: React.FC = () => {
   // hands over its retry once the sheet was closed or failed.
   const [retryCard, setRetryCard] = useState<(() => void) | null>(null);
 
-  const continueLabel = step === "purpose" && !w.reason ? "Skip for now" : "Continue";
+  const continueLabel = step === "purpose" && w.reasons.length === 0 ? "Skip for now" : "Continue";
   const counter = `Step ${index + 1} of ${steps.length}`;
 
   if (step === "seal") {
@@ -80,7 +82,6 @@ const Instructions: React.FC = () => {
         timeValue={w.timeValue}
         durationDays={w.durationDays}
         pledgeValue={w.pledgeValue}
-        reason={w.reason}
         starting={w.starting}
         onSeal={w.startPledge}
       />
@@ -92,7 +93,7 @@ const Instructions: React.FC = () => {
       onBack={w.canLeave ? w.onBack : undefined}
       backLabel={index > 0 ? "Back" : "Cancel"}
       topRight={<Caption>{counter}</Caption>}
-      backdrop={step === "purpose" ? <ReasonFilms reason={w.reason} /> : undefined}
+      backdrop={step === "purpose" ? <ReasonFilms reasons={w.reasons} /> : undefined}
       footer={
         step === "signin" ? (
           // The provider buttons are the step's action; only Back sits here.
@@ -126,6 +127,7 @@ const Instructions: React.FC = () => {
             <ScreenTimeMirror
               authorizationStatus={w.authorizationStatus}
               setAuthorizationStatus={w.setAuthorizationStatus}
+              onStoryEnd={w.onMirrorStoryEnd}
             />
           ) : step === "apps" ? (
             <SetApps
@@ -137,8 +139,8 @@ const Instructions: React.FC = () => {
             />
           ) : step === "purpose" ? (
             <SetPurpose
-              reason={w.reason}
-              setReason={w.setReason}
+              reasons={w.reasons}
+              toggleReason={w.toggleReason}
             />
           ) : step === "limit" ? (
             <SetTimeLimit

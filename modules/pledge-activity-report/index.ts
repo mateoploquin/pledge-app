@@ -227,12 +227,11 @@ export const TimeRecovered: React.FC<{
 };
 
 /** Height the extension's TimeBackView lays out in. */
-export const TIME_BACK_HEIGHT = 230;
+export const TIME_BACK_HEIGHT = 140;
 
 /**
- * The limit step: last week's daily time on the chosen apps as squares (one
- * per 15 minutes), the limit's share dim and the rest lit as time back, then
- * that time back a day and over a life. Drawn by the system from the user's
+ * The limit step: "You get back / 8 years / of your life.", from last week's
+ * daily time on the chosen apps less the limit, over an 80-year life. Drawn by the system from the user's
  * real Screen Time; the limit reaches the extension through the App Group as
  * it changes, so the picture follows the slider without restarting.
  */

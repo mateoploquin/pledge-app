@@ -117,7 +117,11 @@ struct SocialCutReport: DeviceActivityReportScene {
 struct SocialCutView: View {
   let model: SocialCutModel
 
-  enum Phase { case out, grow, lead, number }
+  /// The life adds three stops between its phrase and its last words.
+  enum Phase: Int, Comparable {
+    case out, grow, lead, that, count, years, number
+    static func < (a: Phase, b: Phase) -> Bool { a.rawValue < b.rawValue }
+  }
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var beat = 0
@@ -128,6 +132,8 @@ struct SocialCutView: View {
   @Environment(\.displayScale) private var displayScale
   /// The life's squares have faded; then the pile makes way for the words.
   @State private var pileGone = false
+  /// The life's pull back, 0 (the flood) to 1 (every hour on screen).
+  @State private var zoom: Double = 0
   @State private var pileRemoved = false
 
   private var cream: Color { model.style.textColor }
@@ -158,7 +164,7 @@ struct SocialCutView: View {
       Beat(frame: "This week", lead: ", you spent", value: week.value, unit: week.unit, tail: tail),
       Beat(frame: "This month", lead: ", you'll spend", value: month.value, unit: month.unit, tail: tail),
       Beat(frame: "This year", lead: ", you'll spend", value: year.value, unit: year.unit, tail: tail),
-      Beat(frame: "In your life", lead: ", you'll spend", value: life.value, unit: life.unit, tail: tail),
+      Beat(frame: "In your life", lead: ".", value: life.value, unit: life.unit, tail: tail),
     ]
   }
 
@@ -177,22 +183,27 @@ struct SocialCutView: View {
             .font(.custom("Inter-Medium", size: 11))
             .tracking(1.54)
             .foregroundColor(tertiary)
-          PileShape(pile: pile, e: growth)
-            .fill(cream)
-            .frame(height: 160)
-            // The life floods down over where the words were (they're hidden
-            // then) and fades out before the bottom of the report.
+          // Drawn taller than its 160 pt box: the life floods down over
+          // where the words were (they're hidden then) and fades out before
+          // the bottom of the report; pulling back, the fade slides away.
+          PileCanvas(pile: pile, e: growth, z: zoom, color: cream)
+            .frame(height: 420)
             .mask(alignment: .top) {
               LinearGradient(
                 stops: [.init(color: .black, location: 0.55), .init(color: .clear, location: 0.95)],
                 startPoint: .top, endPoint: .bottom
               )
-              .frame(height: 420)
+              .frame(height: 420 * (1 + 3 * zoom))
             }
+            .frame(height: 160, alignment: .top)
         }
         .opacity(pileGone ? 0 : 1)
       }
-      words(all[min(beat, all.count - 1)])
+      if beat == all.count - 1 {
+        lifeWords(all[beat])
+      } else {
+        words(all[min(beat, all.count - 1)])
+      }
     }
     .padding(.top, 8)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -234,6 +245,53 @@ struct SocialCutView: View {
     }
   }
 
+  /// The life, said slowly (owner, 18 Nov 2026: "In your life. Pause. Give a
+  /// person time to understand what that means. That's 13. Pause. Years on
+  /// your phone."): "In your life." alone, then "That's", the number, then
+  /// "Years" in script (capital Y), then "on your phone."
+  private func lifeWords(_ b: Beat) -> some View {
+    let unit = b.unit.prefix(1).uppercased() + b.unit.dropFirst()
+    return VStack(alignment: .leading, spacing: 4) {
+      reveal(phase >= .lead) {
+        (Text(b.frame).font(.custom("Inter-SemiBold", size: 26)).foregroundColor(cream)
+          + Text(b.lead).font(.custom("Inter-Regular", size: 26)).foregroundColor(muted))
+          .tracking(-0.39)
+      }
+      reveal(phase >= .that) {
+        Text("That's")
+          .font(.custom("Inter-Regular", size: 26))
+          .tracking(-0.39)
+          .foregroundColor(muted)
+      }
+      HStack(alignment: .firstTextBaseline, spacing: 14) {
+        reveal(phase >= .count) {
+          Text("\(b.value)")
+            .font(.custom("Inter-SemiBold", size: 96))
+            .tracking(-4.8)
+            .foregroundColor(cream)
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+        }
+        reveal(phase >= .years) {
+          // The one handwritten word (Great Vibes).
+          Text(unit)
+            .font(.custom("GreatVibes-Regular", size: 92))
+            .foregroundColor(cream)
+            .fixedSize()
+        }
+      }
+      reveal(phase >= .number) {
+        Text(b.tail)
+          .font(.custom("Inter-Regular", size: 20))
+          .foregroundColor(muted)
+      }
+    }
+  }
+
+  private func reveal<V: View>(_ shown: Bool, @ViewBuilder _ v: () -> V) -> some View {
+    v().opacity(shown ? 1 : 0).offset(y: shown ? 0 : 10)
+  }
+
   private func sleep(_ seconds: Double) async {
     try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
   }
@@ -267,15 +325,31 @@ struct SocialCutView: View {
         await sleep(grow)
       } else {
         withAnimation(.timingCurve(0.55, 0.085, 0.68, 0.53, duration: 4.5)) { growth = 1 }
-        await sleep(4.5 + 0.9)
+        await sleep(4.5)
+        // Then pull back until every hour of the life is on screen (owner,
+        // 18 Nov 2026: "zoom out and see the magnitude of the dots").
+        withAnimation(.timingCurve(0.65, 0, 0.35, 1, duration: 2.4)) { zoom = 1 }
+        await sleep(2.4 + 1.2)
         withAnimation(.easeInOut(duration: 1.2)) { pileGone = true }
         await sleep(1.2)
         pileRemoved = true
       }
       withAnimation(.easeOut(duration: 0.5)) { phase = .lead }
-      await sleep(0.8)
-      withAnimation(.easeOut(duration: 0.5)) { phase = .number }
-      if i < last { await sleep(0.5 + 2.6) }
+      if i < last {
+        await sleep(0.8)
+        withAnimation(.easeOut(duration: 0.5)) { phase = .number }
+        await sleep(0.5 + 2.6)
+      } else {
+        // STORY.life in screen-time-mirror.tsx.
+        await sleep(2.2)
+        withAnimation(.easeOut(duration: 0.5)) { phase = .that }
+        await sleep(0.6)
+        withAnimation(.easeOut(duration: 0.5)) { phase = .count }
+        await sleep(1.8)
+        withAnimation(.easeOut(duration: 1.1)) { phase = .years }
+        await sleep(1.2)
+        withAnimation(.easeOut(duration: 0.5)) { phase = .number }
+      }
     }
   }
 }
@@ -308,9 +382,37 @@ struct Pile {
   private var maxCols: Int { box.width > 0 ? Int(box.width / snap(fit(last - 1))) : Int.max }
   private var lifeSquare: Double { box.width / Double(maxCols) }
 
+  /// The life's grid: its columns and its square once pulled back so the
+  /// whole life fits the box's width × 400 pt. The square is whole pixels,
+  /// as big as fits, never under 1 pt (2 px), so the squares stay squares.
+  /// No pulling back when the flood's square already fits. Same as zoomGrid
+  /// in screen-time-mirror.tsx.
+  private var zoomGrid: (cols: Int, square: Double) {
+    guard box.width > 0 else { return (maxCols, lifeSquare) }
+    let scale = 1 / pixel
+    let w = Int((box.width * scale).rounded())
+    let minP = max(2, Int(scale.rounded()))
+    let n = counts[last]
+    var best = minP
+    var p = minP
+    while Double(p) < lifeSquare * scale {
+      let c = w / p
+      if (n + c - 1) / c * p <= Int(400 * scale) { best = p }
+      p += 1
+    }
+    if Double(best) >= lifeSquare * scale { return (maxCols, lifeSquare) }
+    let cols = w / best
+    return (cols, box.width / Double(cols))
+  }
+
   /// Each beat's pile is a near-square of this many columns, never wider
-  /// than the life's rows.
-  var cols: [Int] { near.map { min($0, maxCols) } }
+  /// than the life's rows. The life is laid out on the grid it ends on,
+  /// pulled back; the flood shows its top-left corner, so pulling back
+  /// moves no square.
+  var cols: [Int] {
+    let life = zoomGrid.cols
+    return near.enumerated().map { k, c in k == last ? life : min(c, maxCols) }
+  }
 
   /// Hours drawn when the beat has grown by e (0 to 1): the first beat counts
   /// up from nothing, the others grow in log steps from the beat before.
@@ -320,6 +422,19 @@ struct Pile {
     if beat == 0 { return Double(counts[0]) * e }
     let a = log(Double(counts[beat - 1])), b = log(Double(counts[beat]))
     return exp(a + (b - a) * e)
+  }
+
+  /// Square size and the square drawn in it. The life's square shrinks as
+  /// the view pulls back (z), snapped to pixels, the gap at least a pixel.
+  func cell(_ e: Double, z: Double) -> (square: Double, cell: Double) {
+    guard beat == last else {
+      let s = square(e)
+      return (s, s * (1 - 0.16))
+    }
+    let end = zoomGrid.square
+    let pulled = exp(log(lifeSquare) + (log(end) - log(lifeSquare)) * z)
+    let s = z <= 0 ? lifeSquare : z >= 1 ? end : (pulled / pixel).rounded() * pixel
+    return (s, s - max(1, (s / pixel * 0.16).rounded()) * pixel)
   }
 
   /// Square size: each beat's pile fits the box, snapped to pixels, zooming
@@ -360,30 +475,39 @@ struct Pile {
 /// The time, drawn (owner, 18 Nov 2026): one ivory square per hour. A beat's
 /// squares fill in around the last beat's while the view pulls back to fit
 /// them in the box; at 4 pt it stops and the life floods down past the box,
-/// fading out ("we feel, wow, that's a lot"). Only the squares that can be
-/// on screen are drawn. Same drawing as Pile in screen-time-mirror.tsx.
-struct PileShape: Shape {
+/// fading out ("we feel, wow, that's a lot"), then pulls back until all of
+/// it shows. Each row is one dashed line, a dash per square, so the whole
+/// life (over 100,000 squares) draws cheaply. The box is the top 160 pt;
+/// the canvas runs on below it for the flood. Same drawing as Pile in
+/// screen-time-mirror.tsx.
+struct PileCanvas: View, Animatable {
   let pile: Pile
   var e: Double
-  var animatableData: Double {
-    get { e }
-    set { e = newValue }
+  var z: Double
+  let color: Color
+  var animatableData: AnimatablePair<Double, Double> {
+    get { AnimatablePair(e, z) }
+    set { e = newValue.first; z = newValue.second }
   }
 
-  func path(in rect: CGRect) -> Path {
-    var pile = self.pile
-    pile.box = rect.size
-    let n = Int(pile.hours(e).rounded(.down))
-    let s = pile.square(e)
-    let cell = s * (1 - 0.16)
-    let maxCols = Int((rect.width + 40) / s) + 1
-    var p = Path()
-    for (y, len) in pile.rows(n, maxRows: Int((rect.height + 300) / s) + 1).enumerated() {
-      for x in 0..<min(len, maxCols) {
-        p.addRect(CGRect(x: rect.minX + Double(x) * s, y: rect.minY + Double(y) * s, width: cell, height: cell))
+  var body: some View {
+    Canvas { ctx, size in
+      var pile = self.pile
+      pile.box = CGSize(width: size.width, height: 160)
+      let n = Int(pile.hours(e).rounded(.down))
+      let (s, cell) = pile.cell(e, z: z)
+      guard s > 0 else { return }
+      let visibleCols = Int((size.width + 40) / s) + 1
+      var p = Path()
+      for (y, len) in pile.rows(n, maxRows: Int(size.height / s) + 1).enumerated() {
+        let count = min(len, visibleCols)
+        guard count > 0 else { continue }
+        let mid = Double(y) * s + cell / 2
+        p.move(to: CGPoint(x: 0, y: mid))
+        p.addLine(to: CGPoint(x: Double(count) * s - (s - cell), y: mid))
       }
+      ctx.stroke(p, with: .color(color), style: StrokeStyle(lineWidth: cell, dash: [cell, s - cell]))
     }
-    return p
   }
 }
 

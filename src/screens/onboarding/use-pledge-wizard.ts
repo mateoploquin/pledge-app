@@ -20,7 +20,7 @@ import { track } from "../../services/analytics";
 
 export type StepName = "mirror" | "apps" | "purpose" | "limit" | "duration" | "amount" | "signin" | "card" | "seal";
 
-/** What the time is for: one tap. */
+/** What the time is for: any of these, one tap each. */
 export const REASONS = ["Sleep", "Focus", "People", "Presence"] as const;
 export type Reason = (typeof REASONS)[number];
 
@@ -44,13 +44,21 @@ export const usePledgeWizard = () => {
   const [timeValue, setTimeValue] = useState(30);
   const [durationDays, setDurationDays] = useState(CHALLENGE_DURATION);
   const [pledgeValue, setPledgeValue] = useState(10);
-  // What the time is for: one tap, optional; saved with the pledge as "People".
-  // No text box (owner, 17 Nov 2026: the keyboard covered the picks).
-  const [reason, setReason] = useState<Reason | null>(null);
-  const purpose = reason ?? "";
+  // What the time is for: optional, several allowed (owner, 18 Nov 2026), in
+  // the order tapped; saved with the pledge as "Sleep, People". No text box
+  // (owner, 17 Nov 2026: the keyboard covered the picks).
+  const [reasons, setReasons] = useState<Reason[]>([]);
+  const toggleReason = useCallback(
+    (r: Reason) => setReasons((rs) => (rs.includes(r) ? rs.filter((x) => x !== r) : [...rs, r])),
+    []
+  );
+  const purpose = reasons.join(", ");
   // "I, ___, pledge." From the account once signed in; they can change it on the seal.
   const [name, setName] = useState("");
   const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatusType>();
+  // Continue waits until the mirror's story has been told (owner, 18 Nov 2026).
+  const [mirrorTold, setMirrorTold] = useState(false);
+  const onMirrorStoryEnd = useCallback(() => setMirrorTold(true), []);
 
   const [hasCard, setHasCard] = useState(false);
   // "ready" once someone is signed in and we know whether they have a card.
@@ -192,7 +200,7 @@ export const usePledgeWizard = () => {
   const onContinue = async () => {
     // Only which reason goes to analytics.
     if (step === "purpose") {
-      track(purpose ? "purpose_set" : "purpose_skipped", { reason: reason ?? "none" });
+      track(purpose ? "purpose_set" : "purpose_skipped", { reason: purpose || "none", count: reasons.length });
     }
     if (isLast) await startPledge();
     else setIndex(index + 1);
@@ -212,7 +220,7 @@ export const usePledgeWizard = () => {
   // button off (a shared "disabled" flag set by the card step used to).
   const continueDisabled =
     starting ||
-    (step === "mirror" && authorizationStatus !== AuthorizationStatus.approved) ||
+    (step === "mirror" && (authorizationStatus !== AuthorizationStatus.approved || !mirrorTold)) ||
     (step === "apps" && !selectionEvent?.familyActivitySelection) ||
     (step === "amount" && pledgeValue < 1) ||
     step === "signin" ||
@@ -229,6 +237,7 @@ export const usePledgeWizard = () => {
     isLast,
     canLeave,
     continueDisabled,
+    onMirrorStoryEnd,
     starting,
     onContinue,
     onBack,
@@ -242,8 +251,8 @@ export const usePledgeWizard = () => {
     pledgeValue,
     setPledgeValue,
     purpose,
-    reason,
-    setReason,
+    reasons,
+    toggleReason,
     name,
     setName,
     onCardSaved,

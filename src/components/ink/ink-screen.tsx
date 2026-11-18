@@ -1,5 +1,5 @@
 import React from "react";
-import { KeyboardAvoidingView, Platform, StatusBar, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
+import { StatusBar, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PressableScale from "../buttons/pressable-scale";
@@ -38,8 +38,11 @@ const InkScreen: React.FC<InkScreenProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   return (
-    // The keyboard pushes the footer up, so a step with a text field keeps its button in view.
-    <KeyboardAvoidingView style={styles.ground} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    // A plain View, not a KeyboardAvoidingView: no screen on it has a text
+    // field any more, and a keyboard from elsewhere (TestFlight's feedback
+    // sheet) left its padding behind and pushed the buttons to the top of
+    // the screen, over the question (two testers, build 32).
+    <View style={styles.ground}>
       <StatusBar barStyle="light-content" />
       <Backdrop variant={variant}>{backdrop}</Backdrop>
       <View style={[styles.body, { paddingTop: insets.top + 8 }, style]}>
@@ -76,7 +79,7 @@ const InkScreen: React.FC<InkScreenProps> = ({
       ) : (
         <View style={{ height: insets.bottom }} />
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 

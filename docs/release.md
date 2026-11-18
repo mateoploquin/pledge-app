@@ -6,6 +6,20 @@ store build differs from the dev build.
 
 ## Current status (18 November 2026)
 
+**Build 33 (1.1.0) is being built for TestFlight** (18 November 2026). On
+top of build 32: the seal as a full-bleed poster (the sunset film sets as
+you hold, `seal-idle.mp4`/`seal-set.mp4` from the owner's footage; no ring,
+no logo, Inter only); the mirror's life pulls back until every hour shows,
+then is said slowly ("**In your life.** … That's … 13 … *Years* … on your
+phone.", Great Vibes back for that one word, app and extension); Continue
+waits for the story to end; several reasons on "What would you do with
+that time back?"; the limit step's time back as one sentence ("You get
+back **11 years** of your life."), no longer blinking; the footer no
+longer jumps to the top after a keyboard elsewhere; Help opens Mail; new
+titles ("Set your daily limit.", "How long will you uphold that for?").
+Check on the phone: the seal's hold, the zoom and slow last beat drawn by
+the extension, and Continue's timing there.
+
 **Build 32 (1.1.0) is being built for TestFlight** (18 November 2026, EAS
 build 440743d8, submission c05b2847; confirm once TestFlight shows it processed). On top of build 31: the mirror retold as
 "dots, phrase, number" in Inter only ("**This week**, you spent 36 hours on

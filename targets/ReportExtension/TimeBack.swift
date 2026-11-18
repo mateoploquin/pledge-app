@@ -28,101 +28,65 @@ struct TimeBackReport: DeviceActivityReportScene {
   }
 }
 
-/// "3 h 15 min", "45 min", "2 h".
-func hoursMinutes(_ minutes: Int) -> String {
-  let h = minutes / 60, m = minutes % 60
-  if h > 0 && m > 0 { return "\(h) h \(m) min" }
-  return h > 0 ? "\(h) h" : "\(m) min"
-}
-
-/// The limit step's picture (owner, 18 Nov 2026: "personalized to what we
-/// saw on the first screen ... how many years of my life I'm getting back").
-/// One square per 15 minutes of a day on the chosen apps, last week's
-/// average: the limit's squares stay dim, the rest light up as time back.
-/// Below, that time back a day, then over a life (80 years). The limit comes
-/// from the app through the App Group as the slider moves, read here a few
-/// times a second, so the picture follows the slider. With no data for
-/// these apps, the average day (3 h 45 min). Same drawing as TimeBackFallback
+/// The limit step's answer, one sentence (owner, 18 Nov 2026: "It has to be
+/// OBVIOUS what it means. Anything else is noise."): "You get back / 8 years
+/// / of your life." The years are what the limit saves a day against last
+/// week's daily time on the chosen apps, over an 80-year life; with no data
+/// for these apps, the average day (3 h 45 min). The limit comes from the
+/// app through the App Group as the slider moves, checked here ten times a
+/// second and redrawn only when it changes. Same drawing as TimeBackFallback
 /// in set-time-limit.tsx.
 struct TimeBackView: View {
   let model: TimeBackModel
 
   private var cream: Color { model.style.textColor }
   private var muted: Color { model.style.mutedColor }
-  /// color.textTertiary in the app's tokens.
-  private let tertiary = Color(red: 0xA8 / 255, green: 0x94 / 255, blue: 0x88 / 255)
 
   /// Minutes a day on the chosen apps, last week.
   private var perDay: Int {
     model.total > 0 ? Int((model.total / 60 / 7).rounded()) : Int(averageDayHours * 60)
   }
 
+  /// The limit as last read; the view redraws only when it changes.
+  @State private var limit = TimeBackView.readLimit()
+
+  private static func readLimit() -> Int {
+    max(0, ReportStyle.defaults?.integer(forKey: "pledgeReport.limitMinutes") ?? 0)
+  }
+
   var body: some View {
-    TimelineView(.periodic(from: .now, by: 0.1)) { _ in
-      let limit = max(0, ReportStyle.defaults?.integer(forKey: "pledgeReport.limitMinutes") ?? 0)
-      content(limit: limit)
-    }
+    // Polled, not redrawn: a TimelineView rebuilt the whole picture ten times
+    // a second and on the owner's phone it kept blinking out (18 Nov 2026).
+    content(limit: limit)
+      .onReceive(Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()) { _ in
+        let now = TimeBackView.readLimit()
+        if now != limit { limit = now }
+      }
   }
 
   private func content(limit: Int) -> some View {
     let back = max(0, perDay - limit)
-    let squares = min(Int((Double(perDay) / 15).rounded(.up)), 64)
-    let kept = min(Int((Double(limit) / 15).rounded(.up)), squares)
     let life = lifeParts(Double(back) / 60)
-    return VStack(alignment: .leading, spacing: 10) {
-      Text((model.total > 0 ? "These apps, last week: \(hoursMinutes(perDay)) a day" : "An average day: \(hoursMinutes(perDay))")
-        .uppercased())
-        .font(.custom("Inter-Medium", size: 11))
-        .tracking(1.54)
-        .foregroundColor(tertiary)
-      DaySquares(count: squares, dim: kept, color: cream)
-        .animation(.easeOut(duration: 0.2), value: kept)
+    return VStack(alignment: .leading, spacing: 0) {
       if back > 0 {
-        (Text(hoursMinutes(back)).font(.custom("Inter-SemiBold", size: 20)).foregroundColor(cream)
-          + Text(" a day back.").font(.custom("Inter-Regular", size: 20)).foregroundColor(muted))
-          .padding(.top, 8)
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-          Text("\(life.value) \(life.unit)")
-            .font(.custom("Inter-SemiBold", size: 44))
-            .tracking(-0.88)
-            .foregroundColor(cream)
-          Text("of your life, back.")
-            .font(.custom("Inter-Regular", size: 20))
-            .foregroundColor(muted)
-        }
+        Text("You get back")
+          .font(.custom("Inter-Regular", size: 22))
+          .foregroundColor(muted)
+        Text("\(life.value) \(life.unit)")
+          .font(.custom("Inter-SemiBold", size: 64))
+          .tracking(-1.6)
+          .foregroundColor(cream)
+          .lineLimit(1)
+          .minimumScaleFactor(0.5)
+        Text("of your life.")
+          .font(.custom("Inter-Regular", size: 22))
+          .foregroundColor(cream)
       } else {
         Text("You already stay under this.")
-          .font(.custom("Inter-Regular", size: 20))
+          .font(.custom("Inter-Regular", size: 22))
           .foregroundColor(muted)
-          .padding(.top, 8)
       }
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-  }
-}
-
-/// Sixteen squares to a row, 4 pt apart, the first `dim` faint.
-struct DaySquares: View {
-  let count: Int
-  let dim: Int
-  let color: Color
-
-  var body: some View {
-    GeometryReader { geo in
-      let size = floor((geo.size.width - 4 * 15) / 16)
-      VStack(alignment: .leading, spacing: 4) {
-        ForEach(0..<Int((Double(count) / 16).rounded(.up)), id: \.self) { row in
-          HStack(spacing: 4) {
-            ForEach(0..<min(16, count - row * 16), id: \.self) { col in
-              let i = row * 16 + col
-              Rectangle()
-                .fill(color.opacity(i < dim ? 0.16 : 1))
-                .frame(width: size, height: size)
-            }
-          }
-        }
-      }
-    }
-    .frame(height: CGFloat(Int((Double(count) / 16).rounded(.up))) * 24)
   }
 }

@@ -49,43 +49,50 @@ const ReasonFilm: React.FC<{ source: number; on: boolean }> = ({ source, on }) =
   );
 };
 
-/** The ground of the step: each reason's film, crossfading to the one picked. */
-export const ReasonFilms: React.FC<{ reason: Reason | null }> = ({ reason }) => (
-  <>
-    {REASONS.map((r) => (
-      <ReasonFilm key={r} source={REASON_FILMS[r]} on={reason === r} />
-    ))}
-  </>
-);
+/**
+ * The ground of the step: each reason's film, crossfading to the one tapped
+ * last; untapping it goes back to the one before.
+ */
+export const ReasonFilms: React.FC<{ reasons: Reason[] }> = ({ reasons }) => {
+  const shown = reasons[reasons.length - 1];
+  return (
+    <>
+      {REASONS.map((r) => (
+        <ReasonFilm key={r} source={REASON_FILMS[r]} on={shown === r} />
+      ))}
+    </>
+  );
+};
 
 interface SetPurposeProps {
-  reason: Reason | null;
-  setReason: (r: Reason | null) => void;
+  reasons: Reason[];
+  toggleReason: (r: Reason) => void;
 }
 
 /**
- * Step: what the time is for (Paper v2.1 B3b–B3c). One tap picks a reason,
- * as the length step picks days. No text box (owner, 17 Nov 2026: the
- * keyboard covered the picks). Optional (the button reads "Skip for now"
- * until a pick). Saved with the pledge; analytics gets which reason.
+ * Step: what the time is for (Paper v2.1 B3b–B3c). Each tap picks or drops a
+ * reason; several can be picked (owner, 18 Nov 2026). No text box (owner,
+ * 17 Nov 2026: the keyboard covered the picks). Optional (the button reads
+ * "Skip for now" until a pick). Saved with the pledge; analytics gets which.
  */
-const SetPurpose: React.FC<SetPurposeProps> = ({ reason, setReason }) => (
+const SetPurpose: React.FC<SetPurposeProps> = ({ reasons, toggleReason }) => (
   <View style={styles.container}>
     {REASONS.map((r) => {
-      const active = r === reason;
+      const active = reasons.includes(r);
+      const onFilm = reasons.length > 0;
       return (
         <React.Fragment key={r}>
           <PressableScale
             onPress={() => {
               haptics.select();
-              setReason(active ? null : r);
+              toggleReason(r);
             }}
-            style={[styles.option, reason && !active && styles.optionOnFilm, active && styles.optionActive]}
+            style={[styles.option, onFilm && !active && styles.optionOnFilm, active && styles.optionActive]}
             scaleTo={0.97}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: active }}
           >
-            <Text style={[styles.label, reason && !active && styles.labelOnFilm, active && styles.labelActive]}>{r}</Text>
+            <Text style={[styles.label, onFilm && !active && styles.labelOnFilm, active && styles.labelActive]}>{r}</Text>
             {active && (
               <Svg width={16} height={12} viewBox="0 0 16 12">
                 <Path d="M1.5 6.5l4 4L14.5 1.5" fill="none" stroke={color.onAction} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />

@@ -77,17 +77,22 @@ final class PledgeActivityReportView: ExpoView {
     d.set(accentColor, forKey: "pledgeReport.accentColor")
     d.set(fontSize, forKey: "pledgeReport.fontSize")
     d.set(maxApps, forKey: "pledgeReport.maxApps")
-    if limitMinutes >= 0 {
-      d.set(limitMinutes, forKey: "pledgeReport.limitMinutes")
-    }
+    publishLimit()
     if context == "recovered" {
       d.set(anchorMs, forKey: "pledgeReport.recovered.anchorMs")
       d.set(try? JSONEncoder().encode(unionOfSelections()), forKey: "pledgeReport.recovered.selection")
     }
   }
 
+  /// "timeBack": the limit, written only when it changed.
+  private func publishLimit() {
+    guard limitMinutes >= 0, let d = UserDefaults(suiteName: Self.appGroup) else { return }
+    if d.object(forKey: "pledgeReport.limitMinutes") as? Int != limitMinutes {
+      d.set(limitMinutes, forKey: "pledgeReport.limitMinutes")
+    }
+  }
+
   func render() {
-    publishStyle()
 
     let now = Date()
     let start = startMs > 0 ? Date(timeIntervalSince1970: startMs / 1000) : Calendar.current.startOfDay(for: now)
@@ -121,10 +126,14 @@ final class PledgeActivityReportView: ExpoView {
                selectionsKey, textColor ?? "", mutedColor ?? "", accentColor ?? "", "\(fontSize)", "\(maxApps)", "\(anchorMs)"]
       .joined(separator: "|")
     if key == lastKey, host != nil {
+      // Only the limit can have changed (it's not part of the key): write
+      // just that, so moving the slider touches nothing else.
+      publishLimit()
       host?.view.frame = bounds
       return
     }
     lastKey = key
+    publishStyle()
 
     generation += 1
     let root = AnyView(
