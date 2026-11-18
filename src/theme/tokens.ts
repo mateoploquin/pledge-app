@@ -10,39 +10,39 @@ export const color = {
   surface: "#301B17",
   surfacePressed: "#41251E",
   text: "#F8F0E6",
-  textSecondary: "#D8C9BE",
+  /** The one secondary text colour, on ground, glass and film alike (owner, 17 Nov 2026). */
+  textSecondary: "#E6D8CC",
   textTertiary: "#A89488",
   /** Hairlines. Under 3:1 on dark, so never the only edge of a control. */
   divider: "#6F5549",
   controlEdge: "#A89488",
   action: "#F8F0E6",
   onAction: "#241310",
-  focus: "#FFD1A3",
-  /** Expressive light. Ivory on it is under 3:1: never a button fill. */
+  /**
+   * The brand orange (the app icon's sun) and the one accent (owner, 17 Nov
+   * 2026): the name on the seal, the hold ring, labels, usage bars, the
+   * launch sun, and the glows. Ivory on it is under 3:1: never a button fill.
+   * The owner does not want the light orange (#F4A052) anywhere.
+   */
   solar: "#ED602A",
   ember: "#9F3425",
   oxblood: "#551A20",
-  amber: "#F4A052",
   success: "#8FBF9A",
   warning: "#E8B65C",
   error: "#F2908F",
-  receiptLabel: "#6B5548",
-  receiptRule: "#C9B9AB",
-  receiptOpen: "#9F3425",
   scrim: "rgba(20, 12, 11, 0.72)",
 };
 
 export const fonts = {
   /** Brand moments only: uppercase, never money, forms or terms. */
   display: "NotoSerifDisplay-Regular",
+  /** One handwritten word only: "Life." on the mirror, big swash L (owner, 17 Nov 2026). */
+  script: "GreatVibes-Regular",
   /** Functional titles. */
   title: "Inter-Medium",
   ui: "Inter-Regular",
   uiMedium: "Inter-Medium",
   uiSemibold: "Inter-SemiBold",
-  // Until the screens move over (see `ink`, below): these styled numbers, which belong in Inter.
-  serif: "Inter-SemiBold",
-  serifItalic: "Inter-Medium",
 };
 
 export const type = {
@@ -54,8 +54,14 @@ export const type = {
   heading: { fontFamily: fonts.title, fontSize: 30, lineHeight: 36, letterSpacing: -0.6, color: color.text },
   /** Time and money. */
   value: { fontFamily: fonts.uiSemibold, fontSize: 44, lineHeight: 48, letterSpacing: -0.88, color: color.text },
+  /** A sentence. */
   body: { fontFamily: fonts.ui, fontSize: 16, lineHeight: 24, color: color.textSecondary },
-  label: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 18, color: color.textSecondary },
+  /** One line next to a value, a list row, an option. */
+  row: { fontFamily: fonts.ui, fontSize: 16, lineHeight: 20, color: color.text },
+  /** Meta: "12 days left", hints, legal. Nothing smaller except captions. */
+  small: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 20, color: color.textSecondary },
+  /** Small caps label (`Caption`). */
+  caption: { fontFamily: fonts.uiMedium, fontSize: 11, lineHeight: 14, letterSpacing: 1.54, textTransform: "uppercase" as const, color: color.textTertiary },
 };
 
 export const spacing = { xs: 8, sm: 12, md: 16, lg: 24, xl: 32, xxl: 40 };
@@ -66,6 +72,20 @@ export const radius = {
   glass: 24,
   /** Old name; everything that was a pill is now a control. */
   pill: 12,
+};
+
+/**
+ * The liquid glass of the seal's hold ring (owner, 14 Nov 2026, from the
+ * owner's reference of smoked glass cards; buttons went solid 17 Nov 2026): a blur, a warm dark smoke, a sheen from
+ * the top, a light hairline with a brighter top rim.
+ */
+export const liquidGlass = {
+  radius: 18,
+  blur: 28,
+  smoke: "rgba(34,16,12,0.34)",
+  sheen: ["rgba(255,240,228,0.13)", "rgba(255,240,228,0.03)", "rgba(255,240,228,0.00)"] as const,
+  edge: "rgba(255,232,214,0.20)",
+  rimTop: "rgba(255,244,234,0.42)",
 };
 
 /** Laid over film so the words read on any frame. */
@@ -94,8 +114,6 @@ export const glass = {
   rimBottom: "rgba(237,96,42,0.35)",
   /** Hairlines inside a glass card. */
   rule: "rgba(255,222,196,0.14)",
-  /** Secondary text on glass, lifted because the glow lowers contrast. */
-  textSecondary: "#E6D8CC",
   blur: 30,
 };
 
@@ -109,9 +127,3 @@ export const motion = {
   outMs: 160,
 };
 
-// Old names, so screens not rebuilt yet already wear the new palette.
-// They go once every screen uses `color` directly.
-export const ink = { base: color.bg, raised: color.surface, line: color.divider, edge: color.divider };
-export const cream = { base: color.text, muted: color.textSecondary, faint: color.textTertiary };
-export const ember = color.solar;
-export const amber = color.amber;

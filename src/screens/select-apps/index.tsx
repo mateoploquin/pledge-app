@@ -12,7 +12,7 @@ import {
   DeviceActivitySelectionEvent,
   DeviceActivitySelectionView,
 } from "react-native-device-activity";
-import { cream, ink } from "../../theme/tokens";
+import { color, fonts, type } from "../../theme/tokens";
 
 export type SelectAppsViewProps = {
   navigation: NavigationProp<any>;
@@ -95,7 +95,7 @@ const SelectAppsView = ({ navigation, route }: SelectAppsViewProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ink.base,
+    backgroundColor: color.bg,
   },
   header: {
     flexDirection: "row",
@@ -104,31 +104,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 22,
     paddingBottom: 12,
-    backgroundColor: ink.base,
+    backgroundColor: color.bg,
     borderBottomWidth: 1,
-    borderBottomColor: ink.line,
+    borderBottomColor: color.divider,
     zIndex: 2,
   },
   headerCenter: {
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: cream.base,
+    ...type.row,
+    fontFamily: fonts.uiSemibold,
   },
   headerSubtitle: {
-    fontSize: 12,
-    color: cream.muted,
+    ...type.small,
     marginTop: 2,
   },
   headerAction: {
-    fontSize: 16,
-    color: cream.base,
+    ...type.row,
     minWidth: 52,
   },
   done: {
-    fontWeight: "600",
+    fontFamily: fonts.uiSemibold,
     textAlign: "right",
   },
   disabled: {
@@ -145,12 +142,12 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   fallbackText: {
-    color: cream.muted,
+    ...type.body,
     marginBottom: 8,
   },
   fallbackAction: {
-    color: cream.base,
-    fontWeight: "600",
+    ...type.row,
+    fontFamily: fonts.uiSemibold,
   },
   picker: {
     flex: 1,

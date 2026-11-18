@@ -4,7 +4,7 @@ import SetSlider from "../../../components/sliders/set-slider";
 import AnimatedNumber from "../../../components/text/animated-number";
 import PresetChips from "../../../components/buttons/preset-chips";
 import { haptics } from "../../../utils/haptics";
-import { color, fonts, type } from "../../../theme/tokens";
+import { color, type } from "../../../theme/tokens";
 
 interface SetTimeLimitProps {
   timeValue: number;
@@ -47,13 +47,7 @@ const styles = StyleSheet.create({
     ...type.value,
     marginBottom: 12,
   },
-  unit: {
-    fontFamily: fonts.ui,
-    fontSize: 16,
-    lineHeight: 20,
-    letterSpacing: 0,
-    color: color.textSecondary,
-  },
+  unit: { ...type.row, color: color.textSecondary },
 });
 
 export default SetTimeLimit;

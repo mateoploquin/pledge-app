@@ -1,51 +1,121 @@
-import React from "react";
-import { StyleSheet, TextInput, View } from "react-native";
-import { color, fonts } from "../../../theme/tokens";
+import React, { useEffect } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import Svg, { Path } from "react-native-svg";
+import { ResizeMode, Video } from "expo-av";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import PressableScale from "../../../components/buttons/pressable-scale";
+import { haptics } from "../../../utils/haptics";
+import { color, fonts, radius, type } from "../../../theme/tokens";
+import { REASONS, Reason } from "../use-pledge-wizard";
 
-export const PURPOSE_MAX = 280;
+/**
+ * The film behind "What's this time for?" once a reason is picked (owner,
+ * 13 Nov 2026). People, Focus and Sleep were found on Pinterest; the owner
+ * has the makers' approval to use them (keep it in writing). Presence, a
+ * couple watching the sun go into the sea, is from Pinterest too (owner,
+ * 16 Nov 2026; the maker's approval still to get): only the clip's first
+ * shot (0–6.6 s), its last second crossfaded into its start so the 5.6 s loop
+ * has no seam, cropped to portrait from 748 × 462 with the bars removed.
+ */
+const REASON_FILMS: Record<Reason, number> = {
+  Sleep: require("../../../../assets/video/reason-sleep.mp4"),
+  Focus: require("../../../../assets/video/reason-focus.mp4"),
+  People: require("../../../../assets/video/reason-people.mp4"),
+  Presence: require("../../../../assets/video/reason-presence.mp4"),
+};
+
+/** Dark at the top for the question, open in the middle, dark again under the buttons (Paper v2.1 B3c). */
+const FILM_SHADE = {
+  colors: ["rgba(20,12,11,0.72)", "rgba(20,12,11,0.45)", "rgba(20,12,11,0.05)", "rgba(20,12,11,0.70)"] as const,
+  locations: [0, 0.45, 0.72, 1] as const,
+};
+
+/** How long the ground takes to cross from one reason's film to the next. */
+const CROSSFADE_MS = 700;
+
+/** One reason's film: plays only while chosen, fades in over the ground. */
+const ReasonFilm: React.FC<{ source: number; on: boolean }> = ({ source, on }) => {
+  const opacity = useSharedValue(on ? 1 : 0);
+  useEffect(() => {
+    opacity.value = withTiming(on ? 1 : 0, { duration: CROSSFADE_MS, easing: Easing.inOut(Easing.quad) });
+  }, [on, opacity]);
+  const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  return (
+    <Animated.View style={[StyleSheet.absoluteFill, style]} pointerEvents="none">
+      <Video source={source} style={StyleSheet.absoluteFill} resizeMode={ResizeMode.COVER} shouldPlay={on} isLooping isMuted />
+      <LinearGradient colors={FILM_SHADE.colors} locations={FILM_SHADE.locations} style={StyleSheet.absoluteFill} />
+    </Animated.View>
+  );
+};
+
+/** The ground of the step: each reason's film, crossfading to the one picked. */
+export const ReasonFilms: React.FC<{ reason: Reason | null }> = ({ reason }) => (
+  <>
+    {REASONS.map((r) => (
+      <ReasonFilm key={r} source={REASON_FILMS[r]} on={reason === r} />
+    ))}
+  </>
+);
 
 interface SetPurposeProps {
-  purpose: string;
-  setPurpose: (value: string) => void;
+  reason: Reason | null;
+  setReason: (r: Reason | null) => void;
 }
 
 /**
- * Step: what the time won back is for, in the person's own words (owner,
- * 11 Nov 2026). Optional (the button reads "Skip for now" while empty); the
- * coach builds on it. Never sent to analytics. No hint text (docs/design.md).
+ * Step: what the time is for (Paper v2.1 B3b–B3c). One tap picks a reason,
+ * as the length step picks days. No text box (owner, 17 Nov 2026: the
+ * keyboard covered the picks). Optional (the button reads "Skip for now"
+ * until a pick). Saved with the pledge; analytics gets which reason.
  */
-const SetPurpose: React.FC<SetPurposeProps> = ({ purpose, setPurpose }) => (
+const SetPurpose: React.FC<SetPurposeProps> = ({ reason, setReason }) => (
   <View style={styles.container}>
-    <TextInput
-      value={purpose}
-      onChangeText={(t) => setPurpose(t.slice(0, PURPOSE_MAX))}
-      placeholder="Reading to my kids. Finishing the novel. Sleep."
-      placeholderTextColor={color.textTertiary}
-      selectionColor={color.text}
-      multiline
-      maxLength={PURPOSE_MAX}
-      autoCapitalize="sentences"
-      returnKeyType="done"
-      blurOnSubmit
-      style={styles.input}
-      accessibilityLabel="What's this time for?"
-    />
+    {REASONS.map((r) => {
+      const active = r === reason;
+      return (
+        <React.Fragment key={r}>
+          <PressableScale
+            onPress={() => {
+              haptics.select();
+              setReason(active ? null : r);
+            }}
+            style={[styles.option, reason && !active && styles.optionOnFilm, active && styles.optionActive]}
+            scaleTo={0.97}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+          >
+            <Text style={[styles.label, reason && !active && styles.labelOnFilm, active && styles.labelActive]}>{r}</Text>
+            {active && (
+              <Svg width={16} height={12} viewBox="0 0 16 12">
+                <Path d="M1.5 6.5l4 4L14.5 1.5" fill="none" stroke={color.onAction} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            )}
+          </PressableScale>
+        </React.Fragment>
+      );
+    })}
   </View>
 );
 
 const styles = StyleSheet.create({
-  container: { alignSelf: "stretch" },
-  input: {
-    fontFamily: fonts.title,
-    fontSize: 24,
-    lineHeight: 30,
-    color: color.text,
-    paddingVertical: 12,
-    minHeight: 96,
-    textAlignVertical: "top",
-    borderBottomWidth: 1,
-    borderBottomColor: color.surfacePressed,
+  container: { gap: 10, alignSelf: "stretch" },
+  option: {
+    height: 56,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: radius.control,
+    borderWidth: 1,
+    borderColor: color.divider,
   },
+  // Over a film the outline is a light hairline so it still reads.
+  optionOnFilm: { borderColor: "rgba(248,240,230,0.28)" },
+  optionActive: { backgroundColor: color.action, borderColor: color.action },
+  label: { ...type.row, color: color.textSecondary },
+  labelOnFilm: { color: color.textSecondary },
+  labelActive: { fontFamily: fonts.uiSemibold, color: color.onAction },
 });
 
 export default SetPurpose;

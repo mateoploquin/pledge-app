@@ -159,11 +159,12 @@ export const ScreenTimeOverview: React.FC<CommonProps & { fontSize?: number; max
 };
 
 /** Height the extension's SocialCutView lays out in. */
-export const SOCIAL_CUT_HEIGHT = 400;
+export const SOCIAL_CUT_HEIGHT = 440;
 
 /**
- * Last week's bars with the social media part of each day breaking off,
- * then "14h back." Plays once when it appears. All apps, every device.
+ * The mirror: last week's social media hours counting up, the apps they
+ * went to and "Two full days of daylight you didn't see." Plays once when
+ * it appears. All apps, every device.
  */
 export const SocialCut: React.FC<Omit<CommonProps, "range" | "familyActivitySelection">> = ({
   textColor,

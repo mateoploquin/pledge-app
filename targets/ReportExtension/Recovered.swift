@@ -115,7 +115,7 @@ struct RecoveredReport: DeviceActivityReportScene {
 }
 
 /// Plays once when it appears: the "before" bar, the "now" bar under it, the
-/// gap between them turns ember and lifts off, then "11h back." counts up.
+/// gap between them turns orange and lifts off, then "11h back." counts up.
 /// Everything starts in its final state and is only reset for the animation
 /// in onAppear, so a view that never animates still shows the numbers.
 struct RecoveredView: View {
@@ -128,8 +128,8 @@ struct RecoveredView: View {
   @State private var backShown = true
 
   private var cream: Color { model.style.textColor }
-  private var muted: Color { cream.opacity(0.6) }
-  private var ember: Color { model.style.accentColor }
+  private var muted: Color { model.style.mutedColor }
+  private var accent: Color { model.style.accentColor }
 
   private static let dateFormatter: DateFormatter = {
     let f = DateFormatter()
@@ -178,7 +178,7 @@ struct RecoveredView: View {
           .monospacedDigit()
         Text("back.")
           .font(.custom("Inter-Medium", size: 20))
-          .foregroundColor(ember)
+          .foregroundColor(accent)
       }
       .opacity(backShown ? 1 : 0)
       .padding(.top, 22)
@@ -207,13 +207,13 @@ struct RecoveredView: View {
           ZStack(alignment: .leading) {
             Capsule().fill(cream)
               .frame(width: full * CGFloat(model.beforePledged / longest), height: 14)
-            // The part of "before" that is gone now stays marked in ember...
-            Capsule().fill(marked ? ember : cream)
+            // The part of "before" that is gone now stays marked in orange...
+            Capsule().fill(marked ? accent : cream)
               .frame(width: full * CGFloat(gap / longest), height: 14)
               .offset(x: full * CGFloat(model.nowPledged / longest))
               .opacity(gap > 0 ? 1 : 0)
             // ...and a copy of it lifts off and fades, on its way to the number.
-            Capsule().fill(ember)
+            Capsule().fill(accent)
               .frame(width: full * CGFloat(gap / longest), height: 14)
               .offset(x: full * CGFloat(model.nowPledged / longest), y: lifted ? -30 : 0)
               .opacity(gap > 0 && marked && !lifted ? 1 : 0)

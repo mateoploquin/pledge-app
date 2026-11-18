@@ -1,14 +1,10 @@
 # Pledge — design
 
-> **Being replaced (6 Nov 2026).** The owner rebuilt the brand: dark editorial,
-> Noto Serif Display upright caps on brand moments, Inter for all UI and money.
-> Source: `~/Desktop/creative/` and the Paper file "Pledge — Design System".
-> Tokens in `src/theme/tokens.ts` and the new `src/components/ink/` parts are
-> already current; screens are moving over one group at a time, and the old
-> `ink`, `cream` and `ember` names are aliases until that's done. Below this
-> note, the tokens, type and component details describe the old look. Motion,
-> copy voice, layout rules and the owner's corrections still apply. This file
-> gets rewritten when the screens are done.
+> Dark editorial "last light": Noto Serif Display caps on brand moments,
+> Inter for all UI and money, one accent (the brand orange #ED602A). Source: the Paper file
+> "Pledge — Design System". The Tokens and Type sections below are current
+> (17 Nov 2026); "The feel in one paragraph" and some component notes still
+> describe the older look in places.
 
 ## Direction: "last light" (owner, 7 Nov 2026)
 
@@ -53,17 +49,35 @@ light, fine grain, edges sinking into dark.
   the cards muddy, and what sits behind glass is already a soft glow. It is
   Paper's 135° gradient (angle kept true on any card shape), the 1 px border,
   and the three inset rims drawn as one inner border so they follow the
-  corners (`glass-surface.tsx`). The primary button uses exactly the same glass as the card (same fill,
-  rims and blur, radius 24), so it takes its colour only from what is behind
-  it. No shine line across the middle, no text shadow, no outer shadow or
+  corners (`glass-surface.tsx`). Buttons are not glass any more: see
+  "One main button" below. No shine line across the middle, no text shadow, no outer shadow or
   halo, no brand-colour tint: the owner found a tinted gradient pill
   "horrific" and a glossy clear one "AI generated". Ivory Inter Medium text. Reference: the stacked glowing pills and the frosted product
   card on the owner's board.
-- **Making a pledge uses solid buttons (owner, 8 Nov 2026).** In the wizard,
-  Review and the card step, the main button and the selected chip are solid
+- **One main button, ivory, everywhere (owner, 17 Nov 2026).** The main
+  action on every screen (wizard, Home, detail, Account, the surrender
+  sheet's "No, keep going") is the solid ivory `PillButton` tone `primary`:
+  `#F8F0E6` fill, espresso Inter SemiBold, radius 12, like the words around
+  it. Tried and dropped the same day: liquid glass buttons and a black pill
+  ("off brand"). The glass left is the cards and the seal's hold ring.
+- **The seal's hold ring is liquid glass (owner, 14 Nov 2026).** Smoked
+  glass after the owner's reference of dark glass status cards: a real blur
+  (`BlurView`, dark, intensity 28) under a warm dark smoke
+  `rgba(34,16,12,0.34)`, a soft sheen falling from the top edge, a light
+  hairline all round with a brighter top rim, radius 18
+  (`liquid-glass.tsx`, `liquidGlass` tokens). Cards keep the clear glass.
+- **Three brand moments carried over from the v3 poster (owner, 16 Nov
+  2026), redrawn in last light** (Paper "v2.1 B Making a pledge"): the
+  mirror's daylight line and the seal's oath are Noto Serif caps, numbers
+  stay Inter; "What's this time for?" and the seal have films behind them
+  (the reason's clip, the sunrise), each under a shade that is dark where
+  words sit. The rest of the v3 poster (Anton, Oswald, mono, full-screen
+  posters) is not used; it is kept on the branch `v3-poster`.
+- **Making a pledge uses solid buttons (owner, 8 Nov 2026).** In the wizard
+  and the card step, the main button and the selected chip are solid
   ivory with espresso SemiBold text, radius 12, as in v1. Unselected chips and
   "Choose apps" are thin outlines; disabled Continue is a surface fill with
-  tertiary text. The glass button stays on Home, detail and Account.
+  tertiary text. The same ivory button is on Home, detail and Account.
 - **Text on glass stays readable.** Secondary text on glass is lifted to
   `#E6D8CC` and main text is ivory, because the glow behind lowers contrast.
   The Sign in with Apple button stays solid ivory (Apple's rules for that
@@ -98,38 +112,60 @@ write manifestos, make screens.
 
 ## Tokens (`src/theme/tokens.ts`, use them, don't inline colours)
 
+One system, set by the owner on 17 Nov 2026 after an audit found 19 font
+sizes, six secondary-text colours and four oranges in use.
+
 | token | value | use |
 | --- | --- | --- |
-| `ink.base` | #17130F | every page ground, splash, launch screen, icon background |
-| `ink.raised` | #2A1F17 | cards, sheets, chips (warmed for the light) |
-| `ink.line` | cream at 16 % | hairlines, ghost button borders |
-| `ink.edge` | amber at 24 % | the warm border of a pledge card |
-| `cream.base` | #F8F4EC | display text, the primary pill, active dots |
-| `cream.muted` | cream at 72 % | secondary text, quiet buttons |
-| `cream.faint` | cream at 45 % | placeholders, disabled text |
-| `ember` | #FF8A5B | the warm accent: the italic word of every `Line`, a card's "$10 on it", blocked status, slider thumb/track fill, the report's bars, top-app highlight |
-| `amber` | #FFB36B | the sun: a lighter step of ember, top of the glow |
-| `glow` | amber 34 % → ember 12 % → clear | `InkScreen` and the deal: from the top, 65 % of the screen tall |
-| `radius.pill` / `radius.card` | 30 / 22 | buttons / cards |
-| `shade` | 3-stop ink gradient 10 → 35 → 88 % | laid over film so words read on any frame |
-| `motion.dissolveMs` / `motion.outMs` | 450 / 160 | fade-through timings |
+| `color.bg` | #140C0B | every page ground, splash, launch sunset |
+| `color.surface` / `surfacePressed` | #301B17 / #41251E | disabled fills, usage-bar track |
+| `color.text` | #F8F0E6 ivory | all main text; the main button's fill |
+| `color.textSecondary` | #E6D8CC | **the one** secondary text colour, on ground, glass and film |
+| `color.textTertiary` | #A89488 | captions, slider ticks, disabled labels |
+| `color.divider` / `controlEdge` | #6F5549 / #A89488 | hairlines / outlines of controls |
+| `color.onAction` | #241310 espresso | the label on every ivory button (and the shield's) |
+| `color.solar` | #ED602A, the icon's orange | **the one accent**: the name on the seal, the hold ring, labels like "SOCIAL MEDIA", usage bars, "back.", the launch sun, glows. Never a button fill |
+| `color.ember` / `oxblood` | #9F3425 / #551A20 | light only: glows, film grades. Never text or bars |
 
-Colours in native code (shield, report extension) are the same values as
-RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
+No light orange (#F4A052 or #FFD1A3) anywhere: the owner finds it ugly
+(17 Nov 2026).
+| `color.success` / `warning` / `error` | #8FBF9A / #E8B65C / #F2908F | status dots, callouts, "Delete account" |
+| `glass.*` | see file | the card glass (fill, rims, `rule` hairline) |
+| `liquidGlass.*` | see file | the seal's hold ring only |
+| `radius.control` / `card` / `glass` | 12 / 18 / 24 | buttons and rows / cards / glass cards |
+| `shade` | ink gradient 10 → 35 → 88 % | laid over film so words read |
+| `motion.dissolveMs` / `outMs` | 450 / 160 | fade-through timings |
+
+Native code uses the same values: the shield as RGB 0–255
+(`home.controller.ts`), the report extension through `ReportStyle.swift`
+(the app passes ivory, #E6D8CC and #ED602A; the fallbacks are the same).
 
 ## Type
 
-- Display and headings: **Instrument Serif** (Regular + Italic), loaded at
-  startup from `assets/fonts/Instrument_Serif` via `src/utils/fonts.ts`.
-  `type.display` is 42/46 with −0.6 tracking; `type.heading` 32/36.
-- Body and UI: system font (SF). `type.body` 16/22 cream muted;
-  `type.label` 14 cream muted. Buttons 17 semibold.
-- The `Line` component (`src/components/ink/line.tsx`) sets one line with
-  `*word*` marking the italic word. One italic word per line, the one that
-  carries the meaning: "Your last *seven* days." "What's your word *worth?*"
-- Numbers that matter are large and serif (the 7-day total at 44 pt in the
-  mirror, 44 on Home's empty state). Don't make them bigger without asking;
-  the owner noticed and reverted a 72.
+Two families: **Inter** (Regular, Medium, SemiBold) and **Noto Serif
+Display** Regular, plus **Great Vibes** for one manuscript word, "Life." with a
+big swash L, on the mirror, in ivory like the words around it (owner, 17–18 Nov 2026; `fonts.script`,
+bundled in the app and the report extension, OFL). Nowhere else. No system font in the app's own UI (the shield can't set
+a font; that is Apple's).
+
+| style (`type.*`) | font | size / line | use |
+| --- | --- | --- | --- |
+| `hero` | Noto Serif Display caps, −0.025 em | 48/50 | the opener's line |
+| `display` | Noto Serif Display caps, −0.025 em | 42/46 | brand moments: "You kept your word." |
+| seal oath | Noto Serif Display caps | 64/66 | "I, MATEO, PLEDGE." only |
+| `heading` | Inter Medium, −0.02 em | 30/36 | every screen title: wizard questions, Home, pledge detail, Account, the give-up sheet |
+| `value` | Inter SemiBold, −0.02 em | 44/48 | time and money |
+| `row` | Inter Regular (SemiBold for amounts) | 16/20 | list rows, options, units next to a value, buttons |
+| `body` | Inter Regular, #E6D8CC | 16/24 | sentences |
+| `small` | Inter Regular, #E6D8CC | 14/20 | meta ("12 days left"), hints, callout text, legal. Nothing smaller but captions |
+| `caption` | Inter Medium caps, 0.14 em | 11/14 | `Caption`: step counters, section labels, "HOLD TO SEAL" |
+
+- Serif caps are for brand moments only (owner, 17 Nov 2026): the opener,
+  the mirror's daylight line, the seal, "You kept your word." Functional
+  screens (Home, pledge detail, wizard, Account) use `heading`.
+- Numbers are always Inter, never the serif.
+- Big numbers stay at 44 (168 for the mirror's hours). Don't make them
+  bigger without asking; the owner noticed and reverted a 72.
 
 ## Layout
 
@@ -155,7 +191,7 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
   Back button, the top three apps, the hours-back mirror), the app keeps it
   in the new style.
 - Screen Time panels drawn by the report extension use Inter (bundled in
-  `targets/ReportExtension`), never the system or Instrument Serif fonts.
+  `targets/ReportExtension`), never the system font.
   The pledge card and pledge detail's "Apps" row show the apps as small
   native icons, as many as fit, then "+N" (`ActivityIcons`). Not names: the
   system draws names from tokens but never reports their width, so a row of
@@ -181,10 +217,10 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
   bottom edge, not the glyph baseline, so the small word sits low. The
   currency sign goes before the number, no space, as everywhere else
   ("$10 on your word").
-- `SetSlider`: ember track and thumb, evenly spaced tick labels passed
+- `SetSlider`: ivory track fill and thumb on an espresso track, evenly spaced tick labels passed
   explicitly, animated jump when a preset chip is tapped, selection haptic
   on each value change, thumb must not drift from the value.
-- `PresetChips`: raised ink pills, cream text, ember text when selected.
+- `PresetChips`: outlined, `row` text in #E6D8CC; selected is solid ivory with espresso SemiBold.
 - Social sign-in buttons use `tone="dark"` on the film.
 
 ## Motion
@@ -196,6 +232,26 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
   corners 28, at least 344 pt tall with 32 pt under its buttons, in an RN
   `Modal` so its scrim (#0A0605 at 62 %) dims the whole screen, footer included.
 - Within a screen: `Dissolve` only. No slides.
+  One exception, the mirror's story (owner, 18 Nov 2026: "keep zooming
+  out"): each beat drifts from 100 % to 95 % while it's read, shrinks to
+  70 % and fades in 450 ms, and the next arrives from 130 % in 800 ms (ease
+  out cubic), scaled from the left edge; a beat every 3.2 s. `ZoomOut` in
+  `screen-time-mirror.tsx` and `play()` in `SocialCut.swift`, same timings.
+  Under it, the pile: one #ED602A square per hour (16 % gap), growing from
+  rows of a near-square filled like a calendar (only the last row short), in log steps over 1.7 s (ease in-out)
+  per beat. The view fits the pile in a 128 pt box (at least 6 squares
+  across) until squares reach 5 pt, then stops; the life grows over 5 s
+  (ease in), past the box and off the screen, then after 0.9 s the pile
+  and its count fade out over 1.4 s. Reduce Motion ends on the words alone.
+  `Pile` in `screen-time-mirror.tsx`, `PileShape` in `SocialCut.swift`.
+- Launch (owner, 17 Nov 2026): the static splash comes to life as a sunset
+  (`src/components/ink/launch-sunset.tsx`, mounted over everything in
+  `App.tsx`). It starts as an exact copy of `assets/splash.png` (measured:
+  sun r 85 px centred, line 342 × 6 px, "cover" scale), so the hand-off
+  can't be seen. After 120 ms the sun sinks behind the line over 1.5 s
+  (ease in-out cubic), warming from ivory to the brand orange `#ED602A` with an
+  orange glow; then the app fades in over 450 ms once it has drawn. Reduce Motion
+  skips the sinking.
 - Film: `expo-av` Video, looping, muted, cover; the montage is pre-stitched
   with a 0.5 s crossfade at the seam so the loop has no cut.
 - Haptics (`src/utils/haptics.ts`): `tap` light for ordinary taps, `press`
@@ -235,9 +291,9 @@ RGB 0–255 (`home.controller.ts`, `targets/ReportExtension/ReportStyle.swift`).
 - Stripe card sheet and the Terms/Privacy pages use the same palette.
 - Shield (block screen): ink material blur, cream title, muted subtitle,
   SF Symbol `lock.fill` (iOS tints it; the library ignores a custom tint),
-  cream primary, muted secondary. Animation is not possible there.
+  ivory primary with an espresso label, #E6D8CC secondary. Animation is not possible there.
 - The 7-day mirror and top-apps panels are drawn by the report extension
-  in SwiftUI with the same palette: big serif-style total, ember bars for
+  in SwiftUI with the same palette: big Inter total, orange bars for
   the top three apps with their real icons and names.
 
 ## Things the owner has corrected (don't repeat)

@@ -9,7 +9,7 @@ import { pledgeEndsAt } from "../../services/pledges";
 import GlassSurface from "../ink/glass-surface";
 import StatusBadge, { PledgeStatus } from "../ink/status-badge";
 import UsageBar from "../ink/usage-bar";
-import { color, fonts, glass } from "../../theme/tokens";
+import { color, fonts, type } from "../../theme/tokens";
 
 interface PledgeCardProps {
   pledge: Pledge;
@@ -101,18 +101,12 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
   bottom: { paddingTop: 2 },
-  value: {
-    fontFamily: fonts.uiSemibold,
-    fontSize: 44,
-    lineHeight: 48,
-    letterSpacing: -0.88,
-    color: color.text,
-  },
-  unit: { fontFamily: fonts.ui, fontSize: 16, lineHeight: 20, letterSpacing: 0, color: glass.textSecondary },
-  line: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 22, color: glass.textSecondary },
-  small: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 18, color: glass.textSecondary },
+  value: type.value,
+  unit: { ...type.row, color: color.textSecondary },
+  line: type.small,
+  small: type.small,
   apps: { flex: 1, height: 24, marginRight: 12 },
-  stake: { fontFamily: fonts.uiSemibold, fontSize: 15, lineHeight: 18, color: color.text },
+  stake: { ...type.row, fontFamily: fonts.uiSemibold },
 });
 
 export default PledgeCard;

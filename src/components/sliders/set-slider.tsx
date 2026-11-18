@@ -3,7 +3,7 @@ import { haptics } from "../../utils/haptics";
 import { View, Text, StyleSheet, PanResponder } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { SCREEN_WIDTH } from "../../utils/constants/dimensions";
-import { color, cream, fonts } from "../../theme/tokens";
+import { color, type } from "../../theme/tokens";
 const SLIDER_WIDTH = SCREEN_WIDTH * 0.8;
 
 interface SetSliderProps {
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   fill: {
     height: 4,
-    backgroundColor: cream.base,
+    backgroundColor: color.text,
     borderRadius: 2,
     position: "absolute",
     left: 0,
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   thumb: {
     width: 28,
     height: 28,
-    backgroundColor: cream.base,
+    backgroundColor: color.text,
     borderRadius: 14,
     position: "absolute",
     top: -12,
@@ -169,9 +169,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   tickLabel: {
-    fontFamily: fonts.ui,
-    fontSize: 13,
-    color: cream.faint,
+    ...type.small,
+    color: color.textTertiary,
   },
 });
 

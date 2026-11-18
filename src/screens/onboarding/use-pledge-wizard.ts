@@ -10,7 +10,7 @@ import { Pledge, SelectionInfo } from "../../types";
 import { startPledgeMonitoring } from "../home/home.controller";
 import { CHALLENGE_DURATION } from "../home/home.constants";
 import { haptics } from "../../utils/haptics";
-import { addPledge, hasAcceptedTerms, loadPledges, markTermsAccepted, newPledgeId } from "../../services/pledges";
+import { addPledge, loadPledges, markTermsAccepted, newPledgeId } from "../../services/pledges";
 import { sendPledgeData } from "../../services/sendPledgeData";
 import { fetchHasCard } from "../../services/stripe-api";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -18,16 +18,24 @@ import { auth } from "../../firebaseConfig";
 import { registerDevice } from "../../services/devices";
 import { track } from "../../services/analytics";
 
-export type StepName = "mirror" | "apps" | "purpose" | "limit" | "duration" | "amount" | "review" | "signin" | "card";
+export type StepName = "mirror" | "apps" | "purpose" | "limit" | "duration" | "amount" | "signin" | "card" | "seal";
+
+/** What the time is for: one tap. */
+export const REASONS = ["Sleep", "Focus", "People", "Presence"] as const;
+export type Reason = (typeof REASONS)[number];
+
+/** "Mateo" from "Mateo Ploquin"; empty when the account has no name. */
+const firstName = (displayName?: string | null) => (displayName ?? "").trim().split(/\s+/)[0] ?? "";
 
 /**
  * The state of making a pledge: which steps apply, what's been chosen, when
  * Continue is allowed, and starting the pledge. The start order matters:
  * backend, then Screen Time schedule, then local storage, then Home. Steps
  * must mount one at a time, because the mirror and card steps act on mount.
- * No account is needed until the pledge is about to cost something: the
- * sign-in step comes after Review, only when nobody is signed in (owner,
- * 10 Nov 2026).
+ * No account is needed until the pledge is about to cost something: sign-in
+ * and the card come after the amount, only when needed (owner, 10 Nov 2026).
+ * The seal is always last (owner, 16 Nov 2026), so holding it really starts
+ * the pledge and the name on it comes from the account.
  */
 export const usePledgeWizard = () => {
   const navigation = useNavigation<any>();
@@ -36,13 +44,14 @@ export const usePledgeWizard = () => {
   const [timeValue, setTimeValue] = useState(30);
   const [durationDays, setDurationDays] = useState(CHALLENGE_DURATION);
   const [pledgeValue, setPledgeValue] = useState(10);
-  // What the time is for, in their words. Optional; feeds the coach.
-  const [purpose, setPurpose] = useState("");
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  // What the time is for: one tap, optional; saved with the pledge as "People".
+  // No text box (owner, 17 Nov 2026: the keyboard covered the picks).
+  const [reason, setReason] = useState<Reason | null>(null);
+  const purpose = reason ?? "";
+  // "I, ___, pledge." From the account once signed in; they can change it on the seal.
+  const [name, setName] = useState("");
   const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatusType>();
 
-  // Unknown until checked; while unknown we assume the step is needed.
-  const [termsDone, setTermsDone] = useState(false);
   const [hasCard, setHasCard] = useState(false);
   // "ready" once someone is signed in and we know whether they have a card.
   // Both land together, so the card step never mounts (and opens Stripe)
@@ -57,15 +66,17 @@ export const usePledgeWizard = () => {
   const steps = useMemo<StepName[]>(
     () => [
       ...(firstPledge && isActivityReportAvailable() ? (["mirror"] as StepName[]) : []),
-      "apps",
+      // Straight after the mirror: the time it showed, then what it's for
+      // (owner, 17 Nov 2026), then which apps take it.
       "purpose",
+      "apps",
       "limit",
       "duration",
       "amount",
-      // Review shows on every pledge; its terms checkbox only until accepted.
-      "review",
       ...(account === "ready" ? [] : (["signin"] as StepName[])),
       ...(hasCard ? [] : (["card"] as StepName[])),
+      // Replaces Review and the terms checkbox: holding it agrees and starts.
+      "seal",
     ],
     [firstPledge, account, hasCard]
   );
@@ -79,18 +90,15 @@ export const usePledgeWizard = () => {
   }, [step]);
 
   useEffect(() => {
-    if (termsAccepted) track("terms_accepted");
-  }, [termsAccepted]);
-
-  useEffect(() => {
     setAuthorizationStatus(getAuthorizationStatus());
-    hasAcceptedTerms().then(setTermsDone).catch(() => {});
     loadPledges()
       .then((list) => setFirstPledge(list.length === 0))
       .catch(() => {});
     return onAuthStateChanged(auth, (user) => {
-      if (user) refreshAccount(user);
-      else setAccount("signedOut");
+      if (user) {
+        setName((n) => n || firstName(user.displayName));
+        refreshAccount(user);
+      } else setAccount("signedOut");
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -123,7 +131,7 @@ export const usePledgeWizard = () => {
       durationDays,
       startedAt: new Date().toISOString(),
       synced: true,
-      ...(purpose.trim() ? { purpose: purpose.trim() } : {}),
+      ...(purpose ? { purpose } : {}),
     };
     try {
       setStarting(true);
@@ -135,7 +143,9 @@ export const usePledgeWizard = () => {
       );
       await startPledgeMonitoring(pledge, { fresh: true });
       await addPledge(pledge);
-      if (termsAccepted) await markTermsAccepted();
+      // Holding the seal is agreeing to the terms ("Sealing means you agree…").
+      await markTermsAccepted();
+      track("terms_accepted");
       registerDevice();
       track("pledge_started", {
         limit_minutes: timeValue,
@@ -145,8 +155,7 @@ export const usePledgeWizard = () => {
         has_purpose: !!pledge.purpose,
       });
       haptics.success();
-      // Home, with the coach on top: it reflects the purpose back (owner, 11 Nov 2026).
-      navigation.reset({ index: 1, routes: [{ name: "Home" }, { name: "Coach", params: { context: "pledge_started" } }] });
+      navigation.reset({ index: 0, routes: [{ name: "Home" }] });
     } catch (error: any) {
       console.error("Could not start the pledge:", error);
       track("pledge_start_failed", {
@@ -159,27 +168,32 @@ export const usePledgeWizard = () => {
     } finally {
       setStarting(false);
     }
-  }, [starting, selectionEvent, pledgeValue, timeValue, durationDays, purpose, termsAccepted, firstPledge, navigation]);
+  }, [starting, selectionEvent, pledgeValue, timeValue, durationDays, purpose, firstPledge, navigation]);
 
   /**
-   * Signed in on the sign-in step. With a card on file the pledge starts
-   * now; otherwise the steps drop "signin" and the card step takes its place.
+   * Signed in on the sign-in step. The steps drop "signin", so the same
+   * index now points at the card step, or at the seal when a card is on file.
    */
   const onSignedIn = async () => {
     const user = auth.currentUser;
     if (!user) return;
-    if (await refreshAccount(user)) {
-      // Signin and card both drop out; stay on Review while it starts.
-      setIndex(steps.indexOf("review"));
-      await startPledge();
-    }
+    setName((n) => n || firstName(user.displayName));
+    await refreshAccount(user);
+  };
+
+  /** Card saved: the card step drops out and the same index is the seal. */
+  const onCardSaved = () => {
+    setPaymentSetupComplete(true);
+    setHasCard(true);
   };
 
   const isLast = index >= steps.length - 1;
 
   const onContinue = async () => {
-    // Only the length goes to analytics, never the words.
-    if (step === "purpose") track(purpose.trim() ? "purpose_set" : "purpose_skipped", { length: purpose.trim().length });
+    // Only which reason goes to analytics.
+    if (step === "purpose") {
+      track(purpose ? "purpose_set" : "purpose_skipped", { reason: reason ?? "none" });
+    }
     if (isLast) await startPledge();
     else setIndex(index + 1);
   };
@@ -201,7 +215,6 @@ export const usePledgeWizard = () => {
     (step === "mirror" && authorizationStatus !== AuthorizationStatus.approved) ||
     (step === "apps" && !selectionEvent?.familyActivitySelection) ||
     (step === "amount" && pledgeValue < 1) ||
-    (step === "review" && !termsDone && !termsAccepted) ||
     step === "signin" ||
     (step === "card" && !paymentSetupComplete);
 
@@ -229,14 +242,15 @@ export const usePledgeWizard = () => {
     pledgeValue,
     setPledgeValue,
     purpose,
-    setPurpose,
-    termsAccepted,
-    setTermsAccepted,
+    reason,
+    setReason,
+    name,
+    setName,
+    onCardSaved,
     authorizationStatus,
     setAuthorizationStatus,
     paymentSetupComplete,
     setPaymentSetupComplete,
-    termsDone,
     hasCard,
     signedIn: account === "ready",
     onSignedIn,

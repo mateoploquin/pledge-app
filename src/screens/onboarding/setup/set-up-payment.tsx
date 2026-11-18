@@ -5,7 +5,7 @@ import { fetchPaymentSheetParams } from "../../../services/stripe-api";
 import { auth } from "../../../firebaseConfig";
 import { CURRENCY_SYMBOL, STRIPE_MERCHANT_COUNTRY } from "../../../config";
 import Callout from "../../../components/ink/callout";
-import { color, cream, radius } from "../../../theme/tokens";
+import { color, radius, type } from "../../../theme/tokens";
 import { track } from "../../../services/analytics";
 
 interface SetPaymentProps {
@@ -137,7 +137,7 @@ const SetPayment: React.FC<SetPaymentProps> = ({
     <View style={styles.container}>
       {loading || paymentSetupComplete ? (
         <View style={styles.working}>
-          <ActivityIndicator color={cream.base} />
+          <ActivityIndicator color={color.text} />
           <Text style={styles.text}>
             {paymentSetupComplete ? "Starting your pledge." : "Opening secure card setup."}
           </Text>
@@ -164,9 +164,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   text: {
-    color: cream.muted,
-    fontSize: 15,
-    lineHeight: 21,
+    ...type.body,
     flexShrink: 1,
   },
 });

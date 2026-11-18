@@ -51,10 +51,7 @@ export type AnalyticsEvent =
   | "surrender_opened"
   | "pledge_surrendered"
   | "pledge_completed"
-  | "pledge_forfeited"
-  // The coach (never the words, only lengths and moments).
-  | "coach_opened"
-  | "coach_message_sent";
+  | "pledge_forfeited";
 
 export function track(event: AnalyticsEvent, properties?: Record<string, string | number | boolean | null>) {
   try {

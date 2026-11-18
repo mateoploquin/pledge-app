@@ -10,7 +10,6 @@ import {
   ViewStyle,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import colors from "../../theme/colors";
 import { color, fonts, radius } from "../../theme/tokens";
 import {
   isAppleSignInAvailable,
@@ -122,12 +121,14 @@ const styles = StyleSheet.create({
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.darkGray2,
+    backgroundColor: color.divider,
   },
   dividerText: {
     marginHorizontal: 12,
-    color: colors.darkGray3,
-    fontSize: 13,
+    fontFamily: fonts.ui,
+    fontSize: 14,
+    lineHeight: 20,
+    color: color.textTertiary,
   },
   appleButton: {
     marginBottom: 12,
@@ -139,8 +140,8 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: radius.control,
     borderWidth: 1,
-    borderColor: colors.darkGray,
-    backgroundColor: colors.white,
+    borderColor: color.divider,
+    backgroundColor: color.action,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -178,7 +179,7 @@ const ProviderButton: React.FC<{
     disabled={disabled}
   >
     {busy ? (
-      <ActivityIndicator color={colors.black} />
+      <ActivityIndicator color={color.onAction} />
     ) : (
       <>
         <AntDesign name={icon} size={16} color={color.onAction} style={styles.icon} />

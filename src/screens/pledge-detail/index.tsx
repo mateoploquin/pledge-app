@@ -114,7 +114,7 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
           {blocked && breaksLeft > 0 && (
             <PillButton
               text={`${BREAK_MINUTES} minutes for ${CURRENCY_SYMBOL}${BREAK_PRICE}`}
-              tone="glass"
+              tone="primary"
               onPress={takeBreak}
               busy={buyingBreak}
             />
@@ -132,12 +132,12 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
       }
     >
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Line size="display" text={leftLine(remainingMs)} />
+        <Line size="heading" text={leftLine(remainingMs)} />
 
         <GlassSurface style={styles.card}>
           {/* Long press: the hidden enforcement log, kept until enforcement is proven. */}
           <Text onLongPress={showEventLog} suppressHighlighting>
-            <Caption tint={glass.textSecondary}>{status}</Caption>
+            <Caption tint={color.textSecondary}>{status}</Caption>
           </Text>
           {onBreak ? (
             <Text style={styles.value}>
@@ -188,7 +188,7 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
               maxApps={3}
               familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
               textColor={color.text}
-              mutedColor={glass.textSecondary}
+              mutedColor={color.textSecondary}
               accentColor={color.solar}
               style={styles.topApps}
             />
@@ -217,10 +217,10 @@ const styles = StyleSheet.create({
   // Paper: the card is offset 28 pt under the headline.
   card: { marginTop: 28, padding: 20, gap: 14 },
   value: type.value,
-  unit: { fontFamily: fonts.ui, fontSize: 16, letterSpacing: 0, color: glass.textSecondary },
+  unit: { ...type.row, color: color.textSecondary },
   // Paper: 8 pt between the number and its unit. Inter's space is 4.5 pt at 16.
   gap: { letterSpacing: 3.5 },
-  line: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 22, color: glass.textSecondary },
+  line: type.small,
   rows: { paddingTop: 6 },
   row: {
     flexDirection: "row",
@@ -233,9 +233,9 @@ const styles = StyleSheet.create({
   lastRow: { paddingBottom: 0 },
   topApps: { marginTop: 4 },
   appNames: { flex: 1, height: 24, marginLeft: 24 },
-  label: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 18, color: glass.textSecondary },
-  text: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 18, color: color.text },
-  strong: { fontFamily: fonts.uiSemibold, fontSize: 15, lineHeight: 18, color: color.text },
+  label: { ...type.row, color: color.textSecondary },
+  text: type.row,
+  strong: { ...type.row, fontFamily: fonts.uiSemibold },
 });
 
 export default PledgeDetail;

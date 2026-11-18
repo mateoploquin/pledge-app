@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import InkScreen from "../../components/ink/ink-screen";
 import PillButton from "../../components/ink/pill-button";
 import { Dissolve, Line } from "../../components/ink/line";
-import { cream } from "../../theme/tokens";
+import { type } from "../../theme/tokens";
 
 interface ChallengeCompletedProps {
   navigation: any;
@@ -38,10 +38,8 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   text: {
+    ...type.body,
     marginTop: 18,
-    color: cream.muted,
-    fontSize: 16,
-    lineHeight: 22,
     maxWidth: 320,
   },
 });

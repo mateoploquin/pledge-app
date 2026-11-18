@@ -4,10 +4,10 @@ import SetPledge from "./setup/set-pledge";
 import SetTimeLimit from "./setup/set-time-limit";
 import SetDuration from "./setup/set-duration";
 import SetApps from "./setup/set-apps";
-import SetPurpose from "./setup/set-purpose";
+import SetPurpose, { ReasonFilms } from "./setup/set-purpose";
 import SocialSignInButtons from "../../components/buttons/social-sign-in-buttons";
 import ScreenTimeMirror from "./setup/screen-time-mirror";
-import Review, { TermsCheck } from "./setup/review";
+import Seal from "./setup/seal";
 import SetPayment from "./setup/set-up-payment";
 import InkScreen from "../../components/ink/ink-screen";
 import PillButton from "../../components/ink/pill-button";
@@ -17,39 +17,46 @@ import { StepName, usePledgeWizard } from "./use-pledge-wizard";
 
 /** The one line at the top of each step. */
 const QUESTION: Record<StepName, string> = {
-  mirror: "Your last seven days.",
+  // Then the report tells it as a story, a week to a lifetime (owner, 17 Nov 2026).
+  mirror: "Let's look at your screen time.",
   apps: "Which apps take the most from you?",
-  purpose: "What's this time for?",
+  // After the mirror it answers the number on it (owner, 17 Nov 2026: the
+  // onboarding as a story). Without a mirror, PURPOSE_ALONE.
+  purpose: "What would you do with that time back?",
   limit: "How much is enough a day?",
   duration: "For how long?",
   amount: "What's your word worth?",
-  review: "Your word, in full.",
   signin: "Put your name to it.",
   card: "Put your card down.",
+  // Drawn by the seal itself ("I, NAME, PLEDGE.").
+  seal: "",
 };
+
+/** The purpose question on a pledge without the mirror before it. */
+const PURPOSE_ALONE = "What's this time for?";
 
 /**
  * Space between the question and the control, per step (v2 Paper B1–B8,
  * "Content" padding-top). The control is not centred: Paper places it.
  */
 const CONTROL_TOP: Record<StepName, number> = {
-  mirror: 28,
+  mirror: 40,
   apps: 28,
   purpose: 40,
   limit: 120,
   duration: 160,
   amount: 120,
-  review: 24,
   signin: 28,
   card: 28,
+  seal: 0,
 };
 
 /**
  * Making a pledge (v2 Paper group "B"): one question per screen, dissolving
  * to the next, solid ivory buttons (owner, 8 Nov 2026). The first pledge
- * opens with the 7-day mirror. Review shows on every pledge; sign-in comes
- * after it only when nobody is signed in; the card step is skipped when a
- * card is already on file.
+ * opens with the 7-day mirror. Sign-in comes after the amount only when
+ * nobody is signed in; the card step is skipped when a card is already on
+ * file. The seal is always last and draws its own screen (Paper v2.1 B9).
  */
 const Instructions: React.FC = () => {
   const w = usePledgeWizard();
@@ -58,24 +65,32 @@ const Instructions: React.FC = () => {
   // hands over its retry once the sheet was closed or failed.
   const [retryCard, setRetryCard] = useState<(() => void) | null>(null);
 
-  const continueLabel =
-    step === "review"
-      ? !w.signedIn
-        ? "Sign in to lock it in"
-        : w.hasCard
-          ? "Lock it in"
-          : "Add a card to lock it in"
-      : step === "purpose" && !w.purpose.trim()
-        ? "Skip for now"
-        : w.isLast
-          ? "Lock it in"
-          : "Continue";
+  const continueLabel = step === "purpose" && !w.reason ? "Skip for now" : "Continue";
+  const counter = `Step ${index + 1} of ${steps.length}`;
+
+  if (step === "seal") {
+    return (
+      <Seal
+        counter={counter}
+        onBack={w.onBack}
+        name={w.name}
+        setName={w.setName}
+        timeValue={w.timeValue}
+        durationDays={w.durationDays}
+        pledgeValue={w.pledgeValue}
+        reason={w.reason}
+        starting={w.starting}
+        onSeal={w.startPledge}
+      />
+    );
+  }
 
   return (
     <InkScreen
       onBack={w.canLeave ? w.onBack : undefined}
       backLabel={index > 0 ? "Back" : "Cancel"}
-      topRight={<Caption>{`Step ${index + 1} of ${steps.length}`}</Caption>}
+      topRight={<Caption>{counter}</Caption>}
+      backdrop={step === "purpose" ? <ReasonFilms reason={w.reason} /> : undefined}
       footer={
         step === "signin" ? (
           // The provider buttons are the step's action; only Back sits here.
@@ -87,14 +102,6 @@ const Instructions: React.FC = () => {
               {w.canLeave && <PillButton text="Back" tone="quiet" onPress={w.onBack} />}
             </>
           ) : null
-        ) : step === "review" ? (
-          // Paper B7: the terms sit over the button, 16 apart. The quiet Back
-          // stays, as on every step (rebrand only, same flow).
-          <View style={styles.reviewFooter}>
-            {!w.termsDone && <TermsCheck termsAccepted={w.termsAccepted} setTermsAccepted={w.setTermsAccepted} />}
-            <PillButton text={continueLabel} onPress={w.onContinue} disabled={w.continueDisabled} busy={w.starting} />
-            {w.canLeave && <PillButton text="Back" tone="quiet" onPress={w.onBack} />}
-          </View>
         ) : (
           <>
             <PillButton text={continueLabel} onPress={w.onContinue} disabled={w.continueDisabled} busy={w.starting} />
@@ -107,7 +114,11 @@ const Instructions: React.FC = () => {
       }
     >
       <Dissolve id={step} style={styles.step}>
-        <Line size="heading" text={QUESTION[step]} style={styles.question} />
+        <Line
+          size="heading"
+          text={step === "purpose" && !steps.includes("mirror") ? PURPOSE_ALONE : QUESTION[step]}
+          style={styles.question}
+        />
         <View style={[styles.control, { paddingTop: CONTROL_TOP[step] }]}>
           {step === "mirror" ? (
             <ScreenTimeMirror
@@ -123,21 +134,16 @@ const Instructions: React.FC = () => {
               onSelectionComplete={() => w.setIndex(steps.indexOf("apps") + 1)}
             />
           ) : step === "purpose" ? (
-            <SetPurpose purpose={w.purpose} setPurpose={w.setPurpose} />
+            <SetPurpose
+              reason={w.reason}
+              setReason={w.setReason}
+            />
           ) : step === "limit" ? (
             <SetTimeLimit timeValue={w.timeValue} setTimeValue={w.setTimeValue} />
           ) : step === "duration" ? (
             <SetDuration durationDays={w.durationDays} setDurationDays={w.setDurationDays} />
           ) : step === "amount" ? (
             <SetPledge pledgeValue={w.pledgeValue} setPledgeValue={w.setPledgeValue} />
-          ) : step === "review" ? (
-            <Review
-              selection={w.selectionEvent}
-              timeValue={w.timeValue}
-              durationDays={w.durationDays}
-              pledgeValue={w.pledgeValue}
-              purpose={w.purpose}
-            />
           ) : step === "signin" ? (
             w.starting ? null : <SocialSignInButtons tone="dark" onSignedIn={w.onSignedIn} />
           ) : step === "card" ? (
@@ -147,7 +153,7 @@ const Instructions: React.FC = () => {
               pledgeValue={w.pledgeValue}
               durationDays={w.durationDays}
               setPublishableKey={() => {}}
-              onComplete={w.startPledge}
+              onComplete={w.onCardSaved}
               onRetryChange={(retry) => setRetryCard(() => retry)}
             />
           ) : null}
@@ -161,7 +167,6 @@ const styles = StyleSheet.create({
   step: { flex: 1 },
   question: { marginTop: 24 },
   control: { flex: 1 },
-  reviewFooter: { alignSelf: "stretch", gap: 16, marginBottom: 8 },
 });
 
 export default Instructions;

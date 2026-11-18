@@ -17,8 +17,6 @@ import { CURRENCY_SYMBOL } from "../../config";
 import * as Notifications from "expo-notifications";
 
 export const UNLOCK_ACTION = "unlock";
-/** Notification action that opens the coach (`userInfo.context` says why). */
-export const COACH_ACTION = "coach";
 
 /** Needed so the shield's "Unlock" button can reach the user via a notification. */
 export async function ensureNotificationPermission(): Promise<boolean> {
@@ -42,7 +40,8 @@ export type DailyUsage = {
 // The shield extension expects 0-255 channel values. Same palette as the app.
 const ink = { red: 20, green: 12, blue: 11 };
 const cream = { red: 248, green: 240, blue: 230 };
-const creamMuted = { red: 216, green: 201, blue: 190 };
+const creamMuted = { red: 230, green: 216, blue: 204 }; // color.textSecondary #E6D8CC
+const espresso = { red: 36, green: 19, blue: 16 }; // color.onAction, the label on every ivory button
 
 const toThreshold = (totalMinutes: number) => ({
   hour: Math.floor(totalMinutes / 60),
@@ -83,30 +82,11 @@ export function configureLimitActions(pledge: Pick<Pledge, "id" | "timeValue">) 
   const { activityName, selectionId, shieldId } = pledgeNames(pledge.id);
   for (const event of scheduleEvents(limit)) {
     if (!event.blocks) continue;
-    // Block first. At the limit itself (not the retries past it) the
-    // extension also offers the coach, once a day.
-    const offerCoach = event.name === LIMIT_EVENT_NAME;
     DeviceActivity.configureActions({
       activityName,
       callbackName: "eventDidReachThreshold",
       eventName: event.name,
-      actions: [
-        { type: "blockSelection", familyActivitySelectionId: selectionId, shieldId },
-        ...(offerCoach
-          ? [
-              {
-                type: "sendNotification",
-                payload: {
-                  title: "That's your limit for today.",
-                  body: "Want to talk it through? Your coach is here.",
-                  interruptionLevel: "active",
-                  identifier: `pledge-coach-${pledge.id}`,
-                  userInfo: { action: COACH_ACTION, context: "limit", pledgeId: pledge.id },
-                },
-              } as any,
-            ]
-          : []),
-      ],
+      actions: [{ type: "blockSelection", familyActivitySelectionId: selectionId, shieldId }],
     });
   }
 }
@@ -129,7 +109,7 @@ export function shieldPayload(pledge: Pick<Pledge, "id" | "pledgeValue">): [any,
     iconSystemName: "lock.fill",
     primaryButtonLabel: "Keep my word",
     primaryButtonBackgroundColor: cream,
-    primaryButtonLabelColor: ink,
+    primaryButtonLabelColor: espresso,
     secondaryButtonLabel: `Unlock for ${CURRENCY_SYMBOL}${pledgeValue}`,
     secondaryButtonLabelColor: creamMuted,
   };

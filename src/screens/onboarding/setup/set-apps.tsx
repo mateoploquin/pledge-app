@@ -12,7 +12,7 @@ import { SelectionInfo } from "../../../types";
 import { ActivityLabels } from "../../../../modules/pledge-activity-labels";
 import PillButton from "../../../components/ink/pill-button";
 import PressableScale from "../../../components/buttons/pressable-scale";
-import { color, fonts, spacing } from "../../../theme/tokens";
+import { fonts, spacing, type } from "../../../theme/tokens";
 import { track } from "../../../services/analytics";
 
 interface SetAppsProps {
@@ -158,20 +158,13 @@ const styles = StyleSheet.create({
     marginHorizontal: -spacing.lg,
     paddingHorizontal: spacing.lg - 2,
   },
-  count: {
-    fontFamily: fonts.ui,
-    fontSize: 15,
-    lineHeight: 18,
-    color: color.textSecondary,
-  },
+  count: type.small,
   changeLink: {
     alignSelf: "flex-start",
   },
   change: {
+    ...type.row,
     fontFamily: fonts.uiMedium,
-    fontSize: 16,
-    lineHeight: 20,
-    color: color.text,
     textDecorationLine: "underline",
   },
 });

@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { color, fonts, radius } from "../../theme/tokens";
+import { color, fonts, radius, type } from "../../theme/tokens";
 import PressableScale from "./pressable-scale";
 
 interface PresetChipsProps {
@@ -58,8 +58,7 @@ const styles = StyleSheet.create({
     borderColor: color.action,
   },
   label: {
-    fontFamily: fonts.ui,
-    fontSize: 15,
+    ...type.row,
     color: color.textSecondary,
   },
   labelActive: {

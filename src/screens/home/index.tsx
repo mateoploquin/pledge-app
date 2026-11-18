@@ -82,14 +82,9 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
       footerBottom={40}
       footer={
         accessOff ? (
-          <PillButton text="Open Settings" tone="glass" onPress={() => Linking.openSettings()} />
+          <PillButton text="Open Settings" tone="primary" onPress={() => Linking.openSettings()} />
         ) : (
-          <>
-            <PillButton text="New pledge" tone="glass" onPress={() => navigation.navigate("Instructions")} />
-            {pledges.length > 0 && (
-              <PillButton text="Talk to your coach" tone="quiet" onPress={() => navigation.navigate("Coach")} />
-            )}
-          </>
+          <PillButton text="New pledge" tone="primary" onPress={() => navigation.navigate("Instructions")} />
         )
       }
     >
@@ -113,7 +108,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
             <Line size="heading" text="Your apps aren't being limited." />
           ) : (
             <>
-              <Line size="display" text={headline(pledges, usage)} />
+              <Line size="heading" text={headline(pledges, usage)} />
               <Text style={styles.sub}>
                 {empty
                   ? "Pick the apps that take your time, set a limit, put money on it."

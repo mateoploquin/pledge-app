@@ -8,7 +8,7 @@ import { Pledge } from "../../types";
 import { CURRENCY_SYMBOL } from "../../config";
 import { haptics } from "../../utils/haptics";
 import PillButton from "../ink/pill-button";
-import { color, fonts, glass } from "../../theme/tokens";
+import { glass, type } from "../../theme/tokens";
 
 interface SurrenderModalProps {
   isVisible: boolean;
@@ -65,7 +65,7 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({ isVisible, pledge, onCl
             {pledgeValue}. You've come this far.
           </Text>
           <View style={styles.spacer} />
-          <PillButton text="No, keep going" tone="glass" onPress={onClose} disabled={loading} />
+          <PillButton text="No, keep going" tone="primary" onPress={onClose} disabled={loading} />
           <PillButton
             text={`Pay ${CURRENCY_SYMBOL}${pledgeValue} and unlock`}
             tone="consequential"
@@ -103,14 +103,8 @@ const styles = StyleSheet.create({
   blur: { zIndex: -1 },
   // D4 Sheet inset shadow #FFF0E059 0 1px: a bright line under the top edge.
   rim: { position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: "rgba(255,240,224,0.35)" },
-  // D4: Inter Medium 30/36, -0.02 em (type.heading is Inter Display).
-  title: { fontFamily: fonts.uiMedium, fontSize: 30, lineHeight: 36, letterSpacing: -0.6, color: color.text },
-  text: {
-    fontFamily: fonts.ui,
-    color: glass.textSecondary,
-    fontSize: 16,
-    lineHeight: 24,
-  },
+  title: type.heading,
+  text: type.body,
   spacer: { flexGrow: 1 },
 });
 

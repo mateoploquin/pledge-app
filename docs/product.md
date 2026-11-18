@@ -35,45 +35,25 @@ welcome and the four-beat deal that used to follow sign-in were removed.
 
 One question per screen, "STEP n OF N" top right, a solid ivory
 "Continue" and a quiet "Back"/"Cancel" pinned at the bottom, content
-dissolving between steps (v2, owner 8 Nov 2026). Steps, in order:
+dissolving between steps (v2, owner 8 Nov 2026). The first pledge reads as a
+story (owner, 17 Nov 2026): what your screen time adds up to in a life, what you'd do with it back,
+which apps take it, then the terms and the seal. Steps, in order:
 
 | Step | Question | Control | Continue is enabled when |
 | --- | --- | --- | --- |
-| mirror (first pledge only, and only when the report extension is bundled) | Your last seven days. | Asks Screen Time access immediately, then the system-drawn last 7 days: the bars rise, the social-media part of each breaks off, and it adds up to "Xh back" a week (`SocialCut`, Inter, solar accent) | Screen Time access approved |
+| mirror (first pledge only, and only when the report extension is bundled) | Let's look at your screen time. | Asks Screen Time access immediately, then the system tells last week's Screen Time (all apps, all devices) as a story, one beat at a time, about every 3.2 s, zooming out like a camera pulling back: each beat drifts smaller while it's read and shrinks away as the next arrives from bigger (owner, 18 Nov 2026). Under the words, the time is drawn (owner, 18 Nov 2026): one brand-orange square per hour on the phone, a pile that grows with each beat (26 → 113 → 1,369 → 109,500 hours for the average) while the view pulls back to fit it; at the year it stops pulling back and the life floods past its box and off the screen, square by square, with a running count ("109,500 HOURS · ONE SQUARE, ONE HOUR"), then the squares fade away and the words stay (owner, 17 Nov 2026: "people need a story"; a report can't be tapped, so it plays on its own): "Last week, you spent **36 hours** on your phone." → "In a month, that's **7 days** looking down." → "In a year, it adds up to **79 days**." → "If you keep going like this, that's **17 years** OF YOUR *Life.*" (the last beat stays; "OF YOUR" in Noto Serif caps, "Life." in Great Vibes, ivory; 24-hour days, an 80-year life). Reduce Motion shows the last beat only. iOS keeps only a few weeks of history, so it's projected from last week. Never an empty page: with no Screen Time data the same story is told about most people ("Most people spend **26 hours** a week on their phone." … then just "**13 years** OF YOUR *Life.*"; 3h 45m a day, DataReportal 2024; `averageDayHours`/`lifeYears` in SocialCut.swift, `AVERAGE_DAY_HOURS`/`LIFE_YEARS` in screen-time-mirror.tsx). Where iOS can't draw the report at all (no extension, the simulator) the app tells the same average story (Paper B1b). A report iOS silently fails to draw can't be detected. | Screen Time access approved |
+| purpose (every pledge, owner 11 Nov 2026; picks 16 Nov 2026; straight after the mirror, 17 Nov 2026) | What would you do with that time back? ("What's this time for?" on a pledge without the mirror) | Four picks styled like the length step: Sleep, Focus, People, Presence. No text box (owner, 17 Nov 2026: the keyboard covered the picks). A pick crossfades that reason's film in behind (`reason-sleep/focus/people.mp4`, Presence `reason-presence.mp4`, a couple watching the sun set over the sea; Pinterest, maker's approval still to get). The button reads "Skip for now" until a pick. Saved with the pledge as "People"; the seal reads "For people."; analytics gets only the reason | always |
 | apps | Which apps take the most from you? | "Choose apps" opens Apple's picker (never on its own, owner 31 Oct 2026); after, the chosen apps, "N apps chosen" and an underlined "Change apps" | at least one app, category or site chosen |
-| purpose (every pledge, owner 11 Nov 2026) | What's this time for? | One free-text field (280 chars), placeholder "Reading to my kids. Finishing the novel. Sleep." The button reads "Skip for now" while it's empty. Shown on Review as "For"; sent with the pledge; only the coach reads it (analytics gets only its length) | always |
 | limit | How much is enough a day? | slider 0–120 min with ticks 0/30/60/90/120, presets 30/60/90; 0 means blocked all day | always |
 | duration | For how long? | 7 / 15 / 30 days | always |
 | amount | What's your word worth? | slider 0–20 with ticks 0/5/10/15/20, presets 5/10/20 | amount ≥ 1 |
-| review (every pledge) | Your word, in full. | Apps (counts, since Apple hides app names), Daily limit ("resets at midnight"), Length (with end date), "Your pledge $X", then "Nothing is charged now. You pay $X only if you unlock early, delete Pledge or turn off Screen Time access." The Terms and Privacy checkbox shows once per device, in the footer over the button | terms accepted (first time only) |
-| signin (only when nobody is signed in) | Put your name to it. | "Continue with Apple" and "Continue with Google"; only a quiet "Back" in the footer. Signing in moves on by itself: to the card step, or straight to starting the pledge when that account already has a card | signed in |
-| card (skipped when a card is on file) | Put your card down. | Stripe PaymentSheet opens immediately; saving the card continues on its own. If it's closed or fails: "Your card wasn't saved." callout, with "Add a card" and "Back" in the footer | card saved |
+| signin (only when nobody is signed in) | Put your name to it. | "Continue with Apple" and "Continue with Google"; only a quiet "Back" in the footer. Signing in moves on by itself: to the card step, or to the seal when that account already has a card | signed in |
+| card (skipped when a card is on file) | Put your card down. | Stripe PaymentSheet opens immediately; saving the card moves on to the seal. If it's closed or fails: "Your card wasn't saved." callout, with "Add a card" and "Back" in the footer | card saved |
+| seal (every pledge, always last; owner 16 Nov 2026) | (none; the oath is the screen) | Its own full screen over the sunrise film (`seal-rise.mp4`): "I, NAME, PLEDGE." in Noto Serif caps, the name in the brand orange #ED602A (first name from the account; tap it to change), a rule, the terms in small caps ("60 MIN A DAY · 30 DAYS · $10 · ENDS 16 DEC"), "For people." Under it a liquid glass ring: hold for one breath (4 s) while the film plays and haptics build; letting go runs it back. Below: "Nothing is charged now. You pay $X only if you unlock early, delete Pledge or turn off Screen Time. Sealing means you agree to the Terms and Privacy Policy." Replaces Review and the terms checkbox (`setup/seal.tsx`) | held through |
 
-Review's button reads "Sign in to lock it in" when nobody is signed in,
-"Add a card to lock it in" when no card is on file, otherwise "Lock it in". Locking in: backend records the
+Sealing: backend records the
 pledge (`POST /pledge`), the Screen Time schedule starts, the pledge is
-saved locally, device is registered for push, success haptic, Home with
-the coach opened on top (`context: "pledge_started"`).
-
-### Coach (`src/screens/coach/index.tsx`, v1 text; owner 11 Nov 2026)
-
-Pledge's mission is helping people live closer to their purpose; the coach
-is how each person's purpose gets in. A quiet chat on the ink ground: the
-coach's words sit on the ground, the user's on a solid surface, a text box
-and "Send" in the footer, "YOUR COACH" top right. Opened:
-
-- right after a pledge locks in: it speaks first and reflects the purpose
-  back (or asks what the time is for);
-- from Home, "Talk to your coach" under "New pledge" (only with pledges);
-- from the notification the monitor posts at a pledge's daily limit
-  ("That's your limit for today." / "Want to talk it through? Your coach
-  is here."): it speaks first about that moment.
-
-It knows the pledges (with purpose), the last week of minutes per pledge
-and the conversation, and keeps its own notes per user (profile, purpose,
-notes). It cannot change pledges or touch money, and it never sees which
-apps or per-app times (Apple). 40 messages a day per user. Voice
-(LiveKit) comes later on the same backend.
+saved locally, device is registered for push, success haptic, Home.
 
 ### Home (`src/screens/home/index.tsx`)
 
@@ -127,7 +107,7 @@ sheet: dark glass, "Wait.", a glass "No, keep going" and a red-outline
 monitoring, removes the pledge. There is no failure screen afterwards.
 
 While the apps are blocked, the detail screen's footer offers "5 minutes
-for $1" (glass button, no count shown; "Unlock my apps" drops to quiet text
+for $1" (ivory button, no count shown; "Unlock my apps" drops to quiet text
 below): a paid break. Not in the surrender modal; that stays about giving
 up (owner, 31 Oct 2026). The card is charged $1 (`POST /stripe/break`), the
 pledge keeps running, and the apps unlock for 5 minutes on the clock, used
@@ -199,7 +179,7 @@ Legal pages are served by the backend at `/terms` and `/privacy`
   pledge step (owner,
   10 Nov 2026). It used to be told after sign-in as a welcome plus four
   beats (29 Oct 2026, after testers said they did not know what they were
-  signing up for); the review step's sentence about when money moves now
+  signing up for); the seal's sentence about when money moves now
   carries that. Not a carousel to swipe either. Still no
   slide-to-unlock splash, no separate payment page, no progress bar on Home, no failure screen after surrender, no hint
   texts under controls.
@@ -227,8 +207,9 @@ Legal pages are served by the backend at `/terms` and `/privacy`
   terms (`backend/src/legal.ts`) or the rules step. Revisit before App Review.
 - Shield look: an animation is impossible; options offered were solid ink
   with a cream "p" icon, ember accent, or a still from the montage. No pick.
-- Voice coach: text v1 shipped 11 Nov 2026 (see Coach above); voice still
-  planned (LiveKit full-duplex talker + Claude as the thinker,
+- Coach: removed for now (owner, 16 Nov 2026), not in the App Store
+  version. Text v1 was built 11 Nov 2026 (commit `a6ea121`, restore from
+  there). Voice still planned (LiveKit full-duplex talker + Claude as the thinker,
   per-user folder, triggered from the shield and a daily check-in, free,
   English only). Design artifact: https://claude.ai/artifact/5ZYnYWAo4MGoUB1Y7tgEC2. Not started.
 - Dynamic limits from a coach/agent: the phone enforces, so an agent can

@@ -4,14 +4,24 @@ How a build gets from this repo to TestFlight and the App Store, and where
 things stand. Keep this file current; it is the one place that says why a
 store build differs from the dev build.
 
-## Current status (11 November 2026)
+## Current status (18 November 2026)
 
-**Not built yet: the purpose step and the coach (v1, text).** Before a
-build that includes them, the owner adds `ANTHROPIC_API_KEY` to Vercel
-production (Sensitive) and deploys the backend; without the key the coach
-answers 503 ("The coach is not set up yet.") right after every new
-pledge. Also new: the heartbeat sends today's minutes, and the privacy
-policy (effective 11 November 2026) says so and names Anthropic.
+**Build 31 (1.1.0) is being built for TestFlight** (18 November 2026; EAS
+build and submission ids to fill in, confirm once TestFlight shows it
+processed). On top of build 30: the launch sunset; the mirror told as a
+story ("Let's look at your screen time.": a week in hours, a month, a year,
+then "13 years OF YOUR *Life.*", zooming out, with one orange square per
+hour piling up under it and fading at the end), drawn by the report
+extension on a phone and by the app where it can't (average numbers);
+"What would you do with that time back?" right after it, chips only; the
+seal in the brand orange; one ivory main button everywhere; the type and
+colour sweep (one accent, #ED602A, no light orange) and the dead screens
+and components deleted. Ships `reason-presence.mp4`, a Pinterest clip that
+needs its maker's written approval before the App Store.
+
+**Build 30 (1.1.0) is on TestFlight** (17 November 2026, resubmitted with
+`eas submit --id` after Apple's agreement was signed): the purpose step
+("What's this time for?"), the coach removed, the backend redeployed.
 
 **Build 29 (1.1.0) is being built for TestFlight** (10 November 2026, EAS
 build 7c5cbc57, submission 6a400e56; confirm once TestFlight shows it
@@ -156,9 +166,8 @@ and that the built app has `Extensions/ReportExtension.appex`.
 - [ ] Paid breaks: decide IAP vs Stripe for "5 minutes for $1" (see
       `docs/product.md`, open decisions), add breaks to the terms and the
       rules step, and update `docs/app-review-notes.md`.
-- [ ] App Privacy questionnaire in App Store Connect. Include the coach:
-      user content (messages, purpose) and product interaction (daily
-      minutes), linked to the user, not used for tracking.
+- [ ] App Privacy questionnaire in App Store Connect. Include the purpose
+      text (user content, linked to the user, not used for tracking).
 - [ ] Screenshots from a real device.
 - [ ] App Review notes pasted from `docs/app-review-notes.md`, with a demo
       account filled in.

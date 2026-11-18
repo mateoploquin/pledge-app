@@ -48,10 +48,10 @@ backend/src/                 index (routes), stripe, firebase, apns, forfeit, le
 docs/                        this folder
 ```
 
-Dead code still in the tree (unused, safe to delete): `instructions-carousel`,
-`challenge-on`, `splash-slider`, `home-switch`, `bottom-illustration`,
-`main-header-light`, `days-progress-bar`, `apps-onboarding-grid`,
-`src/theme/colors.ts` consumers from the old style.
+The old screens (Details, Login, Register, SharePledge), their components
+and the old palette `src/theme/colors.ts` were deleted on 17 Nov 2026.
+`openLegal` (Terms and Privacy in an in-app Safari sheet) lives in
+`src/services/legal.ts`.
 
 ## The five targets
 
@@ -87,9 +87,7 @@ run it.
    DeviceActivity schedule `Pledge<id>` (midnight to midnight) with:
    - tick events every 5 min (`tick<n>`), used to show today's usage;
    - `limitReached` at the daily limit, whose action is `blockSelection`
-     with that shield, then a local notification offering the coach
-     (`userInfo.action: "coach"`, context `limit`; 11 Nov 2026); limit 0
-     blocks from interval start;
+     with that shield; limit 0 blocks from interval start;
    - six more ticks past the limit (limit+5 ... limit+30) that also block;
    - `intervalDidStart` unblocks, so the block lifts at midnight.
 
@@ -172,34 +170,22 @@ needs `Authorization: Bearer <Firebase ID token>`.
 | `DELETE /account` | deletes the Stripe customer, every `users/{uid}` record and the Firebase user. With running pledges it answers 409 unless `?charge=1`, which charges them first like giving up |
 | `POST /pledge/:id/complete` | marks completed |
 | `POST /stripe/charge` | charges a pledge (surrender) |
-| `POST /device`, `POST /heartbeat` | deletion detection (above); the heartbeat also carries today's minutes per pledge (`usage`), stored for the coach |
-| `GET /coach/messages` | the coach conversation, oldest first (hidden context notes left out) |
-| `POST /coach/message` | one coach turn: `{text, context: home/limit/pledge_started}`; empty text with a moment makes the coach speak first. 429 past 40 a day, 503 without `ANTHROPIC_API_KEY` |
+| `POST /device`, `POST /heartbeat` | deletion detection (above) |
 | `GET /cron/check-devices` | daily silent-push sweep |
 
 Firestore: `users/{uid}` (profile, `stripeCustomerId`, `lastHeartbeatAt`,
 `screenTimeAuthorized`), `users/{uid}/pledges/{id}` (`status`
 active/surrendered/completed/forfeited, amounts, `endsAt`,
-`paymentIntentId`, `forfeitReason`, `chargeError`, optional `purpose`), `users/{uid}/devices/{token}`,
-`users/{uid}/usage/{YYYY-MM-DD}` (per pledge id: `minutes`, `limit`,
-`limitReached`, phone's local date), `users/{uid}/coachMessages/*`
-(`role`, `text`, `createdAt`, `hidden`), `users/{uid}/coachFiles/{name}`
-(the coach's notes; `coachDay`/`coachCount` on the user doc cap it).
-
-### Coach (`backend/src/coach.ts`)
-
-Claude (`claude-opus-5-5`, effort low, server-side refusal fallbacks) via
-the SDK's tool runner, with one tool: the memory tool, whose `/memories`
-files are Firestore docs under `coachFiles`. Each turn sends a frozen,
-cached system prompt (voice, limits, care rule), the last 30 messages, and
-a `<context>` block built fresh: active pledges with purpose, the last 7
-days of `usage`, and why it was opened. No tool reaches Stripe or pledges.
+`paymentIntentId`, `forfeitReason`, `chargeError`, optional `purpose`), `users/{uid}/devices/{token}`.
+The coach (removed 16 Nov 2026, see `docs/product.md`) also left
+`usage`, `coachMessages` and `coachFiles` under some test users; nothing
+reads them now.
 
 Env (see `backend/.env.example`): `STRIPE_SECRET_KEY`,
 `STRIPE_PUBLISHABLE_KEY` (sandbox keys on Vercel right now; live keys
 must go back before launch), `FIREBASE_SERVICE_ACCOUNT` (JSON or base64),
 `PLEDGE_CURRENCY=usd`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY_P8`
-(base64), `APNS_BUNDLE_ID`, `CRON_SECRET`, `ANTHROPIC_API_KEY` (the coach). All set in Vercel production as
+(base64), `APNS_BUNDLE_ID`, `CRON_SECRET`. All set in Vercel production as
 Sensitive. Local dev: `backend/.env` (gitignored), `npm run dev` on :3000.
 
 Deploy: the owner runs `cd backend && vercel --prod --yes`. Agents cannot.
@@ -247,8 +233,8 @@ and app properties; storage falls back to AsyncStorage (no
 - The app never learns which apps were chosen, per-app use, or the 7-day
   total. Only the report extension can see those, and it can only draw; it
   has no network and cannot talk to the host app. What the app does know is
-  its own pledge's ticks (5-min steps of the selection's use today), and
-  that is the only usage the heartbeat sends to the backend and the coach.
+  its own pledge's ticks (5-min steps of the selection's use today), but
+  it stays on the phone: the backend gets no usage at all.
 - Shield extensions cannot open apps or make network calls reliably; the
   unlock path goes through a notification.
 - Website selections only cover Safari; Private Browsing escapes. Category

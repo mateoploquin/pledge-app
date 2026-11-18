@@ -12,7 +12,7 @@ import GlassSurface from "../../components/ink/glass-surface";
 import Caption from "../../components/ink/caption";
 import Callout from "../../components/ink/callout";
 import PressableScale from "../../components/buttons/pressable-scale";
-import { openLegal } from "../onboarding/setup/accept-terms";
+import { openLegal } from "../../services/legal";
 import { loadPledges } from "../../services/pledges";
 import {
   Card,
@@ -26,7 +26,7 @@ import {
 } from "../../services/account-api";
 import { CURRENCY_SYMBOL } from "../../config";
 import { track } from "../../services/analytics";
-import { color, fonts, glass } from "../../theme/tokens";
+import { color, fonts, glass, type } from "../../theme/tokens";
 
 /**
  * Account (v2 Paper group "E"), opened from the icon on Home. Deliberately
@@ -280,7 +280,7 @@ export const DeleteAccountScreen: React.FC<{ navigation: any }> = ({ navigation 
       backdrop={<CardLight />}
       footer={
         <View style={styles.footer}>
-          <PillButton text="Keep my account" tone="glass" onPress={() => navigation.goBack()} disabled={busy} />
+          <PillButton text="Keep my account" tone="primary" onPress={() => navigation.goBack()} disabled={busy} />
           <PillButton
             text={stake.count > 0 ? `Pay ${amount} and delete` : "Delete account"}
             tone="consequential"
@@ -323,18 +323,17 @@ const styles = StyleSheet.create({
   rowTwoLine: { alignItems: "flex-start", paddingVertical: 16 },
   rowRule: { borderTopWidth: 1, borderTopColor: glass.rule },
   rowText: { flex: 1, gap: 4 },
-  rowLabel: { fontFamily: fonts.ui, fontSize: 16, lineHeight: 20, color: color.text },
-  rowSub: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 18, color: glass.textSecondary },
-  rowValue: { fontFamily: fonts.ui, fontSize: 16, lineHeight: 20, color: glass.textSecondary },
-  rowStrong: { fontFamily: fonts.uiSemibold, fontSize: 16, lineHeight: 20, color: color.text },
-  // E3: the outcome is a size down from the amount on E2.
-  outcomeKept: { fontFamily: fonts.uiSemibold, fontSize: 15, lineHeight: 18, color: color.text },
-  outcomePaid: { fontFamily: fonts.ui, fontSize: 15, lineHeight: 18, color: glass.textSecondary },
-  body: { fontFamily: fonts.ui, fontSize: 16, lineHeight: 24, color: color.textSecondary },
+  rowLabel: type.row,
+  rowSub: type.small,
+  rowValue: { ...type.row, color: color.textSecondary },
+  rowStrong: { ...type.row, fontFamily: fonts.uiSemibold },
+  outcomeKept: { ...type.row, fontFamily: fonts.uiSemibold },
+  outcomePaid: { ...type.row, color: color.textSecondary },
+  body: type.body,
   callout: { marginTop: 20 },
   actions: { gap: 4, paddingTop: 24 },
   delete: { height: 48, alignItems: "center", justifyContent: "center" },
-  deleteText: { fontFamily: fonts.uiMedium, fontSize: 16, lineHeight: 20, color: color.error },
+  deleteText: { ...type.row, fontFamily: fonts.uiMedium, color: color.error },
   // E4: 12 between the two buttons (InkScreen's footer gap is 4).
   footer: { alignSelf: "stretch", gap: 12 },
 });

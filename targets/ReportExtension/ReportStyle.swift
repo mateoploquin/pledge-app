@@ -18,11 +18,11 @@ struct ReportStyle {
     let d = defaults
     let fontSize = d?.double(forKey: "pledgeReport.fontSize") ?? 0
     let maxApps = d?.integer(forKey: "pledgeReport.maxApps") ?? 0
-    let ink = Color(red: 0.11, green: 0.08, blue: 0.06)
+    // Fallbacks are the app's tokens: ivory, the one secondary, the brand orange.
     return ReportStyle(
-      textColor: Color(hex: d?.string(forKey: "pledgeReport.textColor")) ?? ink,
-      mutedColor: Color(hex: d?.string(forKey: "pledgeReport.mutedColor")) ?? ink.opacity(0.55),
-      accentColor: Color(hex: d?.string(forKey: "pledgeReport.accentColor")) ?? Color(red: 1.0, green: 0.35, blue: 0.0),
+      textColor: Color(hex: d?.string(forKey: "pledgeReport.textColor")) ?? Color(hex: "#F8F0E6")!,
+      mutedColor: Color(hex: d?.string(forKey: "pledgeReport.mutedColor")) ?? Color(hex: "#E6D8CC")!,
+      accentColor: Color(hex: d?.string(forKey: "pledgeReport.accentColor")) ?? Color(hex: "#ED602A")!,
       fontSize: fontSize > 0 ? CGFloat(fontSize) : 44,
       maxApps: maxApps > 0 ? maxApps : 5)
   }
