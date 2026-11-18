@@ -6,9 +6,8 @@ store build differs from the dev build.
 
 ## Current status (18 November 2026)
 
-**Build 31 (1.1.0) is being built for TestFlight** (18 November 2026; EAS
-build and submission ids to fill in, confirm once TestFlight shows it
-processed). On top of build 30: the launch sunset; the mirror told as a
+**Build 31 (1.1.0) is being built for TestFlight** (18 November 2026, EAS build 498e8ce0,
+submission 74c7e9ee; confirm once TestFlight shows it processed). On top of build 30: the launch sunset; the mirror told as a
 story ("Let's look at your screen time.": a week in hours, a month, a year,
 then "13 years OF YOUR *Life.*", zooming out, with one orange square per
 hour piling up under it and fading at the end), drawn by the report
