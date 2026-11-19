@@ -1,16 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, InteractionManager } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
 import AnimatedNumber from "../../../components/text/animated-number";
 import PresetChips from "../../../components/buttons/preset-chips";
 import { haptics } from "../../../utils/haptics";
 import { color, fonts, type } from "../../../theme/tokens";
-import * as Device from "expo-device";
-import {
-  TIME_BACK_HEIGHT,
-  TimeBack,
-  isActivityReportAvailable,
-} from "../../../../modules/pledge-activity-report";
+import { TIME_BACK_HEIGHT } from "../../../../modules/pledge-activity-report";
 import { AVERAGE_DAY_HOURS, lifeParts } from "./screen-time-mirror";
 
 interface SetTimeLimitProps {
@@ -22,11 +17,10 @@ interface SetTimeLimitProps {
 
 /**
  * What the limit gives back, one sentence (owner, 18 Nov 2026: "It has to be
- * OBVIOUS what it means. Anything else is noise."). On a phone the Screen
- * Time view draws it from last week's time on the chosen apps (TimeBackView
- * in targets/ReportExtension/TimeBack.swift). Where iOS can't draw one (no
- * extension, the simulator) the app draws the same from the average day,
- * 3 h 45 min.
+ * OBVIOUS what it means. Anything else is noise."). Drawn from the
+ * average day, 3 h 45 min. The Screen Time version (TimeBackView in
+ * targets/ReportExtension/TimeBack.swift, from last week's time on the
+ * chosen apps) never showed on phones, so it isn't used (19 Nov 2026).
  */
 const TimeBackFallback: React.FC<{ minutes: number }> = ({ minutes }) => {
   const back = Math.max(0, Math.round(AVERAGE_DAY_HOURS * 60) - minutes);
@@ -52,22 +46,7 @@ const TimeBackFallback: React.FC<{ minutes: number }> = ({ minutes }) => {
 const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
   timeValue,
   setTimeValue,
-  familyActivitySelection,
 }) => {
-  // The Screen Time view starts once the step has settled: started during
-  // the step's dissolve, right after the mirror's report, it could come up
-  // blank (one extension process serves both).
-  const [reportReady, setReportReady] = useState(false);
-  useEffect(() => {
-    let t: ReturnType<typeof setTimeout> | undefined;
-    const task = InteractionManager.runAfterInteractions(() => {
-      t = setTimeout(() => setReportReady(true), 400);
-    });
-    return () => {
-      task.cancel();
-      if (t) clearTimeout(t);
-    };
-  }, []);
   return (
     <View style={styles.container}>
       {/* One text run, so the unit sits on the number's baseline (see set-pledge). */}
@@ -99,22 +78,9 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
 
       {/* The choice first, what it gives back under it (owner, 18 Nov 2026:
           make it obvious what to do). */}
-      {isActivityReportAvailable() && Device.isDevice ? (
-        !reportReady ? (
-          <View style={styles.report} />
-        ) : (
-          <TimeBack
-            familyActivitySelection={familyActivitySelection}
-            limitMinutes={timeValue}
-            textColor={color.text}
-            mutedColor={color.textSecondary}
-            accentColor={color.solar}
-            style={styles.report}
-          />
-        )
-      ) : (
-        <TimeBackFallback minutes={timeValue} />
-      )}
+      {/* Drawn by the app, not the Screen Time view: on phones the system
+          view never showed here (owner, 19 Nov 2026, several phones). */}
+      <TimeBackFallback minutes={timeValue} />
     </View>
   );
 };

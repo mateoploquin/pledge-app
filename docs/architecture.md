@@ -262,8 +262,11 @@ and app properties; storage falls back to AsyncStorage (no
   render key, so the report isn't restarted (and written only when it
   changed); `TimeBackView` checks it ten times a second and redraws only on
   a change. A `TimelineView` that rebuilt the view every tick made the
-  report blink out on the owner's phone (build 32). App to extension only, as ever: the
-  limit goes in, nothing comes out.
+  report blink out on the owner's phone (build 32), and the polled version
+  never showed at all on several phones (build 35, 19 Nov 2026; no crash
+  or memory kill in the phone's logs). The app no longer uses `timeBack`:
+  the limit step draws `TimeBackFallback` from the average day. The scene
+  is still in the extension.
 
 ## Dev loop
 
