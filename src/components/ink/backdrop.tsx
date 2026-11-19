@@ -39,15 +39,27 @@ const STRONG: BackdropVariant[] = ["brand", "empty"];
  * artboards. A glow placed in the screen's content instead sits above the
  * grain, reads too bright, and moves with the content's padding.
  */
-const Backdrop: React.FC<{ variant?: BackdropVariant; children?: React.ReactNode }> = ({
-  variant = "quiet",
-  children,
-}) => {
+const Backdrop: React.FC<{
+  variant?: BackdropVariant;
+  children?: React.ReactNode;
+  /** An animated style on the light alone (Home's entrance after the seal):
+   * the vignette and grain stay put, as on the seal's last frame. */
+  lightStyle?: any;
+}> = ({ variant = "quiet", children, lightStyle }) => {
   const brand = STRONG.includes(variant);
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+  const light = (
+    <>
       <Image source={LIGHT[variant]} style={styles.fill} resizeMode="stretch" />
       {variant === "empty" && <DriftingSun />}
+    </>
+  );
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      {lightStyle ? (
+        <Animated.View style={[StyleSheet.absoluteFill, lightStyle]}>{light}</Animated.View>
+      ) : (
+        light
+      )}
       {children}
       {brand && <Image source={VIGNETTE} style={styles.fill} resizeMode="stretch" />}
       <ImageBackground

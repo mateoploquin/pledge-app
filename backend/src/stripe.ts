@@ -102,6 +102,23 @@ export async function chargePledge(
   pledge: PledgeRecord,
   mode: { status: "surrendered" | "forfeited"; reason?: string } = { status: "surrendered" }
 ): Promise<ChargeOutcome> {
+  // A $0 pledge (owner, 19 Nov 2026): nothing on it but the user's word, so
+  // giving it up or forfeiting it only ends it. No card needed, no Stripe
+  // call (Stripe can't charge $0 anyway), no charge record.
+  if (!(pledge.pledgeValue > 0)) {
+    if (pledge.status === "completed") {
+      throw Object.assign(new Error("This pledge was already completed"), { status: 400 });
+    }
+    if (pledge.status === "active") {
+      await pledgesRef(user.uid)
+        .doc(pledge.id)
+        .set(
+          { status: mode.status, endedAt: new Date().toISOString(), ...(mode.reason ? { forfeitReason: mode.reason } : {}) },
+          { merge: true }
+        );
+    }
+    return { status: "succeeded", paymentIntentId: "", amount: 0, currency: CURRENCY };
+  }
   if (!customerIdOf(user)) {
     throw Object.assign(new Error("No payment method on file"), { status: 400 });
   }

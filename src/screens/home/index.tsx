@@ -17,6 +17,16 @@ import { useHome } from "./use-home";
 import { CURRENCY_SYMBOL } from "../../config";
 import { ScreenTimeOverview, TimeRecovered, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
 import { color, fonts, spacing } from "../../theme/tokens";
+import Animated from "react-native-reanimated";
+import {
+  Enter,
+  EntranceBlur,
+  EntranceLogo,
+  EntranceProvider,
+  useEntranceClock,
+  useGroundStyle,
+  useHomeLogoStyle,
+} from "./sealed-entrance";
 
 const NO_USAGE: DailyUsage = { usedMinutes: 0, remainingMinutes: 0, limitReached: false };
 
@@ -36,10 +46,28 @@ const AccountIcon = () => (
 );
 
 /** Home (v2 Paper group "C"): every running pledge on glass, and the way to start another. */
-const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
+const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation, route }) => {
   const { pledges, usage, startedAt, selections } = useHome(navigation);
+  // Straight from the seal: Home comes into being (sealed-entrance.tsx).
+  const sealed = route?.params?.entrance === "sealed";
+  // The entrance starts once the pledges are loaded, not on mount.
+  const clock = useEntranceClock(sealed, pledges !== null);
+  const groundStyle = useGroundStyle(clock);
+  const logoStyle = useHomeLogoStyle(clock);
 
-  if (pledges === null) return <InkScreen><View /></InkScreen>;
+  // Loading (a frame or two). Straight from the seal, this must look exactly
+  // like the seal's last frame (dark ground, grain, the logo in its corner),
+  // or the light flashes on and off before the entrance (owner, 19 Nov 2026).
+  if (pledges === null)
+    return sealed ? (
+      <InkScreen variant="empty" backdropStyle={groundStyle} overlay={<EntranceLogo t={clock} />}>
+        <View />
+      </InkScreen>
+    ) : (
+      <InkScreen>
+        <View />
+      </InkScreen>
+    );
 
   const approved = getAuthorizationStatus() === AuthorizationStatus.approved;
   // The real Screen Time of the last 7 days, drawn by the system, once access is granted.
@@ -51,21 +79,38 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
   // C3 and C4 give the head more room above and below than C2 and C5.
   const roomy = accessOff || (!empty && pledges.some((p) => usage[p.id]?.limitReached));
 
+  // Order of coming in after the seal: account, head, each card, the report, the button.
+  const reportOrder = 2 + pledges.length;
   return (
+    <EntranceProvider value={sealed ? clock : null}>
     <InkScreen
       // One ground everywhere, its low sun drifting behind the glass (owner, 18 Nov 2026).
       variant="empty"
       footerBottom={40}
+      backdropStyle={sealed ? groundStyle : undefined}
+      overlay={
+        sealed ? (
+          <>
+            <EntranceBlur t={clock} />
+            <EntranceLogo t={clock} />
+          </>
+        ) : undefined
+      }
       footer={
-        accessOff ? (
-          <PillButton text="Open Settings" tone="primary" onPress={() => Linking.openSettings()} />
-        ) : (
-          <PillButton text="New pledge" tone="primary" onPress={() => navigation.navigate("Instructions")} />
-        )
+        <Enter order={reportOrder + 1} style={styles.footerEnter}>
+          {accessOff ? (
+            <PillButton text="Open Settings" tone="primary" onPress={() => Linking.openSettings()} />
+          ) : (
+            <PillButton text="New pledge" tone="primary" onPress={() => navigation.navigate("Instructions")} />
+          )}
+        </Enter>
       }
     >
       <View style={styles.header}>
-        <Lockup />
+        <Animated.View style={sealed ? logoStyle : undefined}>
+          <Lockup />
+        </Animated.View>
+        <Enter order={0}>
         <PressableScale
           onPress={() => navigation.navigate("Account")}
           haptic="tap"
@@ -76,9 +121,11 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
         >
           <AccountIcon />
         </PressableScale>
+        </Enter>
       </View>
 
       <ScrollView contentContainerStyle={[styles.scroll, roomy && styles.scrollRoomy]} showsVerticalScrollIndicator={false}>
+        <Enter order={1}>
         <Dissolve id={accessOff ? "access-off" : headline(pledges, usage)} style={[styles.head, roomy && styles.headRoomy]}>
           {accessOff ? (
             <Line size="heading" text="Your apps aren't being limited." />
@@ -88,12 +135,16 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
               <Text style={styles.sub}>
                 {empty
                   ? "Pick the apps that take your time, set a limit, put money on it."
-                  : `${CURRENCY_SYMBOL}${atStake} on your word.`}
+                  : atStake > 0
+                  ? `${CURRENCY_SYMBOL}${atStake} on your word.`
+                  : "Nothing on it but your word."}
               </Text>
             </>
           )}
         </Dissolve>
+        </Enter>
 
+        <Enter order={2}>
         {accessOff ? (
           <Callout
             title="Screen Time access is off."
@@ -119,16 +170,18 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
           )
         ) : (
           <View>
-            {pledges.map((p) => (
-              <PledgeCard
-                key={p.id}
-                pledge={p}
-                usage={usage[p.id] ?? NO_USAGE}
-                onPress={() => navigation.navigate("PledgeDetail", { id: p.id })}
-              />
+            {pledges.map((p, i) => (
+              <Enter key={p.id} order={2 + i}>
+                <PledgeCard
+                  pledge={p}
+                  usage={usage[p.id] ?? NO_USAGE}
+                  onPress={() => navigation.navigate("PledgeDetail", { id: p.id })}
+                />
+              </Enter>
             ))}
             {/* Before vs since, drawn by the system; the one report on this screen. */}
             {showReport && selections.length > 0 && (
+              <Enter order={reportOrder}>
               <TimeRecovered
                 startedAt={startedAt}
                 selections={selections}
@@ -137,15 +190,19 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
                 accentColor={color.text}
                 style={styles.recovered}
               />
+              </Enter>
             )}
           </View>
         )}
+        </Enter>
       </ScrollView>
     </InkScreen>
+    </EntranceProvider>
   );
 };
 
 const styles = StyleSheet.create({
+  footerEnter: { alignSelf: "stretch", alignItems: "center" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 4 },
   account: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
   scroll: { paddingTop: 36, paddingBottom: spacing.lg },

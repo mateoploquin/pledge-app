@@ -226,7 +226,11 @@ export const PastPledgesScreen: React.FC<{ navigation: any; route: any }> = ({ n
                   <Text style={styles.rowSub}>Ended {day(p.completedAt ?? p.chargedAt ?? p.endsAt)}</Text>
                 </View>
                 <Text style={p.status === "completed" ? styles.outcomeKept : styles.outcomePaid}>
-                  {p.status === "completed" ? OUTCOME.completed : `${OUTCOME[p.status]} ${CURRENCY_SYMBOL}${p.pledgeValue}`}
+                  {p.status === "completed"
+                    ? OUTCOME.completed
+                    : p.status !== "active" && !(p.pledgeValue > 0)
+                    ? "Given up"
+                    : `${OUTCOME[p.status]} ${CURRENCY_SYMBOL}${p.pledgeValue}`}
                 </Text>
               </View>
             ))}
@@ -250,7 +254,7 @@ export const DeleteAccountScreen: React.FC<{ navigation: any }> = ({ navigation 
     if (busy) return;
     setBusy(true);
     try {
-      await deleteAccount(stake.count > 0);
+      await deleteAccount(stake.total > 0);
       track("account_deleted", { paid_pledges: stake.count });
       navigation.reset({ index: 0, routes: [{ name: "Splash" }] });
     } catch (error: any) {
@@ -273,7 +277,7 @@ export const DeleteAccountScreen: React.FC<{ navigation: any }> = ({ navigation 
         <View style={styles.footer}>
           <PillButton text="Keep my account" tone="primary" onPress={() => navigation.goBack()} disabled={busy} />
           <PillButton
-            text={stake.count > 0 ? `Pay ${amount} and delete` : "Delete account"}
+            text={stake.total > 0 ? `Pay ${amount} and delete` : "Delete account"}
             tone="consequential"
             onPress={onDelete}
             busy={busy}
@@ -289,7 +293,7 @@ export const DeleteAccountScreen: React.FC<{ navigation: any }> = ({ navigation 
             <Callout
             compact
               title={stake.count === 1 ? "You have 1 pledge running." : `You have ${stake.count} pledges running.`}
-              text={`Deleting your account gives ${stake.count === 1 ? "it" : "them"} up, and your card is charged ${amount} first.`}
+              text={`Deleting your account gives ${stake.count === 1 ? "it" : "them"} up${stake.total > 0 ? `, and your card is charged ${amount} first` : ""}.`}
             />
           </View>
         )}

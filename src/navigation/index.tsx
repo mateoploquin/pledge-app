@@ -79,7 +79,13 @@ const AppNavigator = ({ initialRouteName }) => {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{ ...softFade, gestureEnabled: false }}
+        // From the seal, Home makes its own entrance over the seal's last
+        // frame (screens/home/sealed-entrance.tsx), so no crossfade.
+        options={({ route }: any) => ({
+          ...softFade,
+          gestureEnabled: false,
+          ...(route?.params?.entrance === "sealed" ? { animationEnabled: false } : {}),
+        })}
       />
       <Stack.Screen name="PledgeDetail" component={PledgeDetail} />
       <Stack.Screen name="Account" component={AccountScreen} />

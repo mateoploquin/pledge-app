@@ -97,9 +97,13 @@ export function configureLimitActions(pledge: Pick<Pledge, "id" | "timeValue">) 
  */
 export function shieldPayload(pledge: Pick<Pledge, "id" | "pledgeValue">): [any, any] {
   const { pledgeValue } = pledge;
+  // A $0 pledge (owner, 19 Nov 2026): unlocking costs nothing but the word.
+  const paid = pledgeValue > 0;
   const configuration = {
     title: "That's enough for today.",
-    subtitle: `You hit your limit. Unlocking costs your ${CURRENCY_SYMBOL}${pledgeValue} pledge.`,
+    subtitle: paid
+      ? `You hit your limit. Unlocking costs your ${CURRENCY_SYMBOL}${pledgeValue} pledge.`
+      : "You hit your limit. Unlocking breaks your word.",
     // iOS blends the colour with the blur material; the dark material keeps
     // it ink. The SF Symbol icon stays system-tinted (the library ignores iconTint).
     backgroundColor: ink,
@@ -110,7 +114,7 @@ export function shieldPayload(pledge: Pick<Pledge, "id" | "pledgeValue">): [any,
     primaryButtonLabel: "Keep my word",
     primaryButtonBackgroundColor: cream,
     primaryButtonLabelColor: espresso,
-    secondaryButtonLabel: `Unlock for ${CURRENCY_SYMBOL}${pledgeValue}`,
+    secondaryButtonLabel: paid ? `Unlock for ${CURRENCY_SYMBOL}${pledgeValue}` : "Give up and unlock",
     secondaryButtonLabelColor: creamMuted,
   };
   // Shield extensions are not allowed to launch other apps, so the unlock
@@ -122,7 +126,9 @@ export function shieldPayload(pledge: Pick<Pledge, "id" | "pledgeValue">): [any,
       behavior: "close",
       payload: {
         title: "Unlock your apps?",
-        body: `Tap to open Pledge and pay your ${CURRENCY_SYMBOL}${pledgeValue} pledge to unlock.`,
+        body: paid
+          ? `Tap to open Pledge and pay your ${CURRENCY_SYMBOL}${pledgeValue} pledge to unlock.`
+          : "Tap to open Pledge and give up your pledge to unlock.",
         sound: "default",
         interruptionLevel: "timeSensitive",
         identifier: `pledge-unlock-${pledge.id}`,

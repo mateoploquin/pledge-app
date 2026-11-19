@@ -18,7 +18,6 @@ import {
   Animated,
   Easing,
   useWindowDimensions,
-  PixelRatio,
   TextInput,
 } from "react-native";
 import {
@@ -259,8 +258,9 @@ const STORY = {
   outMs: 350,
   /** Squares growing to each beat: a week, a month, a year, a life. */
   growMs: [1600, 1700, 1700, 4500],
-  /** Then the view pulls back until every hour of the life is on screen
-   * (owner, 18 Nov 2026: "zoom out and see the magnitude of the dots"). */
+  /** Then the view pulls back until the whole life is on screen (owner,
+   * 18 Nov 2026: "zoom out and see the magnitude of the dots"), the hours
+   * gathering into days on the way (19 Nov 2026: crisp, never mush). */
   lifeZoomMs: 2400,
   /** A pause to take it in, then the squares fade. */
   lifePauseMs: 1200,
@@ -300,41 +300,55 @@ const storyLengthMs = () => {
   return ms;
 };
 
-/** Gap between squares, as a share of a square. */
+/** Gap between squares, as a share of a square; at least 1 pt. */
 const PILE_GAP = 0.16;
 /** The pile's box above the words; a week is drawn at most 6 squares across. */
 const PILE_BOX = 160;
 const PILE_MIN_SIDE = 6;
-/** The view stops pulling back at this square size, about a year in the box. */
-const PILE_MIN_SQUARE = 4;
-/** The life's whole pile, pulled back, fits this tall under the caption. */
+/**
+ * Every square and gap is whole points (owner, 19 Nov 2026: on a friend's
+ * phone the grid looked blurry and uneven). The smallest step is a 4 pt
+ * square with a 1 pt gap.
+ */
+const PILE_MIN_STEP = 5;
+/** The life, pulled back, fits this tall under the caption. */
 const PILE_ZOOM_HEIGHT = 400;
+/** The smallest day step: a 2 pt square, 1 pt gap. */
+const DAY_MIN_STEP = 3;
+/** A day's square spans 5 hour steps each way (25 cells for its 24 hours). */
+const DAY_CELL = 5;
 
 /**
- * The life's grid: its columns and its square once pulled back so all `n`
- * squares fit `width` × PILE_ZOOM_HEIGHT. The square is whole pixels, as
- * big as fits, and never under 1 pt (2 px), so the squares stay squares and
- * don't run into a solid block. No pulling back when even the flood's
- * square fits (`flood`, its columns `floodCols`). Same as Pile.zoomGrid in
- * SocialCut.swift.
+ * Where the life ends, pulled back (owner, 18 Nov 2026: "zoom out and see the
+ * magnitude of the dots"): one square per day, whole points, as big as lets
+ * the whole life fit `width` × PILE_ZOOM_HEIGHT. Hour squares that small were
+ * grey mush, so on the way out the hours gather into days (owner, 19 Nov
+ * 2026). Null when the hours already fit at the flood's step `flood` in rows
+ * of `floodCols`. Same as Pile.dayGrid in SocialCut.swift.
  */
-export const zoomGrid = (
-  n: number,
+export const dayGrid = (
+  hours: number,
   width: number,
-  px: number,
   flood: number,
   floodCols: number
 ) => {
-  const w = Math.round(width * px);
-  const minP = Math.max(2, Math.round(px));
-  let best = minP;
-  for (let p = minP; p < flood * px; p++) {
-    const c = Math.floor(w / p);
-    if (Math.ceil(n / c) * p <= PILE_ZOOM_HEIGHT * px) best = p;
+  if (width <= 0 || Math.ceil(hours / floodCols) * flood <= PILE_ZOOM_HEIGHT)
+    return null;
+  const days = Math.max(1, Math.round(hours / 24));
+  let best = DAY_MIN_STEP;
+  for (let d = DAY_MIN_STEP; d / DAY_CELL < flood; d++) {
+    const c = Math.max(1, Math.floor(width / d));
+    if (Math.ceil(days / c) * d <= PILE_ZOOM_HEIGHT) best = d;
   }
-  if (best >= flood * px) return { cols: floodCols, square: flood };
-  const cols = Math.floor(w / best);
-  return { cols, square: width / cols };
+  return { step: best, cols: Math.max(1, Math.floor(width / best)), days };
+};
+
+/** How far the hours have turned into days, 0 to 1, over the middle of the
+ * pull back (z already eased). Same as Pile.merge in SocialCut.swift. */
+const mergeAt = (z: number) => {
+  "worklet";
+  const t = Math.min(1, Math.max(0, (z - 0.25) / 0.3));
+  return t * t * (3 - 2 * t);
 };
 
 /** The life adds three stops between its phrase and its last words. */
@@ -548,10 +562,11 @@ export const pileRows = (
 /**
  * The time, drawn (owner, 18 Nov 2026): one ivory square per hour on the
  * phone. A beat's squares fill in around the last beat's, row by row, while
- * the view pulls back to fit them in the box. At 4 pt it stops pulling back
+ * the view pulls back to fit them in the box. At the year's size it stops
  * and the life floods down past the box, over where the words were, fading
- * before the bottom ("we feel, wow, that's a lot"); then the squares fade
- * away and the words come. Square sizes snap to the screen's pixels. Drawn
+ * before the bottom ("we feel, wow, that's a lot"); then the view pulls back
+ * until the whole life shows, the hours gathering into days, one square a
+ * day; then the squares fade away and the words come. Whole points. Drawn
  * as one dashed line per row, only the rows on screen. Same drawing as
  * PileShape in SocialCut.swift.
  */
@@ -624,11 +639,11 @@ const Pile: React.FC<{
     e.value = beat === 0 ? withDelay(STORY.startDelayMs + 400, grow) : grow;
   }, [beat, duration, life, reduceMotion, finish, e]);
 
-  const px = PixelRatio.get();
-  const snap = (v: number) =>
-    Math.max(Math.round(v * px) / px, PILE_MIN_SQUARE);
-  // Each beat's square size: its pile, a near-square, fits the box, at least
-  // 6 squares across.
+  // Whole points, never under the smallest step; rounded down so a pile
+  // that fits the box still fits.
+  const snap = (v: number) => Math.max(Math.floor(v), PILE_MIN_STEP);
+  // Each beat's step: its pile, a near-square, fits the box, at least 6
+  // squares across.
   const near = counts.map((c) => Math.ceil(Math.sqrt(c)));
   const fits = near.map((c, k) =>
     width > 0
@@ -638,25 +653,35 @@ const Pile: React.FC<{
         )
       : 0
   );
-  // The life keeps the year's square size (it stops zooming there) and its
-  // rows span exactly the content's width, so the flood ends flush on both
-  // sides (owner, 18 Nov 2026: a gap opened on the right as squares shrank).
+  // The life floods on at the year's step, in rows the box's width.
   const last = counts.length - 1;
-  const maxCols = width > 0 ? Math.floor(width / snap(fits[last - 1])) : 1;
-  const lifeSquare = width > 0 ? width / maxCols : 0;
-  // The life is laid out on the grid it ends on, pulled back; the flood
-  // shows its top-left corner, so pulling back moves no square.
-  const grid =
-    width > 0
-      ? zoomGrid(counts[last], width, px, lifeSquare, maxCols)
-      : { cols: maxCols, square: lifeSquare };
-  const cols = near.map((c, k) => (k === last ? grid.cols : Math.min(c, maxCols)));
-  const sizes = fits.map((f, k) => (k === last ? lifeSquare : f));
-  const zoomSquare = grid.square;
+  const lastStep = width > 0 ? snap(fits[last - 1]) : PILE_MIN_STEP;
+  const maxCols = width > 0 ? Math.max(1, Math.floor(width / lastStep)) : 1;
+  const grid = dayGrid(counts[last], width, lastStep, maxCols);
+  // A pile too tall for the box widens (up to the box's width). The life is
+  // laid out on the grid it pulls back to, five hour columns per day column;
+  // the flood shows its top-left corner, so pulling back moves no square.
+  const cols = near.map((c, k) => {
+    if (k === last) return grid ? grid.cols * DAY_CELL : maxCols;
+    if (width <= 0) return c;
+    const fitRows = Math.max(1, Math.floor(PILE_BOX / snap(fits[k])));
+    return Math.min(Math.max(c, Math.ceil(counts[k] / fitRows)), maxCols);
+  });
+  const lifeShare = Math.max(1, Math.round(lastStep * PILE_GAP)) / lastStep;
   const floodH = SOCIAL_CUT_HEIGHT;
   const screenW = screen.width;
-  const minSquare = PILE_MIN_SQUARE;
+  const minStep = PILE_MIN_STEP;
   const gap = PILE_GAP;
+
+  // The hour step while pulling back: from the flood's to a fifth of the
+  // day step, so the hours cover the ground the days will.
+  const lifeStep = (z: number) => {
+    "worklet";
+    if (!grid || z <= 0) return lastStep;
+    const end = grid.step / DAY_CELL;
+    if (z >= 1) return end;
+    return Math.exp(Math.log(lastStep) + (Math.log(end) - Math.log(lastStep)) * z);
+  };
 
   const hoursAt = (t: number) => {
     "worklet";
@@ -669,34 +694,27 @@ const Pile: React.FC<{
 
   const pathProps = useAnimatedProps(() => {
     const t = e.value;
-    if (width <= 0) return { d: "", strokeWidth: 0, strokeDasharray: [1, 1] };
-    const raw =
-      beat === 0 || beat === last
-        ? sizes[beat]
-        : Math.exp(
-            Math.log(sizes[beat - 1]) +
-              (Math.log(sizes[beat]) - Math.log(sizes[beat - 1])) * t
-          );
-    // Square sizes snap to the screen's pixels so edges stay sharp. The
-    // life's square shrinks as the view pulls back, the gap at least a pixel.
     const z = zoom.value;
+    const merged = beat === last && grid ? mergeAt(z) : 0;
+    if (width <= 0 || merged >= 1)
+      return { d: "M0 0", strokeWidth: 0, strokeOpacity: 0, strokeDasharray: [1, 1] };
+    // Whole points (the life's hours keep the flood's proportions as they
+    // shrink, pulling back; they're days by the time they'd blur).
     let s: number;
     let cell: number;
     if (beat === last) {
-      // Not snapped while pulling back: snapped, the size only had a few
-      // steps to take and the zoom jumped from one to the next (owner,
-      // 18 Nov 2026: "it needs to be smooth"). The gap widens from the
-      // flood's share to whole pixels at the end, so it lands sharp.
-      s =
-        z >= 1
-          ? zoomSquare
-          : Math.exp(Math.log(raw) + (Math.log(zoomSquare) - Math.log(raw)) * z);
-      const endGap =
-        Math.max(1, Math.round(zoomSquare * px * gap)) / px / zoomSquare;
-      cell = s * (1 - (gap + (endGap - gap) * z));
+      s = lifeStep(z);
+      cell = s * (1 - lifeShare);
     } else {
-      s = Math.max(Math.round(raw * px) / px, minSquare);
-      cell = s * (1 - gap);
+      const raw =
+        beat === 0
+          ? fits[0]
+          : Math.exp(
+              Math.log(fits[beat - 1]) +
+                (Math.log(fits[beat]) - Math.log(fits[beat - 1])) * t
+            );
+      s = Math.max(Math.floor(raw), minStep);
+      cell = s - Math.max(1, Math.round(s * gap));
     }
     const visibleCols = Math.ceil(screenW / s);
     const rows = pileRows(
@@ -716,6 +734,32 @@ const Pile: React.FC<{
     return {
       d: d || "M0 0",
       strokeWidth: d ? cell : 0,
+      strokeOpacity: 1 - merged,
+      strokeDasharray: [cell, s - cell],
+    };
+  });
+
+  // The days the life's hours gather into, pulling back: five hour steps
+  // each, landing on the day grid's whole points.
+  const dayProps = useAnimatedProps(() => {
+    const z = zoom.value;
+    const merged = beat === last && grid ? mergeAt(z) : 0;
+    if (!grid || merged <= 0)
+      return { d: "M0 0", strokeWidth: 0, strokeOpacity: 0, strokeDasharray: [1, 1] };
+    const s = z >= 1 ? grid.step : lifeStep(z) * DAY_CELL;
+    const share = Math.max(1, Math.round(grid.step * gap)) / grid.step;
+    const cell = s * (1 - share);
+    const shown = Math.min(grid.cols, Math.ceil(screenW / s));
+    const rowCount = Math.min(Math.ceil(grid.days / grid.cols), Math.ceil(floodH / s));
+    let d = "";
+    for (let y = 0; y < rowCount; y++) {
+      const count = Math.min(shown, grid.days - y * grid.cols);
+      if (count > 0) d += `M0 ${y * s + cell / 2}H${count * s - (s - cell)}`;
+    }
+    return {
+      d: d || "M0 0",
+      strokeWidth: d ? cell : 0,
+      strokeOpacity: merged,
       strokeDasharray: [cell, s - cell],
     };
   });
@@ -726,18 +770,29 @@ const Pile: React.FC<{
     height: floodH * (1 + 3 * zoom.value),
   }));
 
+  // When the hours gather into days the count dips and comes back in days.
   const countProps = useAnimatedProps(() => {
-    const n = Math.floor(hoursAt(e.value));
+    const days = beat === last && grid ? mergeAt(zoom.value) >= 0.5 : false;
+    const n = days && grid ? grid.days : Math.floor(hoursAt(e.value));
     const digits = String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    const unit = days ? (n === 1 ? "DAY" : "DAYS") : n === 1 ? "HOUR" : "HOURS";
     return {
-      text: `${digits} ${n === 1 ? "HOUR" : "HOURS"} · ONE SQUARE, ONE HOUR`,
+      text: `${digits} ${unit} · ONE SQUARE, ONE ${days ? "DAY" : "HOUR"}`,
     } as any;
   });
 
   // Hidden until the first square.
-  const countStyle = useAnimatedStyle(() => ({
-    opacity: hoursAt(e.value) >= 1 ? 1 : 0,
-  }));
+  const countStyle = useAnimatedStyle(() => {
+    const merged = beat === last && grid ? mergeAt(zoom.value) : 0;
+    return {
+      opacity:
+        hoursAt(e.value) < 1
+          ? 0
+          : merged > 0
+          ? Math.min(1, Math.abs(merged - 0.5) * 4)
+          : 1,
+    };
+  });
 
   return (
     <Animated.View style={{ opacity: fade }}>
@@ -780,6 +835,7 @@ const Pile: React.FC<{
             {/* The fade mask only for the life's flood. */}
             <G mask={life ? "url(#flood)" : undefined}>
               <AnimatedPath animatedProps={pathProps} stroke={color.text} />
+              <AnimatedPath animatedProps={dayProps} stroke={color.text} />
             </G>
           </Svg>
         </View>

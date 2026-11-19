@@ -252,11 +252,20 @@ a font; that is Apple's).
   runs off the bottom, fading over its last 40 pt (from about 6 h a day). The
   life keeps the year's size, full-width rows, and floods down over the
   words' place for 4.5 s (ease in), masked to fade from 55 % to 95 % of the
-  story's height; it holds 1 s, fades out over 1.2 s and the last words move
-  up into its place. No pull back to show every hour of the life any more
-  (150,000 1 pt squares were grey mush, worst in screen recordings). Done in
-  SocialCut.swift; the app's AverageStory in screen-time-mirror.tsx still
-  has the old sizes and pull back. The growth and the drawing run on the UI thread
+  story's height. Then the view pulls back over 2.4 s (ease in-out) until
+  the whole life is on screen (owner, 18 Nov 2026: "zoom out and see the
+  magnitude of the dots"; 19 Nov 2026: it's the strongest moment, but never
+  as mush). Hours that small would blur (150,000 1 pt squares for a heavy
+  user), so on the way out they gather into days: the life is laid out five
+  hour columns per day column, a day's square covering the ground of its 24
+  hours, and from 25 % to 55 % of the pull back the hours fade out as the
+  day squares fade in, still shrinking. It lands on one square per day,
+  whole points, as big as lets the life fit the width × 400 pt (2 pt squares
+  with a 1 pt gap at the least: 4 pt for the average 3h 45m, 2 pt from about
+  8 h a day). The caption dips and comes back as "4,563 DAYS · ONE SQUARE,
+  ONE DAY". When the hours already fit at the flood's size (very light use)
+  nothing moves. It holds 1.2 s, fades out over 1.2 s and the last words
+  move up into its place. The growth and the drawing run on the UI thread
   (Reanimated animated props on an SVG path, the count in a read-only
   TextInput): driven from JS they reached the screen in bursts. Reduce
   Motion shows the last words only. `AverageStory`, `Reveal`, `Pile` and

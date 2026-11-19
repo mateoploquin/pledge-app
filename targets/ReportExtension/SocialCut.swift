@@ -113,9 +113,7 @@ struct SocialCutReport: DeviceActivityReportScene {
 /// life's squares flood past their box and fade before its words. 24-hour
 /// days, an 80-year life, from last week's Screen Time on all devices. A
 /// report can't be tapped, so it plays on its own. Same story and timings
-/// as AverageStory in screen-time-mirror.tsx, except that since 19 Nov 2026
-/// the squares here are whole points, at least 4 pt, and the life no longer
-/// pulls back (the app's copy still does; bring it over).
+/// as AverageStory in screen-time-mirror.tsx.
 struct SocialCutView: View {
   let model: SocialCutModel
 
@@ -133,6 +131,9 @@ struct SocialCutView: View {
   @State private var growth: Double = 0
   /// The life's squares have faded; then the pile makes way for the words.
   @State private var pileGone = false
+  /// The life's pull back, 0 (the flood of hours) to 1 (the whole life, in
+  /// days, on screen).
+  @State private var zoom: Double = 0
   @State private var pileRemoved = false
 
   private var cream: Color { model.style.textColor }
@@ -178,7 +179,7 @@ struct SocialCutView: View {
       if !pileRemoved {
         // The time, drawn (owner, 18 Nov 2026): one ivory square per hour.
         VStack(alignment: .leading, spacing: 10) {
-          PileCount(pile: pile, e: growth)
+          PileCount(pile: pile, e: growth, z: zoom)
             .font(.custom("Inter-Medium", size: 11))
             .tracking(1.54)
             .foregroundColor(tertiary)
@@ -186,9 +187,10 @@ struct SocialCutView: View {
           // where the words were (they're hidden then) and fades out before
           // the bottom of the report. A week, month or year too big for the
           // box at the smallest square runs off its bottom edge, fading, and
-          // never reaches the words below.
+          // never reaches the words below. Pulling back, the flood's fade
+          // slides away so the whole life shows.
           let flood = beat == all.count - 1
-          PileCanvas(pile: pile, e: growth, color: cream)
+          PileCanvas(pile: pile, e: growth, z: zoom, color: cream)
             .frame(height: flood ? 420 : 160, alignment: .top)
             .mask(alignment: .top) {
               LinearGradient(
@@ -197,6 +199,7 @@ struct SocialCutView: View {
                   : [.init(color: .black, location: 1)],
                 startPoint: .top, endPoint: .bottom
               )
+              .frame(height: 420 * (1 + 3 * zoom))
             }
             .frame(height: 160, alignment: .top)
         }
@@ -329,10 +332,13 @@ struct SocialCutView: View {
         await sleep(grow)
       } else {
         withAnimation(.timingCurve(0.55, 0.085, 0.68, 0.53, duration: 4.5)) { growth = 1 }
-        // No pulling back to fit every hour (owner, 19 Nov 2026): for heavy
-        // users that meant 150,000 one-point squares, grey mush on screen
-        // and in any recording. The flood holds a moment, then fades.
-        await sleep(4.5 + 1.0)
+        await sleep(4.5)
+        // Then pull back until the whole life is on screen (owner, 18 Nov
+        // 2026: "zoom out and see the magnitude of the dots"). Hours too
+        // small to see gather into days on the way (owner, 19 Nov 2026: the
+        // zoom out matters, but not as mush). A pause, then they fade.
+        withAnimation(.timingCurve(0.65, 0, 0.35, 1, duration: 2.4)) { zoom = 1 }
+        await sleep(2.4 + 1.2)
         withAnimation(.easeInOut(duration: 1.2)) { pileGone = true }
         await sleep(1.2)
         pileRemoved = true
@@ -366,7 +372,8 @@ struct SocialCutView: View {
 /// screen recording being scaled down; the old 0.64 pt gaps turned to mush.
 /// The smallest square is 4 pt with a 1 pt gap, the same for everyone: a
 /// pile too big for the box at that size runs off its bottom and fades
-/// instead of shrinking to dust. One square is still one hour.
+/// instead of shrinking to dust. One square is one hour, until the life
+/// pulls back: then the hours gather into days (see dayGrid).
 struct Pile {
   let counts: [Int]
   let beat: Int
@@ -399,12 +406,71 @@ struct Pile {
   /// The widest rows: as many whole steps as fit the box.
   private var maxCols: Int { box.width > 0 ? max(1, Int(box.width / lastStep)) : Int.max }
 
+  /// The life, pulled back, fits this tall under the caption.
+  static let zoomHeight: Double = 400
+  /// The smallest day step: a 2 pt square, 1 pt gap. Whole points, never
+  /// mush (owner, 19 Nov 2026).
+  static let minDayStep: Double = 3
+  /// A day's square spans this many hour steps each way (25 cells for its
+  /// 24 hours), so the days cover the same ground as the hours they replace.
+  static let dayCell = 5
+
+  /// The same pile in a box this wide.
+  func sized(_ width: Double) -> Pile {
+    var p = self
+    p.box = CGSize(width: width, height: 160)
+    return p
+  }
+
+  /// The life in days on the phone.
+  var days: Int { max(1, Int((Double(counts[last]) / 24).rounded())) }
+
+  /// Where the life ends, pulled back (owner, 18 Nov 2026: "zoom out and see
+  /// the magnitude of the dots"): one square per day, whole points, as big
+  /// as lets the whole life fit the box's width × zoomHeight. Hour squares
+  /// that small were grey mush (150,000 at 1 pt for a heavy user), so on
+  /// the way out the hours gather into days. Nil when the hours already fit
+  /// at the flood's size; then there is nothing to pull back. Same as
+  /// dayGrid in screen-time-mirror.tsx.
+  var dayGrid: (step: Double, cols: Int)? {
+    guard box.width > 0 else { return nil }
+    let hourRows = (counts[last] + maxCols - 1) / maxCols
+    if Double(hourRows) * lastStep <= Pile.zoomHeight { return nil }
+    var best = Pile.minDayStep
+    var d = Pile.minDayStep
+    while d / Double(Pile.dayCell) < lastStep {
+      let c = max(1, Int(box.width / d))
+      if Double((days + c - 1) / c) * d <= Pile.zoomHeight { best = d }
+      d += 1
+    }
+    return (best, max(1, Int(box.width / best)))
+  }
+
+  /// How far the hours have turned into days, 0 to 1, over the middle of
+  /// the pull back (z is already eased).
+  static func merge(_ z: Double) -> Double {
+    let t = min(1, max(0, (z - 0.25) / 0.3))
+    return t * t * (3 - 2 * t)
+  }
+
+  /// The hour step while pulling back: from the flood's size to a fifth of
+  /// the day step, so the hours cover the ground the days will.
+  func lifeStep(_ z: Double) -> Double {
+    guard let g = dayGrid, z > 0 else { return lastStep }
+    let end = g.step / Double(Pile.dayCell)
+    if z >= 1 { return end }
+    return exp(log(lastStep) + (log(end) - log(lastStep)) * z)
+  }
+
   /// Each beat's pile is a near-square of this many columns; one too tall
   /// for the box at its size widens first (up to the box's width) and only
-  /// then runs off the bottom. The life's rows are the full width.
+  /// then runs off the bottom. The life is laid out on the grid it pulls
+  /// back to (five hour columns per day column; the flood shows its
+  /// top-left corner, so pulling back moves no square), else full width.
   var cols: [Int] {
-    near.enumerated().map { k, c in
-      if k == last || box.height <= 0 { return k == last ? maxCols : min(c, maxCols) }
+    let lifeCols = dayGrid.map { $0.cols * Pile.dayCell } ?? maxCols
+    return near.enumerated().map { k, c in
+      if k == last || box.height <= 0 { return k == last ? lifeCols : min(c, maxCols) }
       let fitRows = max(1, Int(box.height / snap(fit(k))))
       let need = Int((Double(counts[k]) / Double(fitRows)).rounded(.up))
       return min(max(c, need), maxCols)
@@ -423,10 +489,25 @@ struct Pile {
 
   /// The step from one square to the next and the square drawn in it, both
   /// whole points: the gap is about a sixth of the step, at least 1 pt.
-  func cell(_ e: Double) -> (square: Double, cell: Double) {
+  /// Pulling back, the life's hours keep the flood's proportions.
+  func cell(_ e: Double, z: Double = 0) -> (square: Double, cell: Double) {
+    if beat == last {
+      let share = max(1, (lastStep * 0.16).rounded()) / lastStep
+      let s = lifeStep(z)
+      return (s, s * (1 - share))
+    }
     let s = square(e)
     let gap = max(1, (s * 0.16).rounded())
     return (s, s - gap)
+  }
+
+  /// The day step and the square drawn in it while pulling back: five hour
+  /// steps, landing on the day grid's whole points, the gap whole there too.
+  func dayCellSize(_ z: Double) -> (square: Double, cell: Double)? {
+    guard let g = dayGrid else { return nil }
+    let s = z >= 1 ? g.step : lifeStep(z) * Double(Pile.dayCell)
+    let share = max(1, (g.step * 0.16).rounded()) / g.step
+    return (s, s * (1 - share))
   }
 
   /// The step: each beat's pile fits the box, in whole points, zooming
@@ -473,10 +554,11 @@ struct Pile {
 struct PileCanvas: View, Animatable {
   let pile: Pile
   var e: Double
+  var z: Double
   let color: Color
-  var animatableData: Double {
-    get { e }
-    set { e = newValue }
+  var animatableData: AnimatablePair<Double, Double> {
+    get { AnimatablePair(e, z) }
+    set { e = newValue.first; z = newValue.second }
   }
 
   var body: some View {
@@ -484,8 +566,26 @@ struct PileCanvas: View, Animatable {
       var pile = self.pile
       pile.box = CGSize(width: size.width, height: 160)
       let n = Int(pile.hours(e).rounded(.down))
-      let (s, cell) = pile.cell(e)
+      let (s, cell) = pile.cell(e, z: z)
       guard s > 0 else { return }
+      // Pulling back, the hours give way to days.
+      let merged = pile.isFlood && pile.dayGrid != nil ? Pile.merge(z) : 0
+      if merged > 0, let g = pile.dayGrid, let day = pile.dayCellSize(z) {
+        let (ds, dcell) = day
+        var p = Path()
+        let shown = min(g.cols, Int(size.width / ds) + 1)
+        let rowCount = min((pile.days + g.cols - 1) / g.cols, Int(size.height / ds) + 1)
+        for y in 0..<rowCount {
+          let count = min(shown, pile.days - y * g.cols)
+          guard count > 0 else { break }
+          let mid = Double(y) * ds + dcell / 2
+          p.move(to: CGPoint(x: 0, y: mid))
+          p.addLine(to: CGPoint(x: Double(count) * ds - (ds - dcell), y: mid))
+        }
+        ctx.stroke(p, with: .color(color.opacity(merged)),
+                   style: StrokeStyle(lineWidth: dcell, dash: [dcell, ds - dcell]))
+      }
+      guard merged < 1 else { return }
       let visibleCols = Int(size.width / s) + 1
       let rows = pile.rows(n, maxRows: Int(size.height / s) + 1)
       let style = StrokeStyle(lineWidth: cell, dash: [cell, s - cell])
@@ -511,25 +611,36 @@ struct PileCanvas: View, Animatable {
       } else {
         var p = Path()
         for (y, len) in rows.enumerated() { p.addPath(row(y, len)) }
-        ctx.stroke(p, with: .color(color), style: style)
+        ctx.stroke(p, with: .color(color.opacity(1 - merged)), style: style)
       }
     }
   }
 }
 
 /// "1,369 HOURS · ONE SQUARE, ONE HOUR", counting with the pile; hidden
-/// until the first square.
+/// until the first square. When the life's hours gather into days it dips
+/// and comes back as "4,562 DAYS · ONE SQUARE, ONE DAY".
 struct PileCount: View, Animatable {
   let pile: Pile
   var e: Double
-  var animatableData: Double {
-    get { e }
-    set { e = newValue }
+  var z: Double
+  var animatableData: AnimatablePair<Double, Double> {
+    get { AnimatablePair(e, z) }
+    set { e = newValue.first; z = newValue.second }
   }
 
   var body: some View {
     let n = Int(pile.hours(e).rounded(.down))
-    Text("\(n.formatted(.number.locale(Locale(identifier: "en_US")))) \(n == 1 ? "hour" : "hours") · one square, one hour".uppercased())
-      .opacity(n >= 1 ? 1 : 0)
+    // The day grid needs the box's width; the canvas has the same width.
+    GeometryReader { geo in
+      let p = pile.sized(geo.size.width)
+      let merged = p.isFlood && p.dayGrid != nil ? Pile.merge(z) : 0
+      let days = merged >= 0.5
+      let v = days ? p.days : n
+      let unit = days ? (v == 1 ? "day" : "days") : (v == 1 ? "hour" : "hours")
+      Text("\(v.formatted(.number.locale(Locale(identifier: "en_US")))) \(unit) · one square, one \(days ? "day" : "hour")".uppercased())
+        .opacity(n >= 1 ? (merged > 0 ? min(1, abs(merged - 0.5) * 4) : 1) : 0)
+    }
+    .frame(height: 14)
   }
 }

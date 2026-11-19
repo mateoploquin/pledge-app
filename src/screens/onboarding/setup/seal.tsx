@@ -15,8 +15,11 @@ import Animated, {
   useAnimatedReaction,
   useAnimatedStyle,
   useDerivedValue,
+  useReducedMotion,
   useSharedValue,
   withDelay,
+  withRepeat,
+  withSequence,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,6 +28,7 @@ import { ResizeMode, Video } from "expo-av";
 import InkScreen from "../../../components/ink/ink-screen";
 import Caption from "../../../components/ink/caption";
 import Lockup from "../../../components/ink/lockup";
+import { HOME_LOGO_TOP } from "../../home/sealed-entrance";
 import SignatureInk from "../../../components/ink/signature-ink";
 import { openLegal } from "../../../services/legal";
 import { haptics } from "../../../utils/haptics";
@@ -63,12 +67,25 @@ const WRITE = { from: 0.05, to: 0.85 };
 
 /**
  * The close (owner, 19 Nov 2026: "when the sun sets, the screen darkens, and
- * the logo appears ... seal the moment in time"): the words go, the logo
- * comes up in the middle, rests, then moves to where it sits on Home, and
- * Home follows.
+ * the logo appears ... seal the moment in time"; then, the same day: "a
+ * dramatic pause when the screen goes dark"). The screen is dark and only
+ * the signed pledge stays, the name on it (the hold prompt goes); a pause;
+ * the logo comes up in the middle; a pause; the signed pledge goes; then the
+ * logo moves to where it sits on Home, and Home follows.
  */
-const CLOSE = { wordsMs: 450, pauseMs: 150, logoMs: 1000, beatMs: 450, moveMs: 900, endMs: 100 };
-const CLOSE_TOTAL = CLOSE.wordsMs + CLOSE.pauseMs + CLOSE.logoMs + CLOSE.beatMs + CLOSE.moveMs + CLOSE.endMs;
+const CLOSE = {
+  footerMs: 300,
+  darkPauseMs: 2000,
+  logoMs: 1000,
+  logoPauseMs: 1900,
+  wordsMs: 600,
+  moveMs: 900,
+  endMs: 100,
+};
+const CLOSE_LOGO_AT = CLOSE.darkPauseMs;
+const CLOSE_WORDS_AT = CLOSE_LOGO_AT + CLOSE.logoMs + CLOSE.logoPauseMs;
+const CLOSE_MOVE_AT = CLOSE_WORDS_AT + CLOSE.wordsMs;
+const CLOSE_TOTAL = CLOSE_MOVE_AT + CLOSE.moveMs + CLOSE.endMs;
 /** The logo in the middle, and on Home (components/ink/lockup, 1600 × 420). */
 const LOGO_MID = 200;
 const LOGO_HOME = 130;
@@ -108,8 +125,9 @@ interface SealProps {
  * to change the name. Press and hold anywhere for one breath (4 s): the sun
  * sets behind the hill and the screen darkens with it, haptics building,
  * while the user's name writes itself on the line in one hand; let go early
- * and it all goes back. Once the sun is gone the words go, the Pledge logo
- * comes up in the middle and moves to its place on Home, and Home follows.
+ * and it all goes back. Once the sun is gone, in the dark, the signed pledge
+ * stays alone; a pause; the Pledge logo comes up; a pause; the pledge fades
+ * and the logo moves to its place on Home, and Home follows (see CLOSE).
  * Holding it through agrees to the terms and starts the pledge.
  */
 const Seal: React.FC<SealProps> = ({
@@ -128,16 +146,64 @@ const Seal: React.FC<SealProps> = ({
   const progress = useSharedValue(0);
   // While held the film plays on its own; otherwise it follows `progress`.
   const holding = useSharedValue(0);
-  // The close: the words leave, then the logo comes up, then it moves.
+  // The close: the hold prompt leaves, the logo comes up, the signed
+  // pledge leaves, then the logo moves.
+  const footerOut = useSharedValue(0);
   const wordsOut = useSharedValue(0);
   const logoIn = useSharedValue(0);
   const move = useSharedValue(0);
   const [closing, setClosing] = useState(false);
+  // Where the signed pledge starts on screen, so the logo never lands on it.
+  const wordsRef = useRef<View>(null);
+  const [wordsTop, setWordsTop] = useState<number | null>(null);
   const film = useRef<Video>(null);
   const seeking = useRef(false);
   const nextSeek = useRef<number | null>(null);
   const sealing = useRef(false);
   const beats = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Making the hold obvious (owner, 19 Nov 2026: "some users might not
+  // understand it"): the hold button breathes while it waits, fills as it
+  // is held, and a tap that lets go too soon says to keep holding.
+  const reduceMotion = useReducedMotion();
+  const pulse = useSharedValue(0);
+  const [tooShort, setTooShort] = useState(false);
+  // Coming in (owner, 19 Nov 2026: "appears gradually, not just switching"):
+  // the screen opens on the same ground the step before had (this screen's
+  // backdrop is the same "empty" light), the sunset film fades up over it,
+  // then the promise, then the hold button. It starts when the film can
+  // show its first frame, or after 0.7 s at most.
+  const enter = useSharedValue(reduceMotion ? 1 : 0);
+  const entered = useRef(false);
+  const startEnter = () => {
+    if (entered.current) return;
+    entered.current = true;
+    enter.value = withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.sin) });
+  };
+  useEffect(() => {
+    if (reduceMotion) return;
+    const t = setTimeout(startEnter, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const tooShortTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (reduceMotion) return;
+    pulse.value = withDelay(
+      1200,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0, { duration: 1100, easing: Easing.inOut(Easing.sin) })
+        ),
+        -1
+      )
+    );
+    return () => {
+      cancelAnimation(pulse);
+      if (tooShortTimer.current) clearTimeout(tooShortTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduceMotion]);
 
   // One seek at a time; the latest wanted frame wins.
   const seekTo = (p: number) => {
@@ -180,16 +246,23 @@ const Seal: React.FC<SealProps> = ({
 
   useEffect(() => stopBeats, []);
 
-  /** The words go, the logo comes up and moves to Home's corner; resolves when it is there. */
+  /**
+   * In the dark, the signed pledge alone; a pause; the logo; a pause; the
+   * pledge goes and the logo moves to Home's corner. Resolves when it is there.
+   */
   const playClose = () => {
     setClosing(true);
-    wordsOut.value = withTiming(1, { duration: CLOSE.wordsMs, easing: Easing.inOut(Easing.cubic) });
+    footerOut.value = withTiming(1, { duration: CLOSE.footerMs, easing: Easing.inOut(Easing.cubic) });
     logoIn.value = withDelay(
-      CLOSE.wordsMs + CLOSE.pauseMs,
+      CLOSE_LOGO_AT,
       withTiming(1, { duration: CLOSE.logoMs, easing: Easing.inOut(Easing.sin) })
     );
+    wordsOut.value = withDelay(
+      CLOSE_WORDS_AT,
+      withTiming(1, { duration: CLOSE.wordsMs, easing: Easing.inOut(Easing.cubic) })
+    );
     move.value = withDelay(
-      CLOSE.wordsMs + CLOSE.pauseMs + CLOSE.logoMs + CLOSE.beatMs,
+      CLOSE_MOVE_AT,
       withTiming(1, { duration: CLOSE.moveMs, easing: Easing.inOut(Easing.cubic) })
     );
     return new Promise<void>((resolve) => setTimeout(resolve, CLOSE_TOTAL));
@@ -210,6 +283,7 @@ const Seal: React.FC<SealProps> = ({
         move.value = 0;
         logoIn.value = withTiming(0, { duration: 300 });
         wordsOut.value = withTiming(0, { duration: 500 });
+        footerOut.value = withTiming(0, { duration: 500 });
         holding.value = 0;
         progress.value = withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) });
       }
@@ -232,6 +306,13 @@ const Seal: React.FC<SealProps> = ({
 
   const onPressOut = () => {
     if (sealing.current || progress.value >= 1) return;
+    // Let go almost at once: they tapped. Say to hold, gently.
+    if (progress.value < 0.12) {
+      haptics.warning();
+      setTooShort(true);
+      if (tooShortTimer.current) clearTimeout(tooShortTimer.current);
+      tooShortTimer.current = setTimeout(() => setTooShort(false), 2600);
+    }
     stopBeats();
     holding.value = 0;
     film.current?.pauseAsync().catch(() => {});
@@ -254,17 +335,40 @@ const Seal: React.FC<SealProps> = ({
   // At rest the light flickers on the loop; once held, the cut itself moves.
   const restStyle = useAnimatedStyle(() => ({ opacity: progress.value > 0.001 ? 0 : 1 }));
   const duskStyle = useAnimatedStyle(() => ({
-    opacity: Math.max(Math.pow(ramp(progress.value, DUSK.from, DUSK.to), DUSK.curve), wordsOut.value),
+    opacity: Math.max(Math.pow(ramp(progress.value, DUSK.from, DUSK.to), DUSK.curve), footerOut.value),
   }));
-  const wordsStyle = useAnimatedStyle(() => ({ opacity: 1 - wordsOut.value }));
+  const filmStyle = useAnimatedStyle(() => ({ opacity: enter.value }));
+  const wordsStyle = useAnimatedStyle(() => ({
+    opacity: (1 - wordsOut.value) * ramp(enter.value, 0.4, 0.9),
+    transform: [{ translateY: 8 * (1 - ramp(enter.value, 0.4, 0.9)) }],
+  }));
+  const footerStyle = useAnimatedStyle(() => ({
+    opacity: (1 - footerOut.value) * ramp(enter.value, 0.6, 1),
+  }));
+  // The hold button breathes only while nobody is holding it.
+  const holdStyle = useAnimatedStyle(() => {
+    const idle = progress.value > 0.001 ? 0 : pulse.value;
+    return {
+      transform: [{ scale: 1 + 0.025 * idle }],
+      borderColor: `rgba(248,240,230,${0.45 + 0.35 * idle})`,
+    };
+  });
+  // Its fill follows the breath: full when the pledge is sealed.
+  const fillStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` as any }));
   const written = useDerivedValue(() => ramp(progress.value, WRITE.from, WRITE.to));
 
   // The logo: drawn at its middle size, scaled and carried to Home's top left.
   const logoH = LOGO_MID * LOCKUP_RATIO;
-  const startLeft = (W - LOGO_MID) / 2, startTop = H / 2 - logoH / 2;
+  // In the middle, unless the signed pledge reaches that high (small
+  // phones): then above it, since both are on screen together now.
+  const startLeft = (W - LOGO_MID) / 2;
+  const startTop = Math.max(
+    insets.top + 56,
+    Math.min(H / 2 - logoH / 2, wordsTop === null ? Infinity : wordsTop - logoH - 40)
+  );
   const s = LOGO_HOME / LOGO_MID;
-  // Home: InkScreen pads the top by the inset + 8, its header by 4, and the lockup fills the row.
-  const endLeft = spacing.lg, endTop = insets.top + 12;
+  // Exactly where Home's logo sits (HOME_LOGO_TOP), so Home can take over with no jump.
+  const endLeft = spacing.lg, endTop = insets.top + HOME_LOGO_TOP;
   const dx = endLeft + (LOGO_MID * s) / 2 - (startLeft + LOGO_MID / 2);
   const dy = endTop + (logoH * s) / 2 - (startTop + logoH / 2);
   const logoStyle = useAnimatedStyle(() => {
@@ -283,9 +387,15 @@ const Seal: React.FC<SealProps> = ({
       // Ivory: the tertiary grey disappears on the bright sky.
       topRight={closing ? undefined : <Caption tint={color.text}>{counter}</Caption>}
       footerBottom={36}
+      // Over the grain, like Home's logo, so it lands looking the same.
+      overlay={
+        <Animated.View pointerEvents="none" style={[{ position: "absolute", left: startLeft, top: startTop }, logoStyle]}>
+          <Lockup width={LOGO_MID} />
+        </Animated.View>
+      }
       backdrop={
         <>
-          <View style={StyleSheet.absoluteFill}>
+          <Animated.View style={[StyleSheet.absoluteFill, filmStyle]}>
             <Video
               ref={film}
               source={SET}
@@ -304,20 +414,18 @@ const Seal: React.FC<SealProps> = ({
                 isLooping
                 isMuted
                 rate={REST_RATE}
+                onReadyForDisplay={startEnter}
               />
             </Animated.View>
             <LinearGradient colors={SHADE.colors} locations={SHADE.locations} style={StyleSheet.absoluteFill} />
             {/* Film grain on the film too (owner, 18 Nov 2026). */}
             <ImageBackground source={GRAIN} resizeMode="repeat" style={[StyleSheet.absoluteFill, styles.grain]} />
-          </View>
-          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.dusk, duskStyle]} />
-          <Animated.View pointerEvents="none" style={[{ position: "absolute", left: startLeft, top: startTop }, logoStyle]}>
-            <Lockup width={LOGO_MID} />
           </Animated.View>
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.dusk, duskStyle]} />
         </>
       }
       footer={
-        <Animated.View style={wordsStyle}>
+        <Animated.View style={[styles.footerWrap, footerStyle]}>
           <Pressable
             onPressIn={onPressIn}
             onPressOut={onPressOut}
@@ -329,7 +437,10 @@ const Seal: React.FC<SealProps> = ({
             accessibilityActions={[{ name: "activate" }]}
             style={styles.footer}
           >
-            <Text style={styles.hold}>Press and hold to seal</Text>
+            <Animated.View style={[styles.holdButton, holdStyle]}>
+              <Animated.View style={[styles.holdFill, fillStyle]} />
+              <Text style={styles.hold}>{tooShort ? "Keep holding to seal" : "Press and hold to seal"}</Text>
+            </Animated.View>
             <Text style={styles.legal}>
               {"Nothing is charged now. Sealing means you agree to the "}
               <Text style={styles.link} onPress={() => openLegal("terms")}>
@@ -354,11 +465,17 @@ const Seal: React.FC<SealProps> = ({
         accessible={false}
         style={styles.content}
       >
-        <Animated.View style={[styles.words, wordsStyle]}>
+        <Animated.View
+          ref={wordsRef}
+          onLayout={() => wordsRef.current?.measureInWindow((_x, y) => setWordsTop(y))}
+          style={[styles.words, wordsStyle]}
+        >
           {/* The promise in plain words (owner, 18 Nov 2026). */}
           <View style={styles.promise}>
             <Text style={styles.big}>{`${promise}\n${durationDays} days.`}</Text>
-            <Text style={styles.pay}>{`or I pay ${CURRENCY_SYMBOL}${pledgeValue}.`}</Text>
+            <Text style={styles.pay}>
+              {pledgeValue > 0 ? `or I pay ${CURRENCY_SYMBOL}${pledgeValue}.` : "On my word alone."}
+            </Text>
           </View>
           {/* Signed, like a contract: the name writes itself as the seal is
               held (owner, 19 Nov 2026); tap the line to change it. */}
@@ -416,7 +533,27 @@ const styles = StyleSheet.create({
   },
   grain: { opacity: 0.35 },
   dusk: { backgroundColor: color.bg },
-  footer: { alignItems: "center", gap: 6 },
+  footerWrap: { alignSelf: "stretch" },
+  footer: { alignItems: "center", gap: 10, alignSelf: "stretch" },
+  // A pill to hold: an ivory outline, filling with ivory as it is held.
+  holdButton: {
+    alignSelf: "stretch",
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: "rgba(248,240,230,0.45)",
+    backgroundColor: "rgba(248,240,230,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  holdFill: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "rgba(248,240,230,0.22)",
+  },
   hold: {
     fontFamily: fonts.uiSemibold,
     fontSize: 16,

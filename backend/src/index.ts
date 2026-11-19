@@ -105,7 +105,8 @@ app.get("/stripe/payment-method", async (c) => {
   return c.json({ hasCard: !!card || (await hasPaymentMethod(user)), card });
 });
 
-const PLEDGE_MIN = 1;
+// $0 is a pledge on the user's word alone: no card, no charge (owner, 19 Nov 2026).
+const PLEDGE_MIN = 0;
 const PLEDGE_MAX = 100;
 const TIME_MIN = 0;
 const TIME_MAX = 24 * 60;
@@ -258,7 +259,8 @@ app.delete("/account", async (c) => {
   );
   if (active.length > 0) {
     const total = active.reduce((sum, p) => sum + p.pledgeValue, 0);
-    if (c.req.query("charge") !== "1") {
+    // $0 pledges just end with the account; only money needs the go-ahead.
+    if (total > 0 && c.req.query("charge") !== "1") {
       return c.json({ error: "Running pledges must be paid first", activePledges: active.length, total }, 409);
     }
     if (!user) return c.json({ error: "Unknown user" }, 404);
@@ -323,6 +325,11 @@ app.post("/stripe/break", async (c) => {
   const dayMs = Date.parse(`${day}T12:00:00Z`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(dayMs) || Math.abs(dayMs - Date.now()) > 1.5 * DAY_MS) {
     return c.json({ error: "day must be today's date as YYYY-MM-DD" }, 400);
+  }
+  // A $0 pledge has no paid breaks: giving it up costs less than a break.
+  const pledge = await getPledge(uid, body.pledgeId);
+  if (pledge && !(pledge.pledgeValue > 0)) {
+    return c.json({ error: "Breaks are only for pledges with money on them" }, 400);
   }
   const outcome = await chargeBreak(user, body.pledgeId, day);
   const httpStatus = outcome.status === "succeeded" || outcome.status === "processing" ? 200 : 402;

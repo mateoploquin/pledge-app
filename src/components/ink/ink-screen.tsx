@@ -22,6 +22,10 @@ interface InkScreenProps {
   footerBottom?: number;
   /** Small caps label on the right of the back chevron's row ("STEP 3 OF 7"). */
   topRight?: React.ReactNode;
+  /** An animated style on the ground's light, not its grain (Home's entrance after the seal). */
+  backdropStyle?: any;
+  /** Drawn over everything, full screen (Home's entrance after the seal). */
+  overlay?: React.ReactNode;
 }
 
 /** The dark ground every screen stands on: espresso, a soft light, grain. */
@@ -35,6 +39,8 @@ const InkScreen: React.FC<InkScreenProps> = ({
   topRight,
   backdrop,
   footerBottom = 32,
+  backdropStyle,
+  overlay,
 }) => {
   const insets = useSafeAreaInsets();
   return (
@@ -44,7 +50,9 @@ const InkScreen: React.FC<InkScreenProps> = ({
     // the screen, over the question (two testers, build 32).
     <View style={styles.ground}>
       <StatusBar barStyle="light-content" />
-      <Backdrop variant={variant}>{backdrop}</Backdrop>
+      <Backdrop variant={variant} lightStyle={backdropStyle}>
+        {backdrop}
+      </Backdrop>
       <View style={[styles.body, { paddingTop: insets.top + 8 }, style]}>
         {onBack || topRight ? (
           <View style={styles.topRow}>
@@ -79,6 +87,7 @@ const InkScreen: React.FC<InkScreenProps> = ({
       ) : (
         <View style={{ height: insets.bottom }} />
       )}
+      {overlay}
     </View>
   );
 };

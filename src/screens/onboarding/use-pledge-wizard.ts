@@ -82,11 +82,12 @@ export const usePledgeWizard = () => {
       "duration",
       "amount",
       ...(account === "ready" ? [] : (["signin"] as StepName[])),
-      ...(hasCard ? [] : (["card"] as StepName[])),
+      // A $0 pledge needs no card (owner, 19 Nov 2026).
+      ...(hasCard || pledgeValue <= 0 ? [] : (["card"] as StepName[])),
       // Replaces Review and the terms checkbox: holding it agrees and starts.
       "seal",
     ],
-    [firstPledge, account, hasCard]
+    [firstPledge, account, hasCard, pledgeValue]
   );
   const [index, setIndex] = useState(0);
   const step = steps[Math.min(index, steps.length - 1)];
@@ -169,7 +170,8 @@ export const usePledgeWizard = () => {
       });
       haptics.success();
       await ready;
-      navigation.reset({ index: 0, routes: [{ name: "Home" }] });
+      // Home comes into being over the seal's last frame (sealed-entrance.tsx).
+      navigation.reset({ index: 0, routes: [{ name: "Home", params: { entrance: "sealed" } }] });
       return true;
     } catch (error: any) {
       console.error("Could not start the pledge:", error);
@@ -230,7 +232,6 @@ export const usePledgeWizard = () => {
     starting ||
     (step === "mirror" && (authorizationStatus !== AuthorizationStatus.approved || !mirrorTold)) ||
     (step === "apps" && !selectionEvent?.familyActivitySelection) ||
-    (step === "amount" && pledgeValue < 1) ||
     step === "signin" ||
     (step === "card" && !paymentSetupComplete);
 

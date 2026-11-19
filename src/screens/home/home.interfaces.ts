@@ -7,5 +7,6 @@ export namespace Interfaces {
 
   export type HomeScreenProps = {
     navigation: any;
+    route?: { params?: { entrance?: "sealed" } };
   };
 }

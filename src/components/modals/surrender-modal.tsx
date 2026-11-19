@@ -25,6 +25,8 @@ interface SurrenderModalProps {
 const SurrenderModal: React.FC<SurrenderModalProps> = ({ isVisible, pledge, onClose, onSurrender }) => {
   const [loading, setLoading] = useState(false);
   const { pledgeValue } = pledge;
+  // A $0 pledge: giving up costs nothing (the backend just ends it).
+  const paid = pledgeValue > 0;
 
   if (!isVisible) return null;
 
@@ -41,7 +43,10 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({ isVisible, pledge, onCl
       onSurrender();
     } catch (error: any) {
       const detail = error?.response?.data?.error ?? error?.message ?? "Unknown error";
-      Alert.alert("We couldn't charge your pledge", `Your apps stay blocked until the payment goes through.\n\n${detail}`);
+      Alert.alert(
+        paid ? "We couldn't charge your pledge" : "We couldn't end your pledge",
+        paid ? `Your apps stay blocked until the payment goes through.\n\n${detail}` : `Your apps stay blocked. Try again.\n\n${detail}`
+      );
     } finally {
       setLoading(false);
     }
@@ -61,13 +66,14 @@ const SurrenderModal: React.FC<SurrenderModalProps> = ({ isVisible, pledge, onCl
             Wait.
           </Text>
           <Text style={styles.text}>
-            Unlocking now means giving up this pledge and paying the {CURRENCY_SYMBOL}
-            {pledgeValue}. You've come this far.
+            {paid
+              ? `Unlocking now means giving up this pledge and paying the ${CURRENCY_SYMBOL}${pledgeValue}. You've come this far.`
+              : "Unlocking now means giving up this pledge and breaking your word. You've come this far."}
           </Text>
           <View style={styles.spacer} />
           <PillButton text="No, keep going" tone="primary" onPress={onClose} disabled={loading} />
           <PillButton
-            text={`Pay ${CURRENCY_SYMBOL}${pledgeValue} and unlock`}
+            text={paid ? `Pay ${CURRENCY_SYMBOL}${pledgeValue} and unlock` : "Give up and unlock"}
             tone="consequential"
             onPress={handleSurrender}
             busy={loading}

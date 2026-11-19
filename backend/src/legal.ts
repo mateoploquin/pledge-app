@@ -51,7 +51,8 @@ export const termsHtml = page(
 
 <h2>4. The pledge and payments</h2>
 <ul>
-  <li>Before a pledge starts you save a payment card. <strong>Nothing is charged at that point.</strong> Card details are handled by Stripe; we never see your full card number.</li>
+  <li>Before a pledge with money on it starts you save a payment card. <strong>Nothing is charged at that point.</strong> Card details are handled by Stripe; we never see your full card number.</li>
+  <li>You can also pledge $0. A $0 pledge works the same way but nothing is ever charged: giving it up, or it ending under these terms, simply ends it. No card is needed, and $0 pledges have no paid breaks.</li>
   <li>Your pledge is charged <strong>only if you surrender</strong>, meaning you choose to unlock your blocked apps before the pledge period is over. Surrendering ends the pledge.</li>
   <li>If you complete the pledge period without surrendering, nothing is charged.</li>
   <li>Charges are in US dollars for the pledge amount you chose and are <strong>non-refundable</strong>, since the charge is the agreed consequence of ending the pledge early.</li>

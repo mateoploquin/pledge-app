@@ -66,10 +66,10 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
   const endsOn = new Date(pledgeEndsAt(pledge)).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
   const { bold, rest, counting } = pledgeLine(pledge, usage);
   const used = Math.min(usage.usedMinutes, timeValue);
-  const terms =
-    timeValue === 0
-      ? `Apps blocked all day until ${endsOn}, or you pay ${CURRENCY_SYMBOL}${pledgeValue}.`
-      : `${timeValue} min a day until ${endsOn}, or you pay ${CURRENCY_SYMBOL}${pledgeValue}.`;
+  // A $0 pledge is on the user's word alone: nothing to pay, no paid breaks.
+  const paid = pledgeValue > 0;
+  const limit = timeValue === 0 ? `Apps blocked all day until ${endsOn}` : `${timeValue} min a day until ${endsOn}`;
+  const terms = paid ? `${limit}, or you pay ${CURRENCY_SYMBOL}${pledgeValue}.` : `${limit}, on your word alone.`;
 
   return (
     <InkScreen
@@ -77,7 +77,7 @@ const PledgeDetail: React.FC<Props> = ({ navigation, route }) => {
       onBack={() => navigation.goBack()}
       footer={
         <>
-          {blocked && breaksLeft > 0 && (
+          {paid && blocked && breaksLeft > 0 && (
             <PillButton
               text={`${BREAK_MINUTES} minutes for ${CURRENCY_SYMBOL}${BREAK_PRICE}`}
               tone="primary"

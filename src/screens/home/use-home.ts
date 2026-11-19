@@ -83,7 +83,9 @@ export const useHome = (navigation: Interfaces.HomeScreenProps["navigation"]) =>
     Alert.alert(
       "Pledge forfeited",
       forfeited.length === 1
-        ? `Screen Time access was turned off, so your ${CURRENCY_SYMBOL}${forfeited[0].pledgeValue} pledge was charged, as agreed in the terms.`
+        ? forfeited[0].pledgeValue > 0
+          ? `Screen Time access was turned off, so your ${CURRENCY_SYMBOL}${forfeited[0].pledgeValue} pledge was charged, as agreed in the terms.`
+          : "Screen Time access was turned off, so your pledge has ended, as agreed in the terms."
         : `Screen Time access was turned off, so your ${forfeited.length} running pledges were charged, as agreed in the terms.`
     );
   }, []);
