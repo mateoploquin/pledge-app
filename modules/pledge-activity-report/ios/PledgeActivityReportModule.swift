@@ -78,6 +78,9 @@ final class PledgeActivityReportView: ExpoView {
     d.set(fontSize, forKey: "pledgeReport.fontSize")
     d.set(maxApps, forKey: "pledgeReport.maxApps")
     publishLimit()
+    if context == "timeBack" {
+      d.set(try? JSONEncoder().encode(selection), forKey: "pledgeReport.timeBack.selection")
+    }
     if context == "recovered" {
       d.set(anchorMs, forKey: "pledgeReport.recovered.anchorMs")
       d.set(try? JSONEncoder().encode(unionOfSelections()), forKey: "pledgeReport.recovered.selection")
@@ -110,8 +113,12 @@ final class PledgeActivityReportView: ExpoView {
     // "recovered" reads everything on this iPhone and picks the pledged apps
     // out itself, so it can show the phone's total next to them; blocks only
     // apply on this phone, so an iPad's use would not be Pledge's doing.
+    // "timeBack" reads everything too and picks the chosen apps out itself:
+    // filtered to the apps, it never drew on phones (19 Nov 2026).
     let filter = context == "recovered"
       ? DeviceActivityFilter(segment: segmentInterval, users: .all, devices: .init([.iPhone]))
+      : context == "timeBack"
+      ? DeviceActivityFilter(segment: segmentInterval, users: .all, devices: .init([.iPhone, .iPad]))
       : DeviceActivityFilter(
         segment: segmentInterval,
         users: .all,

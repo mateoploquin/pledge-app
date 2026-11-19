@@ -262,11 +262,17 @@ and app properties; storage falls back to AsyncStorage (no
   render key, so the report isn't restarted (and written only when it
   changed); `TimeBackView` checks it ten times a second and redraws only on
   a change. A `TimelineView` that rebuilt the view every tick made the
-  report blink out on the owner's phone (build 32), and the polled version
-  never showed at all on several phones (build 35, 19 Nov 2026; no crash
-  or memory kill in the phone's logs). The app no longer uses `timeBack`:
-  the limit step draws `TimeBackFallback` from the average day. The scene
-  is still in the extension.
+  report blink out on the owner's phone (build 32). App to extension only, as ever: the
+  limit goes in, nothing comes out.
+- `timeBack` asks for everything (no app filter) and picks the chosen apps
+  out itself from `pledgeReport.timeBack.selection`, like `recovered`. With
+  the apps as the filter it never drew on phones (builds 32-35): the
+  phone's log showed the report's scene up for 40 s with nothing from the
+  extension. Its `makeConfiguration` also gives up after 2 s and draws the
+  average day. It logs to `com.pledgecompany.pledge.ReportExtension`,
+  category `timeBack` ("configuration started/done", "drawn"): read them
+  with `sudo log collect --device --last 10m` and `log show --archive ...
+  --predicate 'subsystem == "com.pledgecompany.pledge.ReportExtension"'`.
 
 ## Dev loop
 
