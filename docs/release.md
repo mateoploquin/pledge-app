@@ -6,7 +6,13 @@ store build differs from the dev build.
 
 ## Current status (18 November 2026)
 
-**Build 35 (1.1.0) is being built for TestFlight** (18 November 2026, EAS build 0d859dd8, submission 9e0cf632; confirm once TestFlight shows it processed). On
+**Build 36 (1.1.0) is being built for TestFlight** (19 November 2026, EAS
+build b9644eb1, submission bb06d0a4). On top of build 35, the limit step's
+time back reads all of last week and picks the chosen apps out in the
+extension (filtered to the apps it never drew on phones), with a 2 s
+fallback to the average day and `timeBack` logs.
+
+**Build 35 (1.1.0) went to TestFlight** (18 November 2026, EAS build 0d859dd8, submission 9e0cf632; confirm once TestFlight shows it processed). On
 top of build 34, the rest of the app joins onboarding's brand: one ground
 everywhere (the empty Home's) with its low sun drifting behind the content;
 pledges as glass bubbles saying one quiet sentence ("**35 min** left
