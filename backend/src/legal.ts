@@ -38,27 +38,27 @@ ${body}
 export const termsHtml = page(
   "Terms and Conditions",
   `
-<p>These terms govern your use of the Pledge app ("Pledge", "we", "us"). By creating an account or starting a challenge you agree to them. If you do not agree, do not use the app.</p>
+<p>These terms govern your use of the Pledge app ("Pledge", "we", "us"). By creating an account or starting a pledge you agree to them. If you do not agree, do not use the app.</p>
 
 <h2>1. What Pledge does</h2>
-<p>Pledge helps you reduce screen time. You choose apps, set a daily time limit and a money pledge, and start a challenge that runs for a number of days you choose (7, 15 or 30). When you reach your daily limit, Pledge blocks the selected apps for the rest of the day using Apple's Screen Time features. You can unlock the apps at any time by surrendering the challenge, which charges your pledge.</p>
+<p>Pledge helps you reduce screen time. You choose apps, set a daily time limit and a money pledge, and start a pledge that runs for a number of days you choose (7, 15 or 30). When you reach your daily limit, Pledge blocks the selected apps for the rest of the day using Apple's Screen Time features. You can unlock the apps at any time by surrendering the pledge, which charges it.</p>
 
 <h2>2. Eligibility</h2>
 <p>You must be at least 18 years old and able to enter a binding contract. The app is not intended for children, and Screen Time authorization is requested for your own device only.</p>
 
 <h2>3. Your account</h2>
-<p>You can sign in with email and password, Apple or Google. Keep your credentials safe; you are responsible for activity under your account.</p>
+<p>You sign in with Apple. Keep your Apple account secure; you are responsible for activity under your account.</p>
 
 <h2>4. The pledge and payments</h2>
 <ul>
-  <li>Before a challenge starts you save a payment card. <strong>Nothing is charged at that point.</strong> Card details are handled by Stripe; we never see your full card number.</li>
-  <li>Your pledge is charged <strong>only if you surrender</strong>, meaning you choose to unlock your blocked apps before the challenge period is over. Surrendering ends the challenge.</li>
-  <li>If you complete the challenge period without surrendering, nothing is charged.</li>
-  <li>Charges are in US dollars for the pledge amount you chose and are <strong>non-refundable</strong>, since the charge is the agreed consequence of ending the challenge early.</li>
-  <li>If a charge fails, your apps remain blocked until the payment goes through or the challenge ends.</li>
+  <li>Before a pledge starts you save a payment card. <strong>Nothing is charged at that point.</strong> Card details are handled by Stripe; we never see your full card number.</li>
+  <li>Your pledge is charged <strong>only if you surrender</strong>, meaning you choose to unlock your blocked apps before the pledge period is over. Surrendering ends the pledge.</li>
+  <li>If you complete the pledge period without surrendering, nothing is charged.</li>
+  <li>Charges are in US dollars for the pledge amount you chose and are <strong>non-refundable</strong>, since the charge is the agreed consequence of ending the pledge early.</li>
+  <li>If a charge fails, your apps remain blocked until the payment goes through or the pledge ends.</li>
 </ul>
 
-<h2>5. Challenge rules</h2>
+<h2>5. Pledge rules</h2>
 <ul>
   <li><strong>Deleting the app, revoking Screen Time access, or otherwise disabling the blocking while a pledge is running counts as surrendering.</strong> Every running pledge is forfeited and charged, the same as if you had unlocked your apps. To detect this, the app registers an Apple push token with our server and reports in while it runs; the server pings the device once a day. If Apple reports the app as removed, or the app reports that Screen Time access was turned off, your running pledges are charged.</li>
   <li>Pledge relies on Apple's Screen Time system. We cannot guarantee blocking in every situation, for example after an iOS update or a device restore.</li>
@@ -85,8 +85,8 @@ export const privacyHtml = page(
 
 <h2>1. What we collect</h2>
 <ul>
-  <li><strong>Account data:</strong> your email address, your name if you provide it or your Apple/Google account shares it, and a user ID. Stored with Google Firebase Authentication.</li>
-  <li><strong>Challenge data:</strong> the pledge amount and daily time limit you chose, what the time is for if you write it, when the challenge started, and whether and when a pledge was charged. Stored in Google Cloud Firestore.</li>
+  <li><strong>Account data:</strong> your email address, your name if you provide it or your Apple account shares it, and a user ID. Stored with Google Firebase Authentication.</li>
+  <li><strong>Pledge data:</strong> the pledge amount and daily time limit you chose, what the time is for if you write it, when the pledge started, and whether and when a pledge was charged. Stored in Google Cloud Firestore.</li>
   <li><strong>Payment data:</strong> your card is saved directly with Stripe. We store only Stripe's customer identifier and the status of charges. We never receive your full card number or security code.</li>
   <li><strong>Screen Time data stays on your device.</strong> Which apps you selected and how long you use them is processed by Apple's Screen Time framework on the phone. Apple only gives the app opaque tokens, so we cannot see which apps you chose, and no usage data is sent to our servers.</li>
   <li><strong>In-app activity:</strong> which screens of Pledge you open and which buttons you tap, steps such as signing in, adding a card or starting a pledge, and your device model, iOS version, app version, language and time zone. Linked to your user ID and email. We do not record what you type, and no Screen Time data is included.</li>
@@ -106,7 +106,7 @@ export const privacyHtml = page(
 </ul>
 
 <h2>4. Retention</h2>
-<p>Account and challenge data are kept while your account exists. Charge records are kept as long as required for accounting and tax purposes. Server logs are deleted within 30 days. In-app activity is kept for up to 12 months.</p>
+<p>Account and pledge data are kept while your account exists. Charge records are kept as long as required for accounting and tax purposes. Server logs are deleted within 30 days. In-app activity is kept for up to 12 months.</p>
 
 <h2>5. Your rights</h2>
 <p>You can ask us to access, correct, export or delete your data by emailing us. Deleting your account removes your Firebase account and Firestore records; Stripe retains payment records as required by law.</p>
