@@ -6,7 +6,7 @@ store build differs from the dev build.
 
 ## Current status (18 November 2026)
 
-**Build 34 (1.1.0) is being built for TestFlight** (18 November 2026). On
+**Build 34 (1.1.0) is being built for TestFlight** (18 November 2026, EAS build 837a0e88, submission 9234f9af; confirm once TestFlight shows it processed). On
 top of build 33: "Years" in Inter like the rest of the page (Great Vibes
 removed again, app and extension); the life's pull back is smooth (the
 square no longer snaps to whole pixels while zooming, which made it jump
