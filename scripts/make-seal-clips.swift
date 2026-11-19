@@ -1,10 +1,11 @@
-// Makes the seal's two sunset clips from the owner's footage (18 Nov 2026):
+// Makes the seal's sunset clip from the owner's footage of the sun setting
+// behind a hill (19 Nov 2026, 720 × 1280, 13.9 s):
 //   swiftc -O scripts/make-seal-clips.swift -o /tmp/make-seal-clips
-//   /tmp/make-seal-clips <footage.mp4> assets/video/seal-idle.mp4 idle
 //   /tmp/make-seal-clips <footage.mp4> assets/video/seal-set.mp4 set
-// idle: the first 4 s at real speed, forward then back (a seamless 8 s loop).
-// set: 0 to 12 s (the sun sinking until it touches the horizon, owner,
-// 18 Nov 2026) in 4 s at 30 fps, every frame a keyframe.
+// set: 5.4 s (the sun in the upper sky) to 13.9 s (gone, the sky dark) in
+// 4 s at 30 fps, every frame a keyframe so letting go can scrub it back.
+// Its first frame is assets/video/seal-still.jpg, the screen at rest.
+// (idle mode is the old resting loop, no longer used.)
 
 import AVFoundation
 import CoreGraphics
@@ -15,7 +16,7 @@ let args = CommandLine.arguments
 let asset = AVURLAsset(url: URL(fileURLWithPath: args[1]))
 let out = URL(fileURLWithPath: args[2])
 let mode = args[3]
-let W = 720, H = 1080
+let W = 720, H = 1280
 let gen = AVAssetImageGenerator(asset: asset)
 gen.requestedTimeToleranceBefore = .zero
 gen.requestedTimeToleranceAfter = .zero
@@ -27,9 +28,9 @@ if mode == "idle" {
   let fwd = (0..<120).map { Double($0) / 30 }
   times = fwd + fwd.reversed().dropFirst().dropLast()
 } else {
-  // From the first frame until the sun's bottom edge meets the sea (12 s
-  // into the footage), in 120 frames (4 s at 30 fps).
-  times = (0..<120).map { Double($0) * 12.0 / 119.0 }
+  // From the sun in the upper sky until it is gone behind the hill, in 120
+  // frames (4 s at 30 fps).
+  times = (0..<120).map { 5.4 + Double($0) * 8.5 / 119.0 }
 }
 
 try? FileManager.default.removeItem(at: out)

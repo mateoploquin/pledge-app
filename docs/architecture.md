@@ -13,6 +13,15 @@ Apple lets us do, how to build, and the traps already walked into.
 - Animation: `react-native-reanimated` 3.10 for pressables and the
   surrender modal; `Dissolve` and screen transitions use React Native's
   own `Animated` on the native driver. Video: `expo-av`.
+- Drawing: `@shopify/react-native-skia` 1.2.3 (added 19 Nov 2026, native)
+  for the seal's handwritten name only. `components/ink/signature-ink.tsx`
+  sets the name in Herr Von Muellerhoff on an offscreen surface at 2×, reads
+  its pixels, and `utils/signature-plan.ts` (a port of the Seal Lab artifact's
+  pen) thins them to a centre line, builds a graph of ends, junctions and
+  strokes, and plans one unbroken route per word (retraces paired by the
+  cheapest matching, dots and crossbars after the word). The ink is a mask of
+  four stroke paths, one per brush size, rebuilt on the UI thread as the hold
+  advances. Plan time grows with the name's pixels; names are capped at 24.
 - Screen Time: `react-native-device-activity` 0.4.13 (its config plugin
   generates three extension targets) plus two local Expo modules and one
   hand-written extension target.

@@ -4,7 +4,22 @@ How a build gets from this repo to TestFlight and the App Store, and where
 things stand. Keep this file current; it is the one place that says why a
 store build differs from the dev build.
 
-## Current status (18 November 2026)
+## Current status (19 November 2026)
+
+**Build 38 (1.1.0) is being built for TestFlight** (19 November 2026). On top
+of build 37, a new seal, worked out with the owner in the Seal Lab artifact:
+the owner's new footage of the sun setting behind a hill (`seal-set.mp4`, its
+5.4 to 13.9 s in the 4 s hold, every frame a keyframe). At rest the sun's real
+light flickers in place (`seal-rest.mp4`, `scripts/make-seal-rest.py`, played
+at 2.6×). While held the screen darkens with the sun, fully dark as it goes,
+and the user's name writes itself on the signature line in Herr Von
+Muellerhoff, one unbroken line per word (`components/ink/signature-ink.tsx`,
+`utils/signature-plan.ts`, new native dependency `@shopify/react-native-skia`
+1.2.3). Then the words go, the logo comes up in the middle and moves to Home's
+top left, and Home follows. The footage is a third-party clip: its maker's
+written approval is needed before the App Store. Check on the phone: the
+writing (no lifts mid-word, nothing spotty), the loop's speed, the dark landing
+with the sun, and the logo landing where Home's sits.
 
 **Build 37 (1.1.0) is being built for TestFlight** (19 November 2026, EAS
 build 93964c80, submission eb78b385). On top of build 36: time back no

@@ -11,84 +11,82 @@ import {
 import Animated, {
   Easing,
   cancelAnimation,
-  interpolate,
   runOnJS,
   useAnimatedReaction,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withDelay,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { ResizeMode, Video } from "expo-av";
 import InkScreen from "../../../components/ink/ink-screen";
 import Caption from "../../../components/ink/caption";
 import Lockup from "../../../components/ink/lockup";
+import SignatureInk from "../../../components/ink/signature-ink";
 import { openLegal } from "../../../services/legal";
 import { haptics } from "../../../utils/haptics";
-import { color, fonts } from "../../../theme/tokens";
+import { color, fonts, spacing } from "../../../theme/tokens";
 import { CURRENCY_SYMBOL } from "../../../config";
 
 /** One breath: how long the seal is held. */
 const HOLD_MS = 4000;
 /**
- * The sunset (owner, 18 Nov 2026: "have it sunset as you hold"), from the
- * owner's footage of the sun sinking into the sea (keep the maker's approval
- * in writing). Two cuts of it (made with an AVAssetWriter script, see
- * scripts/make-seal-clips.swift): at rest, its first 4 s at real speed played
- * forward and back, a seamless 8 s loop, so the sun shimmers and the screen
- * is alive before it's touched; held, the sun sinking until its bottom edge
- * meets the sea (the footage's first 12 s) in one breath, 4 s at 30 fps,
- * every frame a keyframe so letting go can scrub it back.
+ * The sunset (owner, 19 Nov 2026), from the owner's footage of the sun
+ * setting behind a hill (keep the maker's approval in writing). One cut
+ * (scripts/make-seal-clips.swift): the sun from the upper sky until it is
+ * gone and the sky dark, in one breath, 4 s at 30 fps, every frame a
+ * keyframe so letting go can scrub it back.
+ *
+ * At rest (owner, 19 Nov 2026: the light alive, the sun not travelling): 2 s
+ * of the same footage just before the cut starts, the sun held in place in
+ * every frame and only the sun and its glow taken from the moving film, over
+ * the cut's first frame, looped with a crossfade and played fast like the
+ * held cut. Made by scripts/make-seal-rest.py.
  */
-const IDLE = require("../../../../assets/video/seal-idle.mp4");
 const SET = require("../../../../assets/video/seal-set.mp4");
+const REST = require("../../../../assets/video/seal-rest.mp4");
+/** The rest loop's speed (owner, 19 Nov 2026: "much faster, just like in the video"). */
+const REST_RATE = 2.6;
 const GRAIN = require("../../../../assets/textures/grain.png");
-/** The held cut's last frame: the sun that travels into the logo. */
-const SUN = require("../../../../assets/video/seal-sun.jpg");
 
 /**
- * Where things are in the footage (720 × 1080) on the held cut's last
- * frame: the horizon, and the sun as a disc resting on it. Measured from
- * the clip; the closing animation starts exactly on that sun.
+ * The screen goes dark with the sun (owner, 19 Nov 2026: "the darkening to
+ * happen at the same time as the sun sets"): the last of it slips behind the
+ * hill at 92% of the hold, and so does the light, slowly and then quickly.
  */
-const FOOTAGE = { w: 720, h: 1080, horizon: 720, sunX: 337, sunR: 250 };
+const DUSK = { from: 0.35, to: 0.92, curve: 2.4 };
+/** The name is written over most of the breath, done just before the sun is gone. */
+const WRITE = { from: 0.05, to: 0.85 };
+
 /**
- * The film is raised by this share of the screen height so the horizon sits
- * at about 56% of the screen and every word sits on the dark sea (owner,
- * 18 Nov 2026: "all the text needs to be in the dark part").
+ * The close (owner, 19 Nov 2026: "when the sun sets, the screen darkens, and
+ * the logo appears ... seal the moment in time"): the words go, the logo
+ * comes up in the middle, rests, then moves to where it sits on Home, and
+ * Home follows.
  */
-const FILM_LIFT = 0.32;
+const CLOSE = { wordsMs: 450, pauseMs: 150, logoMs: 1000, beatMs: 450, moveMs: 900, endMs: 100 };
+const CLOSE_TOTAL = CLOSE.wordsMs + CLOSE.pauseMs + CLOSE.logoMs + CLOSE.beatMs + CLOSE.moveMs + CLOSE.endMs;
+/** The logo in the middle, and on Home (components/ink/lockup, 1600 × 420). */
+const LOGO_MID = 200;
+const LOGO_HOME = 130;
+const LOCKUP_RATIO = 420 / 1600;
 
-/** The closing animation (owner, 18 Nov 2026: the sun "turns into the logo and then the main menu appears"). */
-const CLOSE = {
-  /** The sun shrinks into the mark (the film fades as it goes). */
-  fadeMs: 0,
-  settleMs: 1600,
-  /** Then the wordmark. */
-  wordMs: 500,
-  /** A beat on the finished logo before Home. */
-  holdMs: 500,
-};
-
-/** The Pledge lockup's geometry (components/ink/lockup.tsx, viewBox 1600 × 420). */
-const LOCKUP = { w: 1600, h: 420, cx: 275, cy: 160, r: 105, lineL: 50, lineR: 500, lineY: 265, line: 6 };
-/** How wide the logo is drawn at the end. */
-const LOGO_W = 240;
-
-/** A touch of dark under the status bar and back chevron, and more over the sea so the words read. */
+/** A touch of dark under the status bar and over the words. */
 const SHADE = {
-  colors: [
-    "rgba(20,12,11,0.45)",
-    "rgba(20,12,11,0)",
-    "rgba(20,12,11,0)",
-    "rgba(20,12,11,0.55)",
-  ] as const,
+  colors: ["rgba(20,12,11,0.45)", "rgba(20,12,11,0)", "rgba(20,12,11,0)", "rgba(20,12,11,0.55)"] as const,
   locations: [0, 0.14, 0.6, 1] as const,
 };
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const signedOn = (d: Date) => `SIGNED ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+
+const ramp = (x: number, a: number, b: number) => {
+  "worklet";
+  return Math.max(0, Math.min(1, (x - a) / (b - a)));
+};
 
 interface SealProps {
   counter: string;
@@ -105,14 +103,14 @@ interface SealProps {
 
 /**
  * The seal (Paper v2.1 B9), always the last step: a poster. The sunset fills
- * the screen; on the dark sea below it, the promise in plain words ("30 min
- * a day. 30 days. or I pay $10.") and the user's name on a signature line
- * (owner, 18 Nov 2026: the signature and the simple wording). Tap the name
- * to change it. Press and hold anywhere for one breath (4 s): the sun sinks
- * until it touches the horizon, haptics building; let go early and it rises
- * back. Then the sun becomes the logo, an ivory disc on a line, the wordmark
- * joins it, and Home follows. Holding it through agrees to the terms and
- * starts the pledge.
+ * the screen, its light flickering; on it, the promise in plain words
+ * ("30 min a day. 30 days. or I pay $10.") and a signature line. Tap the line
+ * to change the name. Press and hold anywhere for one breath (4 s): the sun
+ * sets behind the hill and the screen darkens with it, haptics building,
+ * while the user's name writes itself on the line in one hand; let go early
+ * and it all goes back. Once the sun is gone the words go, the Pledge logo
+ * comes up in the middle and moves to its place on Home, and Home follows.
+ * Holding it through agrees to the terms and starts the pledge.
  */
 const Seal: React.FC<SealProps> = ({
   counter,
@@ -126,46 +124,20 @@ const Seal: React.FC<SealProps> = ({
   onSeal,
 }) => {
   const { width: W, height: H } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const progress = useSharedValue(0);
-  // While held the film plays on its own; otherwise it follows `progress` (the sink).
+  // While held the film plays on its own; otherwise it follows `progress`.
   const holding = useSharedValue(0);
-  // The closing animation: 0 → 1 the sun becomes the mark; then the wordmark.
-  const close = useSharedValue(0);
-  const word = useSharedValue(0);
+  // The close: the words leave, then the logo comes up, then it moves.
+  const wordsOut = useSharedValue(0);
+  const logoIn = useSharedValue(0);
+  const move = useSharedValue(0);
   const [closing, setClosing] = useState(false);
-  // The held cut covers the resting loop as soon as the hold starts, and
-  // hands back once it has run back to its first frame.
-  const setStyle = useAnimatedStyle(() => ({
-    opacity: progress.value > 0.001 ? 1 : 0,
-  }));
   const film = useRef<Video>(null);
   const seeking = useRef(false);
   const nextSeek = useRef<number | null>(null);
   const sealing = useRef(false);
   const beats = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // The film, raised and scaled to cover: where its horizon and sun land.
-  const lift = H * FILM_LIFT;
-  const scale = Math.max(W / FOOTAGE.w, (H + lift) / FOOTAGE.h);
-  const ox = (W - FOOTAGE.w * scale) / 2;
-  const oy = -lift + (H + lift - FOOTAGE.h * scale) / 2;
-  const horizonY = oy + FOOTAGE.horizon * scale;
-  const sun = {
-    x: ox + FOOTAGE.sunX * scale,
-    r: FOOTAGE.sunR * scale,
-  };
-  // The logo, centred, at its final size.
-  const k = LOGO_W / LOCKUP.w;
-  const logoLeft = (W - LOGO_W) / 2;
-  const logoTop = H / 2 - (LOCKUP.h * k) / 2;
-  const mark = {
-    x: logoLeft + LOCKUP.cx * k,
-    r: LOCKUP.r * k,
-    lineL: logoLeft + LOCKUP.lineL * k,
-    lineR: logoLeft + LOCKUP.lineR * k,
-    lineY: logoTop + LOCKUP.lineY * k,
-    line: LOCKUP.line * k,
-  };
 
   // One seek at a time; the latest wanted frame wins.
   const seekTo = (p: number) => {
@@ -176,10 +148,7 @@ const Seal: React.FC<SealProps> = ({
     }
     seeking.current = true;
     film.current
-      ?.setPositionAsync(ms, {
-        toleranceMillisBefore: 0,
-        toleranceMillisAfter: 0,
-      })
+      ?.setPositionAsync(ms, { toleranceMillisBefore: 0, toleranceMillisAfter: 0 })
       .catch(() => {})
       .finally(() => {
         seeking.current = false;
@@ -211,20 +180,19 @@ const Seal: React.FC<SealProps> = ({
 
   useEffect(() => stopBeats, []);
 
-  /** The sun becomes the logo; resolves when the logo has had its beat. */
+  /** The words go, the logo comes up and moves to Home's corner; resolves when it is there. */
   const playClose = () => {
     setClosing(true);
-    close.value = withTiming(1, {
-      duration: CLOSE.fadeMs + CLOSE.settleMs,
-      easing: Easing.linear,
-    });
-    word.value = withDelay(
-      CLOSE.fadeMs + CLOSE.settleMs,
-      withTiming(1, { duration: CLOSE.wordMs, easing: Easing.out(Easing.cubic) })
+    wordsOut.value = withTiming(1, { duration: CLOSE.wordsMs, easing: Easing.inOut(Easing.cubic) });
+    logoIn.value = withDelay(
+      CLOSE.wordsMs + CLOSE.pauseMs,
+      withTiming(1, { duration: CLOSE.logoMs, easing: Easing.inOut(Easing.sin) })
     );
-    return new Promise<void>((resolve) =>
-      setTimeout(resolve, CLOSE.fadeMs + CLOSE.settleMs + CLOSE.wordMs + CLOSE.holdMs)
+    move.value = withDelay(
+      CLOSE.wordsMs + CLOSE.pauseMs + CLOSE.logoMs + CLOSE.beatMs,
+      withTiming(1, { duration: CLOSE.moveMs, easing: Easing.inOut(Easing.cubic) })
     );
+    return new Promise<void>((resolve) => setTimeout(resolve, CLOSE_TOTAL));
   };
 
   const sealed = async () => {
@@ -239,13 +207,11 @@ const Seal: React.FC<SealProps> = ({
       if (!started) {
         // It didn't start (an alert said why): the sunset comes back.
         setClosing(false);
-        word.value = withTiming(0, { duration: 300 });
-        close.value = withTiming(0, { duration: 500 });
+        move.value = 0;
+        logoIn.value = withTiming(0, { duration: 300 });
+        wordsOut.value = withTiming(0, { duration: 500 });
         holding.value = 0;
-        progress.value = withTiming(0, {
-          duration: 700,
-          easing: Easing.out(Easing.cubic),
-        });
+        progress.value = withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) });
       }
     }
   };
@@ -254,9 +220,7 @@ const Seal: React.FC<SealProps> = ({
     if (starting || sealing.current) return;
     beat(Date.now());
     holding.value = 1;
-    film.current
-      ?.playFromPositionAsync(Math.round(progress.value * HOLD_MS))
-      .catch(() => {});
+    film.current?.playFromPositionAsync(Math.round(progress.value * HOLD_MS)).catch(() => {});
     progress.value = withTiming(
       1,
       { duration: HOLD_MS * (1 - progress.value), easing: Easing.linear },
@@ -272,10 +236,7 @@ const Seal: React.FC<SealProps> = ({
     holding.value = 0;
     film.current?.pauseAsync().catch(() => {});
     cancelAnimation(progress);
-    progress.value = withTiming(0, {
-      duration: 600,
-      easing: Easing.out(Easing.cubic),
-    });
+    progress.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) });
   };
 
   const editName = () =>
@@ -284,101 +245,36 @@ const Seal: React.FC<SealProps> = ({
       "As it goes on your pledge.",
       [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Done",
-          onPress: (v?: string) => setName((v ?? "").trim().slice(0, 24)),
-        },
+        { text: "Done", onPress: (v?: string) => setName((v ?? "").trim().slice(0, 24)) },
       ],
       "plain-text",
       name
     );
 
-  // One continuous move (owner, 18 Nov 2026: the sun "turns into the
-  // logo"): the sky fades where it is while the sun, cut out as a disc from
-  // the held cut's last frame, shrinks and is carried to where the mark's
-  // disc sits; as it gets small an ivory disc takes over from the photograph,
-  // and the horizon becomes the mark's line. `close` runs 0 → 1; the
-  // geometry eases in and out.
-  const sunCY = horizonY - sun.r;
-  const markCY = mark.lineY - mark.r;
-  const endScale = mark.r / sun.r;
-  const ease = (t: number) => {
-    "worklet";
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  };
-  const geometry = (t: number) => {
-    "worklet";
-    const g = ease(t);
-    // Scale shrinks geometrically, so it feels like one steady pull.
-    const sc = Math.exp(Math.log(endScale) * g);
-    const cx = sun.x + (mark.x - sun.x) * g;
-    const cy = sunCY + (markCY - sunCY) * g;
-    return { g, sc, cx, cy };
-  };
-  // The sky stays where it is and fades; only the sun travels.
-  const filmStyle = useAnimatedStyle(() => ({
-    opacity: 1 - interpolate(close.value, [0, 0.3], [0, 1], "clamp"),
+  // At rest the light flickers on the loop; once held, the cut itself moves.
+  const restStyle = useAnimatedStyle(() => ({ opacity: progress.value > 0.001 ? 0 : 1 }));
+  const duskStyle = useAnimatedStyle(() => ({
+    opacity: Math.max(Math.pow(ramp(progress.value, DUSK.from, DUSK.to), DUSK.curve), wordsOut.value),
   }));
-  // The travelling sun: a round window onto the held cut's last frame,
-  // shrinking about the sun and carried to the mark.
-  const sunWindowStyle = useAnimatedStyle(() => {
-    const { sc, cx, cy } = geometry(close.value);
-    const r = sun.r * sc;
-    return {
-      opacity: close.value > 0 ? 1 - interpolate(close.value, [0.55, 0.85], [0, 1], "clamp") : 0,
-      width: r * 2,
-      height: r * 2,
-      borderRadius: r,
-      left: cx - r,
-      top: cy - r,
-    };
-  });
-  const sunImageStyle = useAnimatedStyle(() => {
-    const { sc } = geometry(close.value);
-    const s2 = scale * sc;
-    const r = sun.r * sc;
-    return {
-      width: FOOTAGE.w * s2,
-      height: FOOTAGE.h * s2,
-      // Place the frame so its sun sits in the middle of the window.
-      left: r - FOOTAGE.sunX * s2,
-      top: r - (FOOTAGE.horizon - FOOTAGE.sunR) * s2,
-    };
-  });
-  const wordsStyle = useAnimatedStyle(() => ({
-    opacity: 1 - interpolate(close.value, [0, 0.15], [0, 1], "clamp"),
-  }));
-  const discStyle = useAnimatedStyle(() => {
-    const { sc, cx, cy } = geometry(close.value);
-    const r = sun.r * sc;
-    return {
-      opacity: interpolate(close.value, [0.45, 0.8], [0, 1], "clamp"),
-      width: r * 2,
-      height: r * 2,
-      borderRadius: r,
-      left: cx - r,
-      top: cy - r,
-    };
-  });
-  const lineStyle = useAnimatedStyle(() => {
-    const { g, sc, cy } = geometry(close.value);
-    const l = mark.lineL * g;
-    const r = W + (mark.lineR - W) * g;
-    // The line stays under the disc.
-    const y = cy + sun.r * sc;
-    const th = 1.5 + (mark.line - 1.5) * g;
-    return {
-      opacity: interpolate(close.value, [0.2, 0.6], [0, 1], "clamp"),
-      left: l,
-      width: r - l,
-      top: y - th / 2,
-      height: th,
-    };
-  });
-  const lockupStyle = useAnimatedStyle(() => ({ opacity: word.value }));
+  const wordsStyle = useAnimatedStyle(() => ({ opacity: 1 - wordsOut.value }));
+  const written = useDerivedValue(() => ramp(progress.value, WRITE.from, WRITE.to));
 
-  const promise =
-    timeValue === 0 ? "Apps blocked all day." : `${timeValue} min a day.`;
+  // The logo: drawn at its middle size, scaled and carried to Home's top left.
+  const logoH = LOGO_MID * LOCKUP_RATIO;
+  const startLeft = (W - LOGO_MID) / 2, startTop = H / 2 - logoH / 2;
+  const s = LOGO_HOME / LOGO_MID;
+  // Home: InkScreen pads the top by the inset + 8, its header by 4, and the lockup fills the row.
+  const endLeft = spacing.lg, endTop = insets.top + 12;
+  const dx = endLeft + (LOGO_MID * s) / 2 - (startLeft + LOGO_MID / 2);
+  const dy = endTop + (logoH * s) / 2 - (startTop + logoH / 2);
+  const logoStyle = useAnimatedStyle(() => {
+    const translateX = dx * move.value;
+    const translateY = dy * move.value;
+    const scale = (0.97 + 0.03 * logoIn.value) * (1 + (s - 1) * move.value);
+    return { opacity: logoIn.value, transform: [{ translateX }, { translateY }, { scale }] as any };
+  });
+
+  const promise = timeValue === 0 ? "Apps blocked all day." : `${timeValue} min a day.`;
 
   return (
     <InkScreen
@@ -389,53 +285,34 @@ const Seal: React.FC<SealProps> = ({
       footerBottom={36}
       backdrop={
         <>
-          <Animated.View style={[StyleSheet.absoluteFill, filmStyle]}>
-            {/* Raised so the horizon sits above the words. */}
-            <View style={{ position: "absolute", left: 0, right: 0, top: -lift, height: H + lift }}>
+          <View style={StyleSheet.absoluteFill}>
+            <Video
+              ref={film}
+              source={SET}
+              style={StyleSheet.absoluteFill}
+              resizeMode={ResizeMode.COVER}
+              shouldPlay={false}
+              isLooping={false}
+              isMuted
+            />
+            <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, restStyle]}>
               <Video
-                source={IDLE}
+                source={REST}
                 style={StyleSheet.absoluteFill}
                 resizeMode={ResizeMode.COVER}
                 shouldPlay
                 isLooping
                 isMuted
+                rate={REST_RATE}
               />
-              <Animated.View style={[StyleSheet.absoluteFill, setStyle]}>
-                <Video
-                  ref={film}
-                  source={SET}
-                  style={StyleSheet.absoluteFill}
-                  resizeMode={ResizeMode.COVER}
-                  shouldPlay={false}
-                  isLooping={false}
-                  isMuted
-                />
-              </Animated.View>
-            </View>
-            <LinearGradient
-              colors={SHADE.colors}
-              locations={SHADE.locations}
-              style={StyleSheet.absoluteFill}
-            />
+            </Animated.View>
+            <LinearGradient colors={SHADE.colors} locations={SHADE.locations} style={StyleSheet.absoluteFill} />
             {/* Film grain on the film too (owner, 18 Nov 2026). */}
-            <ImageBackground
-              source={GRAIN}
-              resizeMode="repeat"
-              style={[StyleSheet.absoluteFill, styles.grain]}
-            />
-          </Animated.View>
-          {/* The photographed sun, travelling. */}
-          <Animated.View pointerEvents="none" style={[styles.sunWindow, sunWindowStyle]}>
-            <Animated.Image source={SUN} style={[styles.sunImage, sunImageStyle]} />
-          </Animated.View>
-          {/* The sun as the mark: a disc resting on the horizon line. */}
-          <Animated.View pointerEvents="none" style={[styles.disc, discStyle]} />
-          <Animated.View pointerEvents="none" style={[styles.line, lineStyle]} />
-          <Animated.View
-            pointerEvents="none"
-            style={[{ position: "absolute", left: logoLeft, top: logoTop }, lockupStyle]}
-          >
-            <Lockup width={LOGO_W} />
+            <ImageBackground source={GRAIN} resizeMode="repeat" style={[StyleSheet.absoluteFill, styles.grain]} />
+          </View>
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.dusk, duskStyle]} />
+          <Animated.View pointerEvents="none" style={[{ position: "absolute", left: startLeft, top: startTop }, logoStyle]}>
+            <Lockup width={LOGO_MID} />
           </Animated.View>
         </>
       }
@@ -448,9 +325,7 @@ const Seal: React.FC<SealProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Hold to seal your pledge"
             accessibilityHint="Hold for four seconds. Sealing means you agree to the Terms and Privacy Policy."
-            onAccessibilityAction={(e) =>
-              e.nativeEvent.actionName === "activate" && sealed()
-            }
+            onAccessibilityAction={(e) => e.nativeEvent.actionName === "activate" && sealed()}
             accessibilityActions={[{ name: "activate" }]}
             style={styles.footer}
           >
@@ -471,7 +346,7 @@ const Seal: React.FC<SealProps> = ({
       }
     >
       {/* The whole screen is the control: press and hold anywhere, the sun
-          sets. The name and the links keep their own taps. */}
+          sets. The signature line and the links keep their own taps. */}
       <Pressable
         onPressIn={onPressIn}
         onPressOut={onPressOut}
@@ -485,14 +360,21 @@ const Seal: React.FC<SealProps> = ({
             <Text style={styles.big}>{`${promise}\n${durationDays} days.`}</Text>
             <Text style={styles.pay}>{`or I pay ${CURRENCY_SYMBOL}${pledgeValue}.`}</Text>
           </View>
-          {/* Signed, like a contract; tap the name to change it. */}
+          {/* Signed, like a contract: the name writes itself as the seal is
+              held (owner, 19 Nov 2026); tap the line to change it. */}
           <Pressable
             onPress={editName}
             accessibilityRole="button"
-            accessibilityLabel={`Signed ${name || "your name"}. Change the name`}
+            accessibilityLabel={`Signature: ${name || "no name yet"}. Change the name`}
             style={styles.signature}
           >
-            <Text style={[styles.name, !name && styles.noName]}>{name || "Your name"}</Text>
+            <View style={styles.inkRow}>
+              {name ? (
+                <SignatureInk name={name} progress={written} maxWidth={W - spacing.lg * 2} />
+              ) : (
+                <Text style={styles.noName}>Your name</Text>
+              )}
+            </View>
             <View style={styles.signLine} />
             <Text style={styles.signed}>{signedOn(new Date())}</Text>
           </Pressable>
@@ -520,9 +402,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     color: color.text,
   },
-  signature: { alignSelf: "flex-start", width: 200, gap: 6 },
-  name: { fontFamily: fonts.ui, fontSize: 20, lineHeight: 24, color: color.text },
-  noName: { color: color.textSecondary },
+  signature: { alignSelf: "flex-start", minWidth: 200, gap: 6 },
+  // Room for the handwriting before it is written, so nothing moves as it appears.
+  inkRow: { minHeight: 52, justifyContent: "flex-end" },
+  noName: { fontFamily: fonts.ui, fontSize: 20, lineHeight: 24, color: color.textSecondary },
   signLine: { height: StyleSheet.hairlineWidth * 2, backgroundColor: "rgba(248,240,230,0.6)" },
   signed: {
     fontFamily: fonts.uiMedium,
@@ -532,10 +415,7 @@ const styles = StyleSheet.create({
     color: "rgba(248,240,230,0.7)",
   },
   grain: { opacity: 0.35 },
-  disc: { position: "absolute", backgroundColor: color.text },
-  sunWindow: { position: "absolute", overflow: "hidden" },
-  sunImage: { position: "absolute" },
-  line: { position: "absolute", backgroundColor: color.text },
+  dusk: { backgroundColor: color.bg },
   footer: { alignItems: "center", gap: 6 },
   hold: {
     fontFamily: fonts.uiSemibold,
