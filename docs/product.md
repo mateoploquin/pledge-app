@@ -173,7 +173,7 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 | Usage tick | every 5 min | `TICK_MINUTES` |
 | Paid break | $1 for 5 min on the clock, 3 a day per pledge | `BREAK_*` in `home.constants.ts`, backend `BREAK_AMOUNT_CENTS`, `BREAKS_PER_DAY` |
 | Currency | $ in the app, `usd` on the backend | `src/config.ts`, `PLEDGE_CURRENCY` |
-| Test card | 4242 4242 4242 4242 (sandbox Stripe keys are live on Vercel now) | |
+| Stripe mode | Live keys on Vercel production since 19 Nov 2026 (new Stripe account); test cards are declined | Vercel env `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` |
 
 ## Decisions taken (don't reopen)
 

@@ -204,8 +204,9 @@ and that the built app has `Extensions/ReportExtension.appex`.
 
 ## Before the App Store (not needed for TestFlight)
 
-- [ ] Live Stripe keys on Vercel production (sandbox keys are there now so
-      testers can use card 4242 4242 4242 4242).
+- [x] Live Stripe keys on Vercel production (19 Nov 2026, new Stripe
+      account; Apple Pay certificate for `merchant.pledge.applepay` uploaded
+      to it). Test cards no longer work against this backend.
 - [x] Currency: US dollars (decided 29 Oct 2026). `CURRENCY_SYMBOL` in
       `src/config.ts`, `PLEDGE_CURRENCY` defaults to `usd` on the backend,
       the terms say "US dollars". Needs a backend deploy and a new build.

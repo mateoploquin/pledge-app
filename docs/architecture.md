@@ -183,8 +183,9 @@ The coach (removed 16 Nov 2026, see `docs/product.md`) also left
 reads them now.
 
 Env (see `backend/.env.example`): `STRIPE_SECRET_KEY`,
-`STRIPE_PUBLISHABLE_KEY` (sandbox keys on Vercel right now; live keys
-must go back before launch), `FIREBASE_SERVICE_ACCOUNT` (JSON or base64),
+`STRIPE_PUBLISHABLE_KEY` (live keys from the new Stripe account since
+19 Nov 2026; the app fetches the publishable key from the backend, so
+switching keys needs only a backend redeploy, no app build), `FIREBASE_SERVICE_ACCOUNT` (JSON or base64),
 `PLEDGE_CURRENCY=usd`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY_P8`
 (base64), `APNS_BUNDLE_ID`, `CRON_SECRET`. All set in Vercel production as
 Sensitive. Local dev: `backend/.env` (gitignored), `npm run dev` on :3000.
