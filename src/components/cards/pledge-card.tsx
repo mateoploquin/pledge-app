@@ -3,13 +3,13 @@ import { View, Text, StyleSheet } from "react-native";
 import PressableScale from "../buttons/pressable-scale";
 import { ActivityIcons } from "../../../modules/pledge-activity-labels";
 import { Pledge } from "../../types";
-import { DailyUsage, isOnBreak } from "../../screens/home/home.controller";
+import { DailyUsage, breakEndsAt, isOnBreak } from "../../screens/home/home.controller";
 import { CURRENCY_SYMBOL } from "../../config";
 import { pledgeEndsAt } from "../../services/pledges";
 import GlassSurface from "../ink/glass-surface";
-import StatusBadge, { PledgeStatus } from "../ink/status-badge";
+import { PledgeStatus } from "../ink/status-badge";
 import UsageBar from "../ink/usage-bar";
-import { color, fonts, type } from "../../theme/tokens";
+import { color, fonts } from "../../theme/tokens";
 
 interface PledgeCardProps {
   pledge: Pledge;
@@ -41,39 +41,36 @@ export const pledgeStatus = (pledge: Pledge, usage: DailyUsage): { status: Pledg
   return { status: "active", text: "On track" };
 };
 
-/** One running pledge on glass (v2 Paper "C2"): status, minutes left, the bar, apps and stake. */
-const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
-  const { status, text } = pledgeStatus(pledge, usage);
-  const noAllowance = pledge.timeValue === 0;
-  const used = Math.min(usage.usedMinutes, pledge.timeValue);
+/**
+ * The sentence a card says (owner, 18 Nov 2026: one quiet line, the number
+ * in bold, like onboarding): "35 min left today.", "4 min left on your
+ * break.", "Blocked until midnight.", "Blocked all day."
+ */
+export const pledgeLine = (pledge: Pledge, usage: DailyUsage, now = Date.now()): { bold: string; rest: string; counting: boolean } => {
+  if (isOnBreak(pledge, now) && pledge.breakStartedAt) {
+    const mins = Math.max(1, Math.ceil((breakEndsAt(pledge.breakStartedAt) - now) / 60000));
+    return { bold: `${mins} min`, rest: " left on your break.", counting: false };
+  }
+  if (pledge.timeValue === 0) return { bold: "Blocked", rest: " all day.", counting: false };
+  if (usage.limitReached) return { bold: "Blocked", rest: " until midnight.", counting: false };
   const left = Math.max(0, pledge.timeValue - usage.usedMinutes);
+  return { bold: `${left} min`, rest: " left today.", counting: true };
+};
+
+/**
+ * One running pledge, a glass bubble (Paper "Proposal: one light", C2):
+ * which apps and what's at stake, one quiet sentence, and the bar while
+ * minutes are being counted. The days left and the small print are on the
+ * pledge's own page.
+ */
+const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
+  const { bold, rest, counting } = pledgeLine(pledge, usage);
+  const used = Math.min(usage.usedMinutes, pledge.timeValue);
 
   return (
     <PressableScale onPress={onPress} scaleTo={0.985} haptic="tap" style={styles.press}>
       <GlassSurface style={styles.card}>
-        <View style={styles.topRow}>
-          <StatusBadge status={status} text={text} />
-          <Text style={styles.small}>{daysLeftLabel(pledge)}</Text>
-        </View>
-
-        {noAllowance ? (
-          <Text style={styles.line}>Blocked for the whole pledge.</Text>
-        ) : (
-          <>
-            <Text style={styles.value}>
-              {usage.limitReached ? 0 : left} min<Text style={styles.unit}> left today</Text>
-            </Text>
-            <UsageBar used={used} limit={pledge.timeValue} />
-            <View style={styles.row}>
-              <Text style={styles.small}>
-                {used} of {pledge.timeValue} min used
-              </Text>
-              <Text style={styles.small}>Resets at midnight</Text>
-            </View>
-          </>
-        )}
-
-        <View style={[styles.row, styles.bottom]}>
+        <View style={styles.row}>
           {/* The apps as small icons (names can't be fitted), the stake on the right. */}
           <ActivityIcons
             familyActivitySelection={pledge.selectionEvent?.familyActivitySelection}
@@ -84,6 +81,11 @@ const PledgeCard: React.FC<PledgeCardProps> = ({ pledge, usage, onPress }) => {
             {pledge.pledgeValue}
           </Text>
         </View>
+        <Text style={styles.line}>
+          <Text style={styles.bold}>{bold}</Text>
+          {rest}
+        </Text>
+        {counting && <UsageBar used={used} limit={pledge.timeValue} />}
       </GlassSurface>
     </PressableScale>
   );
@@ -97,16 +99,18 @@ const styles = StyleSheet.create({
     shadowRadius: 30,
     shadowOffset: { width: 0, height: 24 },
   },
-  card: { paddingVertical: 18, paddingHorizontal: 20, gap: 12 },
-  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  card: { paddingVertical: 18, paddingHorizontal: 20, gap: 14 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
-  bottom: { paddingTop: 2 },
-  value: type.value,
-  unit: { ...type.row, color: color.textSecondary },
-  line: type.small,
-  small: type.small,
   apps: { flex: 1, height: 24, marginRight: 12 },
-  stake: { ...type.row, fontFamily: fonts.uiSemibold },
+  stake: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 18, color: color.textTertiary },
+  line: {
+    fontFamily: fonts.ui,
+    fontSize: 24,
+    lineHeight: 30,
+    letterSpacing: -0.36,
+    color: color.textSecondary,
+  },
+  bold: { fontFamily: fonts.uiSemibold, color: color.text },
 });
 
 export default PledgeCard;

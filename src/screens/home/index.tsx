@@ -1,12 +1,10 @@
 import { FC } from "react";
 import { AuthorizationStatus, getAuthorizationStatus } from "react-native-device-activity";
 import { View, Text, ScrollView, StyleSheet, Linking } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 import InkScreen from "../../components/ink/ink-screen";
 import PillButton from "../../components/ink/pill-button";
 import { Dissolve, Line } from "../../components/ink/line";
-import { Glow } from "../../components/ink/backdrop";
 import Lockup from "../../components/ink/lockup";
 import Caption from "../../components/ink/caption";
 import Callout from "../../components/ink/callout";
@@ -19,15 +17,6 @@ import { useHome } from "./use-home";
 import { CURRENCY_SYMBOL } from "../../config";
 import { ScreenTimeOverview, TimeRecovered, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
 import { color, fonts, spacing } from "../../theme/tokens";
-
-/**
- * The glow behind the cards, in screen coordinates under the grain, as in
- * Paper C2-C5: a 330 x 290 ellipse (330 x 420 on C2) at left -30, top 320
- * (330 on C2) of an 844 artboard whose status bar is 62 pt, blur 36. The PNG
- * carries 108 pt of spread on each side, so it sits 108 pt up and left.
- */
-const CARD_GLOW_TOP = 320 - 62 - 108;
-const CARD_GLOW_TOP_TALL = 330 - 62 - 108;
 
 const NO_USAGE: DailyUsage = { usedMinutes: 0, remainingMinutes: 0, limitReached: false };
 
@@ -49,9 +38,8 @@ const AccountIcon = () => (
 /** Home (v2 Paper group "C"): every running pledge on glass, and the way to start another. */
 const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
   const { pledges, usage, startedAt, selections } = useHome(navigation);
-  const insets = useSafeAreaInsets();
 
-  if (pledges === null) return <InkScreen variant="home"><View /></InkScreen>;
+  if (pledges === null) return <InkScreen><View /></InkScreen>;
 
   const approved = getAuthorizationStatus() === AuthorizationStatus.approved;
   // The real Screen Time of the last 7 days, drawn by the system, once access is granted.
@@ -62,23 +50,11 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
   const accessOff = !empty && !approved;
   // C3 and C4 give the head more room above and below than C2 and C5.
   const roomy = accessOff || (!empty && pledges.some((p) => usage[p.id]?.limitReached));
-  // C2 stretches the glow down behind a second card; C3, C4 and C5 keep it short.
-  const tallGlow = !accessOff && pledges.length === 2;
 
   return (
     <InkScreen
-      variant={empty ? "empty" : "home"}
-      backdrop={
-        empty ? (
-          <Glow kind="lowSun" style={styles.lowSun} opacity={0.85} />
-        ) : (
-          <Glow
-            kind="card"
-            style={[styles.cardGlow, tallGlow && styles.cardGlowTall, { top: insets.top + (tallGlow ? CARD_GLOW_TOP_TALL : CARD_GLOW_TOP) }]}
-            opacity={0.8}
-          />
-        )
-      }
+      // One ground everywhere, its low sun drifting behind the glass (owner, 18 Nov 2026).
+      variant="empty"
       footerBottom={40}
       footer={
         accessOff ? (
@@ -136,7 +112,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
                 maxApps={3}
                 textColor={color.text}
                 mutedColor={color.textSecondary}
-                accentColor={color.solar}
+                accentColor={color.text}
                 style={styles.reportApps}
               />
             </View>
@@ -158,7 +134,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
                 selections={selections}
                 textColor={color.text}
                 mutedColor={color.textSecondary}
-                accentColor={color.solar}
+                accentColor={color.text}
                 style={styles.recovered}
               />
             )}
@@ -170,17 +146,11 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  // Paper C1: a 510 pt sun at left -60, top 640 on 844, blur 24 (the PNG
-  // carries 72 pt of spread on each side), anchored to the screen's bottom.
-  lowSun: { left: -132, bottom: -378 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 4 },
   account: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
   scroll: { paddingTop: 36, paddingBottom: spacing.lg },
   // Paper C3/C4: the head starts 44 below the header and the card 36 below it.
   scrollRoomy: { paddingTop: 44 },
-  cardGlow: { left: -30 - 108 },
-  // Paper C2: 420 + 2 x 108 spread.
-  cardGlowTall: { height: 636 },
   head: { marginBottom: 28 },
   headRoomy: { marginBottom: 36 },
   sub: {

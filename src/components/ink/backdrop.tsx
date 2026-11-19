@@ -1,5 +1,13 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Image, ImageBackground, StyleSheet, View, StyleProp, ImageStyle } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 import { color, grain } from "../../theme/tokens";
 
 /**
@@ -39,6 +47,7 @@ const Backdrop: React.FC<{ variant?: BackdropVariant; children?: React.ReactNode
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Image source={LIGHT[variant]} style={styles.fill} resizeMode="stretch" />
+      {variant === "empty" && <DriftingSun />}
       {children}
       {brand && <Image source={VIGNETTE} style={styles.fill} resizeMode="stretch" />}
       <ImageBackground
@@ -81,7 +90,55 @@ export const Glow: React.FC<{
 
 const styles = StyleSheet.create({
   fill: { ...StyleSheet.absoluteFillObject, width: undefined, height: undefined, backgroundColor: "transparent" },
+  // Paper C1: a 510 pt sun at left -60, top 640 on 844, blur 24 (the PNG
+  // carries 72 pt of spread on each side), anchored to the screen's bottom.
+  sun: { position: "absolute", left: -132, bottom: -378, width: 654, height: 654 },
+  sunImage: { left: 0, top: 0 },
 });
+
+/**
+ * The ground's low sun, drifting (owner, 18 Nov 2026: "make the sun behind
+ * move around in the UI so the effect is seen/felt"): it starts where the
+ * empty Home put it, low behind the main button, wanders up behind the
+ * glass bubbles and settles back, once every 22 s. The glass catches it as
+ * it passes. With Reduce Motion it stays put.
+ */
+const DRIFT_MS = 22000;
+/** The path as offsets from the resting place (points), one loop. */
+const PATH = [
+  { x: 0, y: 0 },
+  { x: -80, y: -150 },
+  { x: 50, y: -240 },
+  { x: 100, y: -90 },
+  { x: 0, y: 0 },
+];
+
+const DriftingSun: React.FC = () => {
+  const reduceMotion = useReducedMotion();
+  const t = useSharedValue(0);
+  useEffect(() => {
+    if (reduceMotion) return;
+    t.value = withRepeat(withTiming(1, { duration: DRIFT_MS, easing: Easing.linear }), -1, false);
+  }, [reduceMotion, t]);
+  const style = useAnimatedStyle(() => {
+    // Through the path's points, each leg eased in and out.
+    const legs = PATH.length - 1;
+    const p = t.value * legs;
+    const i = Math.min(Math.floor(p), legs - 1);
+    const f = p - i;
+    const e = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+    const a = PATH[i];
+    const b = PATH[i + 1];
+    return {
+      transform: [{ translateX: a.x + (b.x - a.x) * e }, { translateY: a.y + (b.y - a.y) * e }] as any,
+    };
+  });
+  return (
+    <Animated.View style={[styles.sun, style]}>
+      <Glow kind="lowSun" style={styles.sunImage} opacity={0.85} />
+    </Animated.View>
+  );
+};
 
 export const GROUND = color.bg;
 export default Backdrop;

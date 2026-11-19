@@ -47,9 +47,9 @@ which apps take it, then the terms and the seal. Steps, in order:
 | limit | Set your daily limit. | the choice first (owner, 18 Nov 2026: make it obvious what to do): the slider 0–120 min with ticks 0/30/60/90/120 and presets 30/60/90, 0 meaning blocked all day; under it, what the limit gives back, personal (owner, 18 Nov 2026: "based on the numbers we saw on the first screen ... how many years of my life I'm getting back"): one sentence, nothing else (owner, 18 Nov 2026: "It has to be OBVIOUS what it means. Anything else is noise."): "You get back / **9 years** / of your life." (the number large; last week's daily time on the chosen apps less the limit, over an 80-year life, drawn by the report extension's `timeBack` view); "You already stay under this." when the limit is above their use. The limit reaches the extension through the App Group (`pledgeReport.limitMinutes`) and the view checks it ten times a second and redraws on a change, so the picture follows the slider without restarting the report. Without data for those apps, or where iOS can't draw the report (the simulator), the average day (3 h 45 min) in the app's own copy (`TimeBackFallback`) | always |
 | duration | How long will you uphold that for? | 7 / 15 / 30 days | always |
 | amount | What's your word worth? | slider 0–20 with ticks 0/5/10/15/20, presets 5/10/20 | amount ≥ 1 |
-| signin (only when nobody is signed in) | Put your name to it. | "Continue with Apple" and "Continue with Google"; only a quiet "Back" in the footer. Signing in moves on by itself: to the card step, or to the seal when that account already has a card | signed in |
+| signin (only when nobody is signed in) | Put your name to it. | "Continue with Apple" and "Continue with Google" at the bottom, above a quiet "Back" (owner, 18 Nov 2026: "move this down", where the thumb is). Signing in moves on by itself: to the card step, or to the seal when that account already has a card | signed in |
 | card (skipped when a card is on file) | Put your card down. | Stripe PaymentSheet opens immediately; saving the card moves on to the seal. If it's closed or fails: "Your card wasn't saved." callout, with "Add a card" and "Back" in the footer | card saved |
-| seal (every pledge, always last; owner 16 Nov 2026) | (none; the oath is the screen) | A poster (owner, 18 Nov 2026: "too much text ... it needs to feel like a poster"): the sunset fills the whole screen (the owner's footage of the sun sinking into the sea, maker's approval to keep in writing), and only what's being promised sits on the sea at the bottom, one face in two sizes, ivory: "I, Mateo, pledge" (first name from the account, underlined; tap it to change) and "30 min a day for 30 days, or I pay $10." ("Apps blocked all day for 30 days, …" at 0). At rest the sun shimmers (`seal-idle.mp4`, its first 4 s forward and back, looping). No ring or logo on the sunset (the glass ring looked "vibe coded", the logo "weird"): the whole screen is held, "Press and hold to seal"; for one breath (4 s) the whole sunset plays (`seal-set.mp4`, 141 s in 4 s) while haptics build; letting go runs it back. Both clips come from `scripts/make-seal-clips.swift`. Under it, small: "Nothing is charged now. Sealing means you agree to the Terms and Privacy Policy." (what breaking it means is in the Terms and the steps before). The step counter is ivory here. Replaces Review and the terms checkbox (`setup/seal.tsx`) | held through |
+| seal (every pledge, always last; owner 16 Nov 2026) | (none; the promise is the screen) | A poster: the sunset fills the screen (the owner's footage of the sun sinking into the sea, maker's approval to keep in writing), raised so the horizon sits at about 56% of the height and every word sits on the dark sea below it (owner, 18 Nov 2026: "all the text needs to be in the dark part"), with film grain over it. The promise in plain words, one face in two sizes, ivory: "**30 min a day. 30 days.**" and "or I pay $10." ("Apps blocked all day." at 0), then the user's name on a signature line with "SIGNED 18 NOV 2026" under it (owner, 18 Nov 2026: the signature and the simple wording; "I, Mateo, pledge" looked weird). Tap the name to change it. At rest the sun shimmers (`seal-idle.mp4`, its first 4 s forward and back, looping). The whole screen is held, "Press and hold to seal": for one breath (4 s) the sun sinks until its bottom edge touches the horizon and stops there (`seal-set.mp4`, the footage's first 12 s in 4 s) while haptics build; letting go runs it back. Then (owner, 18 Nov 2026: "turns into the logo and then the main menu appears") the sky fades to the ground while the sun, cut out as a disc from the clip's last frame (`seal-sun.jpg`), shrinks and glides to the centre, turns ivory on a thin line (the Pledge mark), "PLEDGE" fades in beside it, a beat, then Home. The pledge starts on the server while this plays; Home waits for both. If it fails, the sunset comes back with the reason. Both clips come from `scripts/make-seal-clips.swift`. Under the words, small: "Nothing is charged now. Sealing means you agree to the Terms and Privacy Policy." Replaces Review and the terms checkbox (`setup/seal.tsx`) | held through |
 
 Sealing: backend records the
 pledge (`POST /pledge`), the Screen Time schedule starts, the pledge is
@@ -60,11 +60,13 @@ saved locally, device is registered for push, success haptic, Home.
 The list of pledges, several can run at once (v2, owner 8 Nov 2026). Top:
 the logo lockup and an Account icon. A caps headline from the state
 ("NOTHING ON THE LINE YET.", "ONE PLEDGE RUNNING.", "N PLEDGES RUNNING.",
-"THAT'S ENOUGH FOR TODAY.") and "$X on your word." Each card is glass:
-a status in words ("On track", "Close to your limit" when 20% or 5 min is
-left, "Blocked until midnight", "On a 5-minute break", "No allowance"),
-days left (rounded up), "N min left today", a thin bar, "X of Y min used",
-"Resets at midnight", the apps and the amount. Empty state shows the 7-day
+"THAT'S ENOUGH FOR TODAY.") and "$X on your word." Each pledge is a glass
+bubble (Apple's Liquid Glass on iOS 26) with little in it (owner, 18 Nov
+2026: "simpler and smaller with less text"): the apps and the amount on one
+small line, then one quiet sentence with the number in bold, "**35 min**
+left today.", "**4 min** left on your break.", "**Blocked** until
+midnight.", "**Blocked** all day.", and an ivory bar while minutes are being
+counted. Days left and the small print are on the pledge's page. Empty state shows the 7-day
 mirror under "YOUR LAST 7 DAYS" with a low sun. When Screen Time access is
 off while pledges run: "Your apps aren't being limited.", a warning, and
 "Open Settings". A glass "New pledge" starts another pledge. Heartbeat to the backend on every
@@ -97,11 +99,12 @@ time: 4h 20m → 3h 50m a day". Method (owner's picks, 31 Oct 2026):
 
 ### Pledge detail (`src/screens/pledge-detail/index.tsx`)
 
-Countdown in caps ("24 DAYS LEFT.", same rounding as the card), the
-chosen apps, then a glass "Today" card: status caption (long press opens
-the hidden event log), "N of M min used" and the bar, "Your pledge $X, not
-charged", "Ends", and the top apps for this selection (when the report
-extension is bundled). Quiet "Give up this pledge" opens the surrender
+Said the way onboarding says things (owner, 18 Nov 2026): the time left as
+the title ("24 days left."), the pledge's glass bubble as on Home (long
+press opens the hidden event log), "TODAY ON THESE APPS" with the top apps
+for this selection and ivory bars (when the report extension is bundled),
+then "THE PLEDGE" in one sentence: "60 min a day until 6 Dec, or you pay
+$10." Quiet "Give up this pledge" opens the surrender
 sheet: dark glass, "Wait.", a glass "No, keep going" and a red-outline
 "Pay $X and unlock" (v2, owner 8 Nov 2026). Surrender charges the card, stops
 monitoring, removes the pledge. There is no failure screen afterwards.
@@ -113,14 +116,15 @@ up (owner, 31 Oct 2026). The card is charged $1 (`POST /stripe/break`), the
 pledge keeps running, and the apps unlock for 5 minutes on the clock, used
 or not (owner changed this from "5 minutes of use", 31 Oct 2026). Up to 3 a
 day per pledge, counted on the phone's local date and enforced by the
-backend. The detail screen's card reads "14:05 when the apps lock again" and the Home card "On a 5-minute break". A break that would end
+backend. The bubble reads "**4 min** left on your break.", on Home and on the pledge's page. A break that would end
 after midnight is not re-blocked: the midnight reset unblocks anyway.
 
 ### Account (`src/screens/account/index.tsx`)
 
 Opened from the icon top right on Home (v2, owner 8 Nov 2026). Plain on
-purpose: a glass list of Payment method ("Visa 4242"), Charges, Past
-pledges, Screen Time access (On/Off), Terms, Privacy and Help (opens Mail to the support address; without a mail app it shows the address), then a quiet
+purpose: onboarding's outlined rows, one per item (owner, 18 Nov 2026), for
+Payment method ("Visa 4242"), Charges, Past pledges, Screen Time access
+(On/Off), Terms, Privacy and Help (opens Mail to the support address; without a mail app it shows the address), then a quiet
 "Sign out" and a red "Delete account".
 
 - **Charges**: each given-up or forfeited pledge and paid break, with date

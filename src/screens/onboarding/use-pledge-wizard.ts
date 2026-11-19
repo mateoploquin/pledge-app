@@ -125,11 +125,16 @@ export const usePledgeWizard = () => {
   };
 
   /** Records the pledge, registers its Screen Time schedule and opens Home. */
-  const startPledge = useCallback(async () => {
-    if (starting) return;
+  /**
+   * Starts the pledge. `ready` is the seal's closing animation (the sun
+   * becoming the logo): Home waits for it, so the pledge starts while it
+   * plays. Returns whether the pledge started.
+   */
+  const startPledge = useCallback(async (ready?: Promise<unknown>): Promise<boolean> => {
+    if (starting) return false;
     if (!selectionEvent?.familyActivitySelection) {
       Alert.alert("No apps chosen", "Go back and choose the apps you want to limit.");
-      return;
+      return false;
     }
     const pledge: Pledge = {
       id: newPledgeId(),
@@ -163,7 +168,9 @@ export const usePledgeWizard = () => {
         has_purpose: !!pledge.purpose,
       });
       haptics.success();
+      await ready;
       navigation.reset({ index: 0, routes: [{ name: "Home" }] });
+      return true;
     } catch (error: any) {
       console.error("Could not start the pledge:", error);
       track("pledge_start_failed", {
@@ -173,6 +180,7 @@ export const usePledgeWizard = () => {
         "Could not start your pledge",
         error?.response?.data?.error ?? error?.message ?? "Please check Screen Time permissions and try again."
       );
+      return false;
     } finally {
       setStarting(false);
     }

@@ -31,7 +31,7 @@ const InkScreen: React.FC<InkScreenProps> = ({
   onBack,
   style,
   footer,
-  variant = "quiet",
+  variant = "empty",
   topRight,
   backdrop,
   footerBottom = 32,

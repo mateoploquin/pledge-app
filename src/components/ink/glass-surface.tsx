@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { LayoutChangeEvent, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { glass, radius } from "../../theme/tokens";
+import { LiquidGlass, isLiquidGlassAvailable } from "../../../modules/pledge-glass";
 
 /**
  * The one glass material (docs/design.md): cards and glass buttons share it
@@ -11,10 +12,12 @@ import { glass, radius } from "../../theme/tokens";
  *   border 1px #FFDEC438, radius 24
  *   inset rims: #FFF0E073 0 1px (top), #FFD6AA2E 1px 0 (left), #ED602A59 0 -1px (bottom)
  *
- * No system blur: every iOS blur style lays a grey tint over what's behind
- * (the "dark" one made the cards muddy), while Paper's blur is clear. What
- * sits behind glass in Pledge is already a soft glow, so the clear gradient
- * alone reads as the thin glass of the design and lets the glow through.
+ * On iOS 26 it is Apple's own Liquid Glass instead (owner, 18 Nov 2026:
+ * "this is how Apple designed its bubbles ... I want the same feeling"): the
+ * system material bends and catches the light behind it, the drifting sun
+ * included, with a faint warm tint. Elsewhere, no system blur: every older
+ * iOS blur style lays a grey tint over what's behind, so the clear gradient
+ * above stands in for it.
  */
 const GlassSurface: React.FC<{
   children?: React.ReactNode;
@@ -33,6 +36,15 @@ const GlassSurface: React.FC<{
   const dx = (size.w + size.h) / (4 * size.w);
   const dy = (size.w + size.h) / (4 * size.h);
   const inner = Math.max(corner - 1, 0);
+
+  if (isLiquidGlassAvailable()) {
+    return (
+      <View style={[{ borderRadius: corner }, style]}>
+        <LiquidGlass cornerRadius={corner} tint={glass.liquidTint} style={StyleSheet.absoluteFill} />
+        {children}
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.shell, { borderRadius: corner }, style]} onLayout={onLayout}>

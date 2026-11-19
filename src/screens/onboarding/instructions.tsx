@@ -96,8 +96,11 @@ const Instructions: React.FC = () => {
       backdrop={step === "purpose" ? <ReasonFilms reasons={w.reasons} /> : undefined}
       footer={
         step === "signin" ? (
-          // The provider buttons are the step's action; only Back sits here.
-          <PillButton text="Back" tone="quiet" onPress={w.onBack} />
+          // The provider buttons sit at the bottom, where the thumb is (owner, 18 Nov 2026), above Back.
+          <>
+            {!w.starting && <SocialSignInButtons tone="dark" onSignedIn={w.onSignedIn} />}
+            <PillButton text="Back" tone="quiet" onPress={w.onBack} />
+          </>
         ) : step === "card" ? (
           retryCard ? (
             <>
@@ -152,9 +155,7 @@ const Instructions: React.FC = () => {
             <SetDuration durationDays={w.durationDays} setDurationDays={w.setDurationDays} />
           ) : step === "amount" ? (
             <SetPledge pledgeValue={w.pledgeValue} setPledgeValue={w.setPledgeValue} />
-          ) : step === "signin" ? (
-            w.starting ? null : <SocialSignInButtons tone="dark" onSignedIn={w.onSignedIn} />
-          ) : step === "card" ? (
+          ) : step === "signin" ? null : step === "card" ? (
             <SetPayment
               paymentSetupComplete={w.paymentSetupComplete}
               setPaymentSetupComplete={w.setPaymentSetupComplete}

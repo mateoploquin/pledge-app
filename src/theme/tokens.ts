@@ -99,6 +99,8 @@ export const glass = {
   /** Hairlines inside a glass card. */
   rule: "rgba(255,222,196,0.14)",
   blur: 30,
+  /** iOS 26 Liquid Glass: a faint warm tint laid into Apple's material. */
+  liquidTint: "#2413102E",
 };
 
 /** Film grain strength: brand moments, then everything else. */

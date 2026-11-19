@@ -29,31 +29,27 @@ light, fine grain, edges sinking into dark.
   banding.
 - **Vignette on brand moments.** The edges darken to near-black so the light
   seems to come from inside the frame.
-- **The glow scales with distance from money.** Strongest on the opener, empty
-  Home, "You kept your word" and the launch screen. On Home with a
-  pledge, the wizard, Review, give-up and Account, the glow is only a soft
-  light at the top and bottom edges. Account and its sub-screens (Paper E1–E4)
-  add one more: a radial gradient (ellipse 70 % × 30 % of the screen at
-  30 %/38 %, solar 42 % → ember 24 % → clear) behind the glass list, drawn in
-  the ground under the grain, not the blurred card glow. Pledge detail (Paper
-  D1–D4) does the same with an ellipse 70 % × 28 % at 25 %/40 %, solar 50 % →
-  ember 28 % at half → clear, behind the Today card.
-- **Glass for cards and the main button (owner, 7 Nov 2026).** The pledge
-  card is frosted glass: a faint warm-white fill, background blur, a bright
-  1 px rim along the top edge, an orange rim along the bottom, and a soft
-  shadow beneath. It needs light behind it to read, so a blurred glow sits
-  behind each glass card. On Home that glow is part of the ground (passed as
-  `InkScreen`'s `backdrop`, under the grain, fixed to the screen as in Paper
-  C2–C5), not part of the scrolling content. In the app the glass has no
-  system blur (9 Nov 2026): every iOS blur style adds a grey tint that made
-  the cards muddy, and what sits behind glass is already a soft glow. It is
-  Paper's 135° gradient (angle kept true on any card shape), the 1 px border,
-  and the three inset rims drawn as one inner border so they follow the
-  corners (`glass-surface.tsx`). Buttons are not glass any more: see
-  "One main button" below. No shine line across the middle, no text shadow, no outer shadow or
-  halo, no brand-colour tint: the owner found a tinted gradient pill
-  "horrific" and a glossy clear one "AI generated". Ivory Inter Medium text. Reference: the stacked glowing pills and the frosted product
-  card on the owner's board.
+- **One ground everywhere, its sun drifting (owner, 18 Nov 2026).** Every
+  screen stands on the empty Home's ground: espresso, a warm haze at the
+  top right, the low sun behind the main button, vignette, grain
+  (`InkScreen` variant `empty`). Nothing glows behind content any more: the
+  card glows and the lights behind the Today card and the Account list are
+  gone ("not brand-aligned"). The low sun drifts (`DriftingSun` in
+  `backdrop.tsx`): from its resting place it wanders up behind the bubbles
+  and settles back, once every 22 s, so the glass catches it ("so the effect
+  is seen/felt"); still with Reduce Motion. The opener keeps its brand
+  ground; the seal and the purpose films lay their film over it.
+- **Glass bubbles for pledges (owner, 18 Nov 2026).** A running pledge is a
+  glass bubble (`glass-surface.tsx`), on Home and on its page, with one
+  quiet sentence in it. On iOS 26 it is Apple's own Liquid Glass
+  (`UIGlassEffect`, local module `modules/pledge-glass`, a faint warm tint
+  `glass.liquidTint`), the owner's reference being Apple's folder bubbles.
+  Elsewhere it is the drawn glass: Paper's 135° gradient, a 1 px border,
+  three inset rims (top light, left warm, bottom ember), no system blur
+  (older iOS blurs add a grey tint). Flat cards and a nearly clear glass
+  were tried the same day and felt flat; this glass "really has more
+  texture". Lists and choices elsewhere are onboarding's outlined rows, not
+  glass. Bars are ivory, never orange.
 - **One main button, ivory, everywhere (owner, 17 Nov 2026).** The main
   action on every screen (wizard, Home, detail, Account, the surrender
   sheet's "No, keep going") is the solid ivory `PillButton` tone `primary`:
@@ -158,7 +154,7 @@ a font; that is Apple's).
 | --- | --- | --- | --- |
 | `hero` | Noto Serif Display caps, −0.025 em | 48/50 | the opener's line |
 | `display` | Noto Serif Display caps, −0.025 em | 42/46 | brand moments: "You kept your word." |
-| seal oath | Inter SemiBold, −0.025 em | 40/46 | "I, Mateo, pledge" only; the promise under it Inter 22/29 ivory; "Press and hold to seal" Inter SemiBold 16, the legal line Inter 12 |
+| seal promise | Inter SemiBold, −0.025 em | 38/42 | "30 min a day. 30 days." only; "or I pay $10." Inter 20/26 ivory; the signature: the name Inter 20, a hairline, "SIGNED 18 NOV 2026" caption at 70 % ivory; "Press and hold to seal" Inter SemiBold 16, the legal line Inter 12 |
 | `heading` | Inter Medium, −0.02 em | 30/36 | every screen title: wizard questions, Home, pledge detail, Account, the give-up sheet |
 | `value` | Inter SemiBold, −0.02 em | 44/48 | time and money |
 | `row` | Inter Regular (SemiBold for amounts) | 16/20 | list rows, options, units next to a value, buttons |

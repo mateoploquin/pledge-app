@@ -3,7 +3,8 @@
 //   /tmp/make-seal-clips <footage.mp4> assets/video/seal-idle.mp4 idle
 //   /tmp/make-seal-clips <footage.mp4> assets/video/seal-set.mp4 set
 // idle: the first 4 s at real speed, forward then back (a seamless 8 s loop).
-// set: 0 to 141 s squeezed into 4 s at 30 fps, every frame a keyframe.
+// set: 0 to 12 s (the sun sinking until it touches the horizon, owner,
+// 18 Nov 2026) in 4 s at 30 fps, every frame a keyframe.
 
 import AVFoundation
 import CoreGraphics
@@ -26,8 +27,9 @@ if mode == "idle" {
   let fwd = (0..<120).map { Double($0) / 30 }
   times = fwd + fwd.reversed().dropFirst().dropLast()
 } else {
-  // The whole sunset, 0 to 141 s, in 120 frames (4 s at 30 fps).
-  times = (0..<120).map { Double($0) * 141.0 / 119.0 }
+  // From the first frame until the sun's bottom edge meets the sea (12 s
+  // into the footage), in 120 frames (4 s at 30 fps).
+  times = (0..<120).map { Double($0) * 12.0 / 119.0 }
 }
 
 try? FileManager.default.removeItem(at: out)

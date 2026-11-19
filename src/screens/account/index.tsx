@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator, Linking } from "react-native";
-import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { AuthorizationStatus, getAuthorizationStatus } from "react-native-device-activity";
 import InkScreen from "../../components/ink/ink-screen";
 import PillButton from "../../components/ink/pill-button";
 import { Line } from "../../components/ink/line";
-import GlassSurface from "../../components/ink/glass-surface";
 import Caption from "../../components/ink/caption";
 import Callout from "../../components/ink/callout";
 import PressableScale from "../../components/buttons/pressable-scale";
@@ -25,7 +23,7 @@ import {
 } from "../../services/account-api";
 import { CURRENCY_SYMBOL } from "../../config";
 import { track } from "../../services/analytics";
-import { color, fonts, glass, type } from "../../theme/tokens";
+import { color, fonts, radius, type } from "../../theme/tokens";
 
 /**
  * Account (v2 Paper group "E"), opened from the icon on Home. Deliberately
@@ -74,30 +72,12 @@ const Row: React.FC<{ label: string; value?: string; onPress?: () => void; first
   </PressableScale>
 );
 
-/** Glass list; its light is `CardLight`, in the ground. */
-const Sheet: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <GlassSurface style={styles.list}>{children}</GlassSurface>
-);
-
 /**
- * The light behind the glass list on E1-E4: the first background layer of
- * those artboards, `radial-gradient(ellipse 70% 30% at 30% 38%, #ED602A6B 0%,
- * #9F34253D 50%, #140C0B00 100%)`, over the quiet ground's top and bottom
- * lights. A gradient, not the blurred `Glow kind="card"` (which E has none
- * of). Drawn through InkScreen's `backdrop` so it sits under the grain and in
- * screen coordinates, as in Paper. Paper blends in oklab; SVG blends in sRGB.
+ * A list of onboarding's outlined option rows (owner, 18 Nov 2026: the rest
+ * of the app speaks onboarding): each row its own hairline box, 8 apart.
  */
-const CardLight: React.FC = () => (
-  <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
-    <Defs>
-      <RadialGradient id="accountLight" cx="0.3" cy="0.38" rx="0.7" ry="0.3" gradientUnits="objectBoundingBox">
-        <Stop offset="0" stopColor={color.solar} stopOpacity={0x6b / 255} />
-        <Stop offset="0.5" stopColor={color.ember} stopOpacity={0x3d / 255} />
-        <Stop offset="1" stopColor={color.bg} stopOpacity={0} />
-      </RadialGradient>
-    </Defs>
-    <Rect x="0" y="0" width="100%" height="100%" fill="url(#accountLight)" />
-  </Svg>
+const Sheet: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <View style={styles.list}>{children}</View>
 );
 
 export const AccountScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
@@ -148,7 +128,6 @@ export const AccountScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       onBack={() => navigation.goBack()}
       backLabel="Home"
       topRight={<Caption>Pledge</Caption>}
-      backdrop={<CardLight />}
     >
       <ScrollView contentContainerStyle={[styles.scroll, styles.fill, styles.flush]} showsVerticalScrollIndicator={false}>
         <Line size="heading" text="Account" style={styles.title} />
@@ -188,7 +167,7 @@ export const ChargesScreen: React.FC<{ navigation: any; route: any }> = ({ navig
     fetchCharges().then(setCharges).catch(() => {});
   }, []);
   return (
-    <InkScreen onBack={() => navigation.goBack()} backLabel="Account" topRight={<Caption>Account</Caption>} backdrop={<CardLight />}>
+    <InkScreen onBack={() => navigation.goBack()} backLabel="Account" topRight={<Caption>Account</Caption>}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Line size="heading" text="Charges" style={styles.title} />
         {charges === null ? (
@@ -228,7 +207,7 @@ export const PastPledgesScreen: React.FC<{ navigation: any; route: any }> = ({ n
       .catch(() => {});
   }, []);
   return (
-    <InkScreen onBack={() => navigation.goBack()} backLabel="Account" topRight={<Caption>Account</Caption>} backdrop={<CardLight />}>
+    <InkScreen onBack={() => navigation.goBack()} backLabel="Account" topRight={<Caption>Account</Caption>}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Line size="heading" text="Past pledges" style={styles.title} />
         {past === null ? (
@@ -290,7 +269,6 @@ export const DeleteAccountScreen: React.FC<{ navigation: any }> = ({ navigation 
       onBack={() => navigation.goBack()}
       backLabel="Account"
       topRight={<Caption>Account</Caption>}
-      backdrop={<CardLight />}
       footer={
         <View style={styles.footer}>
           <PillButton text="Keep my account" tone="primary" onPress={() => navigation.goBack()} disabled={busy} />
@@ -330,15 +308,26 @@ const styles = StyleSheet.create({
   title: { marginBottom: 24 },
   // E4: the body sits 14 under the title.
   titleTight: { marginBottom: 14 },
-  list: { paddingHorizontal: 20, paddingVertical: 4 },
-  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12, paddingVertical: 15 },
-  // E2/E3 rows: two lines, top-aligned, 16 above and below.
-  rowTwoLine: { alignItems: "flex-start", paddingVertical: 16 },
-  rowRule: { borderTopWidth: 1, borderTopColor: glass.rule },
+  list: { gap: 8 },
+  // Onboarding's option row: a hairline box, 12 corners, 20 in.
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    minHeight: 52,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: color.divider,
+    borderRadius: radius.control,
+  },
+  // Charges and past pledges: two lines.
+  rowTwoLine: { paddingVertical: 12 },
+  rowRule: {},
   rowText: { flex: 1, gap: 4 },
-  rowLabel: type.row,
+  rowLabel: { ...type.row, color: color.textSecondary },
   rowSub: type.small,
-  rowValue: { ...type.row, color: color.textSecondary },
+  rowValue: { ...type.row, color: color.textTertiary },
   rowStrong: { ...type.row, fontFamily: fonts.uiSemibold },
   outcomeKept: { ...type.row, fontFamily: fonts.uiSemibold },
   outcomePaid: { ...type.row, color: color.textSecondary },

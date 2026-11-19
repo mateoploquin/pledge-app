@@ -6,6 +6,20 @@ store build differs from the dev build.
 
 ## Current status (18 November 2026)
 
+**Build 35 (1.1.0) is being built for TestFlight** (18 November 2026). On
+top of build 34, the rest of the app joins onboarding's brand: one ground
+everywhere (the empty Home's) with its low sun drifting behind the content;
+pledges as glass bubbles saying one quiet sentence ("**35 min** left
+today."), Apple's Liquid Glass on iOS 26 (new local module
+`modules/pledge-glass`, native: needs this full build); pledge detail and
+Account in onboarding's pieces (small caps labels, outlined rows, the
+pledge in one sentence); bars ivory; sign-in buttons at the bottom. The
+seal: the promise in plain words with a signature line, all text on the
+dark sea, grain on the film; holding sinks the sun only until it touches
+the horizon (new `seal-set.mp4`, 0 to 12 s), then the sun becomes the logo
+and Home follows. Check on the phone: the hold and the logo ending, the
+glass bubbles with a pledge running, the drifting sun.
+
 **Build 34 (1.1.0) is being built for TestFlight** (18 November 2026, EAS build 837a0e88, submission 9234f9af; confirm once TestFlight shows it processed). On
 top of build 33: "Years" in Inter like the rest of the page (Great Vibes
 removed again, app and extension); the life's pull back is smooth (the
