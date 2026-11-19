@@ -14,8 +14,9 @@ pledge ends, you pay the pledge. If you delete Pledge or revoke its Screen
 Time access while a pledge runs, you pay the pledge. If you keep your word,
 you pay nothing.
 
-The word is "pledge", never "challenge". A forfeited pledge goes to charity
-minus a small fee (wording still open, see decisions).
+The word is "pledge", never "challenge". A forfeited pledge is kept by
+Pledge; there is no charity (dropped 19 Nov 2026, don't bring it back
+without a real agreement).
 
 ## Flow
 
@@ -156,7 +157,6 @@ stops, and the completion screen shows.
 1. Nothing is charged now.
 2. Unlocking costs the pledge. Apps stay blocked until midnight.
 3. Deleting the app, or turning off Screen Time access, forfeits it.
-4. The pledge does good (charity, minus a small fee).
 
 Legal pages are served by the backend at `/terms` and `/privacy`
 (`backend/src/legal.ts`).
@@ -200,7 +200,6 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 
 ## Open decisions (ask the owner, don't guess)
 
-- Charity wording: "Make-A-Wish" is a placeholder; no agreement exists.
 - Paid breaks (30 Oct 2026): the owner chose Stripe and the wording
   "Donate $1 for 5 minutes", then changed the label to "5 minutes for $1"
   (31 Oct 2026), after being told the risks: App Review may see

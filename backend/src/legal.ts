@@ -1,9 +1,8 @@
 // Terms of Service and Privacy Policy served as plain HTML pages.
 // Review the bracketed items with a lawyer before launch.
 
-const EFFECTIVE_DATE = "16 November 2026";
+const EFFECTIVE_DATE = "19 November 2026";
 const CONTACT_EMAIL = "mateoploquina@gmail.com";
-const CHARITY = "Make-A-Wish";
 const JURISDICTION = "Spain";
 
 function page(title: string, body: string): string {
@@ -56,7 +55,6 @@ export const termsHtml = page(
   <li>Your pledge is charged <strong>only if you surrender</strong>, meaning you choose to unlock your blocked apps before the challenge period is over. Surrendering ends the challenge.</li>
   <li>If you complete the challenge period without surrendering, nothing is charged.</li>
   <li>Charges are in US dollars for the pledge amount you chose and are <strong>non-refundable</strong>, since the charge is the agreed consequence of ending the challenge early.</li>
-  <li>Of each charged pledge, we donate the amount to ${CHARITY} after deducting a small fee that covers payment processing and the running of the app. [Confirm the exact fee and donation arrangement before launch.]</li>
   <li>If a charge fails, your apps remain blocked until the payment goes through or the challenge ends.</li>
 </ul>
 

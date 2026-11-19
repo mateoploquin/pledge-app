@@ -27,8 +27,7 @@ Why the app uses Family Controls / Screen Time:
 
 Payments: the saved card is handled by Stripe. The charge is a penalty the
 user agreed to when starting the pledge, not a purchase of digital content
-or a donation, so it is processed outside In-App Purchase. Pledge donates
-its net proceeds from forfeited pledges to charity at its own discretion.
+or a donation, so it is processed outside In-App Purchase.
 
 Sign in: Sign in with Apple or Google (email was dropped on 8 Nov 2026).
 The reviewer can use their own Apple ID; check whether a demo account is still
@@ -53,8 +52,7 @@ How to test in under two minutes:
 
 ## Before submitting
 
-- [ ] Live Stripe keys on Vercel production (currently sandbox).
-- [ ] Charity wording confirmed in the rules step and the terms page.
+- [x] Live Stripe keys on Vercel production (19 Nov 2026).
 - [ ] App Privacy questionnaire: collects email, name, payment info via
       Stripe, device token for push. No tracking.
 - [ ] Screenshots from the real device: opener, mirror step, apps step,

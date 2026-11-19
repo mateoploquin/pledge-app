@@ -210,9 +210,8 @@ and that the built app has `Extensions/ReportExtension.appex`.
 - [x] Currency: US dollars (decided 29 Oct 2026). `CURRENCY_SYMBOL` in
       `src/config.ts`, `PLEDGE_CURRENCY` defaults to `usd` on the backend,
       the terms say "US dollars". Needs a backend deploy and a new build.
-- [ ] Charity wording in the rules step and in `backend/src/legal.ts`.
-      Current text names Make-A-Wish; reword to "Pledge donates its net
-      proceeds from forfeited pledges to charity" unless an agreement exists.
+- [x] Charity removed everywhere (19 Nov 2026): no charity line in the
+      terms or the app. Needs a backend deploy.
 - [ ] Paid breaks: decide IAP vs Stripe for "5 minutes for $1" (see
       `docs/product.md`, open decisions), add breaks to the terms and the
       rules step, and update `docs/app-review-notes.md`.

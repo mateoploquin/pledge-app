@@ -277,7 +277,7 @@ a font; that is Apple's).
   who means it: "That's enough for today." "Keep my word." "Lock it in."
 - Questions, not instructions, on pledge steps. No hint text under controls.
 - "Pledge", "your word", "keep your word", "give up". Never "challenge",
-  "penalty", "fine", "fee" (except the charity line), "fail".
+  "penalty", "fine", "fee", "fail".
 - Plain money: "Unlock for $5", "What's your word worth?"
 - Errors: say what happened and what to do, in one sentence each.
 
