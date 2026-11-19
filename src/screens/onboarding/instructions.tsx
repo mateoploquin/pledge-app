@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, useWindowDimensions } from "react-native";
 import SetPledge from "./setup/set-pledge";
 import SetTimeLimit from "./setup/set-time-limit";
 import SetDuration from "./setup/set-duration";
@@ -63,6 +63,9 @@ const CONTROL_TOP: Record<StepName, number> = {
  * file. The seal is always last and draws its own screen (Paper v2.1 B9).
  */
 const Instructions: React.FC = () => {
+  // iPhone SE and other 667-pt screens: the limit step's time back ran
+  // under the button (19 Nov 2026), so its gaps tighten there.
+  const compact = useWindowDimensions().height < 700;
   const w = usePledgeWizard();
   const { step, steps, index } = w;
   // The card step's "Add a card" lives in the footer (Paper B8); the step
@@ -125,7 +128,7 @@ const Instructions: React.FC = () => {
           text={step === "purpose" && !steps.includes("mirror") ? PURPOSE_ALONE : QUESTION[step]}
           style={styles.question}
         />
-        <View style={[styles.control, { paddingTop: CONTROL_TOP[step] }]}>
+        <View style={[styles.control, { paddingTop: compact && step === "limit" ? 20 : CONTROL_TOP[step] }]}>
           {step === "mirror" ? (
             <ScreenTimeMirror
               authorizationStatus={w.authorizationStatus}

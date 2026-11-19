@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, InteractionManager } from "react-native";
+import { View, Text, StyleSheet, InteractionManager, useWindowDimensions } from "react-native";
 import SetSlider from "../../../components/sliders/set-slider";
 import AnimatedNumber from "../../../components/text/animated-number";
 import PresetChips from "../../../components/buttons/preset-chips";
@@ -28,11 +28,11 @@ interface SetTimeLimitProps {
  * extension, the simulator) the app draws the same from the average day,
  * 3 h 45 min.
  */
-const TimeBackFallback: React.FC<{ minutes: number }> = ({ minutes }) => {
+const TimeBackFallback: React.FC<{ minutes: number; gap: { marginTop: number } }> = ({ minutes, gap }) => {
   const back = Math.max(0, Math.round(AVERAGE_DAY_HOURS * 60) - minutes);
   const life = lifeParts(back / 60);
   return (
-    <View style={styles.back}>
+    <View style={[styles.back, gap]}>
       {back > 0 ? (
         <>
           <Text style={styles.backLead}>You get back</Text>
@@ -68,6 +68,8 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
       if (t) clearTimeout(t);
     };
   }, []);
+  // Less air above the sentence on 667-pt screens (iPhone SE), so it clears the button.
+  const gap = { marginTop: useWindowDimensions().height < 700 ? 16 : 40 };
   return (
     <View style={styles.container}>
       {/* One text run, so the unit sits on the number's baseline (see set-pledge). */}
@@ -101,7 +103,7 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
           make it obvious what to do). */}
       {isActivityReportAvailable() && Device.isDevice ? (
         !reportReady ? (
-          <View style={styles.report} />
+          <View style={[styles.report, gap]} />
         ) : (
           <TimeBack
             familyActivitySelection={familyActivitySelection}
@@ -109,11 +111,11 @@ const SetTimeLimit: React.FC<SetTimeLimitProps> = ({
             textColor={color.text}
             mutedColor={color.textSecondary}
             accentColor={color.solar}
-            style={styles.report}
+            style={[styles.report, gap]}
           />
         )
       ) : (
-        <TimeBackFallback minutes={timeValue} />
+        <TimeBackFallback minutes={timeValue} gap={gap} />
       )}
     </View>
   );
