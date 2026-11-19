@@ -261,10 +261,16 @@ and app properties; storage falls back to AsyncStorage (no
   it's on screen: the daily limit. `limitMinutes` is written to
   `pledgeReport.limitMinutes` on every prop update but kept out of the
   render key, so the report isn't restarted (and written only when it
-  changed); `TimeBackView` checks it ten times a second and redraws only on
+  changed); `TimeBackView` checks it twenty times a second and redraws only on
   a change. A `TimelineView` that rebuilt the view every tick made the
   report blink out on the owner's phone (build 32). App to extension only, as ever: the
   limit goes in, nothing comes out.
+- The report's identity (what restarts it) compares selections by their
+  sorted tokens. Comparing re-encoded selections restarted the report on
+  every slider tick, about 100 restarts in a few seconds of sliding (owner's
+  phone log, build 36): the view went blank and came back. The host logs
+  each start to `com.pledgecompany.pledge`, category `report` ("view
+  created", "report (re)started"); one start per screen is right.
 - `timeBack` asks for everything (no app filter) and picks the chosen apps
   out itself from `pledgeReport.timeBack.selection`, like `recovered`. With
   the apps as the filter it never drew on phones (builds 32-35): the

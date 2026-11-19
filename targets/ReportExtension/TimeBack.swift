@@ -109,7 +109,7 @@ final class Race<T>: @unchecked Sendable {
 /// / of your life." The years are what the limit saves a day against last
 /// week's daily time on the chosen apps, over an 80-year life; with no data
 /// for these apps, the average day (3 h 45 min). The limit comes from the
-/// app through the App Group as the slider moves, checked here ten times a
+/// app through the App Group as the slider moves, checked here twenty times a
 /// second and redrawn only when it changes. Same drawing as TimeBackFallback
 /// in set-time-limit.tsx.
 struct TimeBackView: View {
@@ -135,7 +135,7 @@ struct TimeBackView: View {
     // Polled, not redrawn: a TimelineView rebuilt the whole picture ten times
     // a second and on the owner's phone it kept blinking out (18 Nov 2026).
     content(limit: limit)
-      .onReceive(Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()) { _ in
+      .onReceive(Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()) { _ in
         let now = TimeBackView.readLimit()
         if now != limit { limit = now }
       }

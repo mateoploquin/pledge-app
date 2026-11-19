@@ -1,11 +1,14 @@
 import DeviceActivity
 import ExpoModulesCore
 import FamilyControls
+import os
 import SwiftUI
 
 /// Embeds Apple's `DeviceActivityReport` view. The system launches our
 /// ReportExtension in a sandbox to draw the user's real Screen Time for the
 /// requested context and filter; nothing about the numbers comes back here.
+private let reportLog = Logger(subsystem: "com.pledgecompany.pledge", category: "report")
+
 final class PledgeActivityReportView: ExpoView {
   private var host: UIHostingController<AnyView>?
   /// Bumped on every render: a new identity makes SwiftUI create a fresh
@@ -20,6 +23,13 @@ final class PledgeActivityReportView: ExpoView {
   var endMs: Double = 0
   var segment = "daily"
   var selection: FamilyActivitySelection?
+  /// The selections as the app last sent them, so a repeat is ignored. The
+  /// report's identity sorts the tokens (`stableKey`): re-encoding a decoded
+  /// selection is not stable, its sets can come out in another order, and
+  /// the report restarted on every slider tick (owner's phone log, build 36,
+  /// 19 Nov 2026).
+  private var selectionRaw: String?
+  private var selectionsRaw: [String] = []
 
   var textColor: String?
   var mutedColor: String?
@@ -40,9 +50,12 @@ final class PledgeActivityReportView: ExpoView {
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
     clipsToBounds = true
+    reportLog.log("view created")
   }
 
   func setSelection(_ b64: String?) {
+    if b64 == selectionRaw, selection != nil || b64 == nil { return }
+    selectionRaw = b64
     guard let b64, let data = Data(base64Encoded: b64) else {
       selection = nil
       return
@@ -51,10 +64,21 @@ final class PledgeActivityReportView: ExpoView {
   }
 
   func setSelections(_ list: [String]?) {
+    if (list ?? []) == selectionsRaw, !selections.isEmpty || (list ?? []).isEmpty { return }
+    selectionsRaw = list ?? []
     selections = (list ?? []).compactMap { b64 in
       guard let data = Data(base64Encoded: b64) else { return nil }
       return try? JSONDecoder().decode(FamilyActivitySelection.self, from: data)
     }
+  }
+
+  /// The same apps, categories and sites always give the same key, whatever
+  /// order their sets come out in.
+  private static func stableKey(_ s: FamilyActivitySelection) -> String {
+    func keys<T: Encodable>(_ tokens: Set<T>) -> String {
+      tokens.compactMap { (try? JSONEncoder().encode($0))?.base64EncodedString() }.sorted().joined(separator: ".")
+    }
+    return [keys(s.applicationTokens), keys(s.categoryTokens), keys(s.webDomainTokens)].joined(separator: "/")
   }
 
   /// All running pledges' apps, categories and sites, each counted once.
@@ -127,8 +151,8 @@ final class PledgeActivityReportView: ExpoView {
         categories: selection?.categoryTokens ?? [],
         webDomains: selection?.webDomainTokens ?? [])
 
-    let selectionKey = (try? JSONEncoder().encode(selection)).map { $0.base64EncodedString() } ?? ""
-    let selectionsKey = selections.compactMap { (try? JSONEncoder().encode($0))?.base64EncodedString() }.joined(separator: ",")
+    let selectionKey = selection.map(Self.stableKey) ?? ""
+    let selectionsKey = selections.map(Self.stableKey).joined(separator: ",")
     let key = [context, "\(start.timeIntervalSince1970)", "\(end.timeIntervalSince1970)", segment, selectionKey,
                selectionsKey, textColor ?? "", mutedColor ?? "", accentColor ?? "", "\(fontSize)", "\(maxApps)", "\(anchorMs)"]
       .joined(separator: "|")
@@ -139,6 +163,7 @@ final class PledgeActivityReportView: ExpoView {
       host?.view.frame = bounds
       return
     }
+    reportLog.log("report (re)started: \(self.context, privacy: .public), had one: \(self.lastKey != nil, privacy: .public)")
     lastKey = key
     publishStyle()
 
