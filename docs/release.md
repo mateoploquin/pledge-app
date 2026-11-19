@@ -6,7 +6,7 @@ store build differs from the dev build.
 
 ## Current status (19 November 2026)
 
-**Build 38 (1.1.0) is being built for TestFlight** (19 November 2026). On top
+**Build 38 (1.1.0) is being built for TestFlight** (19 November 2026, EAS build aa1b1da1, submission 4b09069f). On top
 of build 37, a new seal, worked out with the owner in the Seal Lab artifact:
 the owner's new footage of the sun setting behind a hill (`seal-set.mp4`, its
 5.4 to 13.9 s in the 4 s hold, every frame a keyframe). At rest the sun's real
