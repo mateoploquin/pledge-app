@@ -6,8 +6,13 @@ store build differs from the dev build.
 
 ## Current status (18 November 2026)
 
-**Build 36 (1.1.0) is being built for TestFlight** (19 November 2026, EAS
-build b9644eb1, submission bb06d0a4). On top of build 35, the limit step's
+**Build 37 (1.1.0) is being built for TestFlight** (19 November 2026, EAS
+build 93964c80, submission eb78b385). On top of build 36: time back no
+longer restarts on every slider tick (the report's identity compares
+sorted tokens), and the limit step fits the iPhone SE.
+
+**Build 36 (1.1.0) went to TestFlight** (19 November 2026, EAS
+build b9644eb1, submission bb06d0a4; time back drew but blinked while sliding). On top of build 35, the limit step's
 time back reads all of last week and picks the chosen apps out in the
 extension (filtered to the apps it never drew on phones), with a 2 s
 fallback to the average day and `timeBack` logs.
