@@ -113,7 +113,9 @@ struct SocialCutReport: DeviceActivityReportScene {
 /// life's squares flood past their box and fade before its words. 24-hour
 /// days, an 80-year life, from last week's Screen Time on all devices. A
 /// report can't be tapped, so it plays on its own. Same story and timings
-/// as AverageStory in screen-time-mirror.tsx.
+/// as AverageStory in screen-time-mirror.tsx, except that since 19 Nov 2026
+/// the squares here are whole points, at least 4 pt, and the life no longer
+/// pulls back (the app's copy still does; bring it over).
 struct SocialCutView: View {
   let model: SocialCutModel
 
@@ -129,11 +131,8 @@ struct SocialCutView: View {
   /// Hours in the pile; grows with each beat.
   /// How far the current beat's squares have grown, 0 to 1.
   @State private var growth: Double = 0
-  @Environment(\.displayScale) private var displayScale
   /// The life's squares have faded; then the pile makes way for the words.
   @State private var pileGone = false
-  /// The life's pull back, 0 (the flood) to 1 (every hour on screen).
-  @State private var zoom: Double = 0
   @State private var pileRemoved = false
 
   private var cream: Color { model.style.textColor }
@@ -168,9 +167,9 @@ struct SocialCutView: View {
     ]
   }
 
-  /// The squares' story: hours at each beat, the beat being drawn, pixels.
+  /// The squares' story: hours at each beat and the beat being drawn.
   private var pile: Pile {
-    Pile(counts: pileSizes.map { Int($0.rounded()) }, beat: beat, pixel: 1 / displayScale)
+    Pile(counts: pileSizes.map { Int($0.rounded()) }, beat: beat)
   }
 
   var body: some View {
@@ -185,15 +184,19 @@ struct SocialCutView: View {
             .foregroundColor(tertiary)
           // Drawn taller than its 160 pt box: the life floods down over
           // where the words were (they're hidden then) and fades out before
-          // the bottom of the report; pulling back, the fade slides away.
-          PileCanvas(pile: pile, e: growth, z: zoom, color: cream)
-            .frame(height: 420)
+          // the bottom of the report. A week, month or year too big for the
+          // box at the smallest square runs off its bottom edge, fading, and
+          // never reaches the words below.
+          let flood = beat == all.count - 1
+          PileCanvas(pile: pile, e: growth, color: cream)
+            .frame(height: flood ? 420 : 160, alignment: .top)
             .mask(alignment: .top) {
               LinearGradient(
-                stops: [.init(color: .black, location: 0.55), .init(color: .clear, location: 0.95)],
+                stops: flood
+                  ? [.init(color: .black, location: 0.55), .init(color: .clear, location: 0.95)]
+                  : [.init(color: .black, location: 1)],
                 startPoint: .top, endPoint: .bottom
               )
-              .frame(height: 420 * (1 + 3 * zoom))
             }
             .frame(height: 160, alignment: .top)
         }
@@ -326,11 +329,10 @@ struct SocialCutView: View {
         await sleep(grow)
       } else {
         withAnimation(.timingCurve(0.55, 0.085, 0.68, 0.53, duration: 4.5)) { growth = 1 }
-        await sleep(4.5)
-        // Then pull back until every hour of the life is on screen (owner,
-        // 18 Nov 2026: "zoom out and see the magnitude of the dots").
-        withAnimation(.timingCurve(0.65, 0, 0.35, 1, duration: 2.4)) { zoom = 1 }
-        await sleep(2.4 + 1.2)
+        // No pulling back to fit every hour (owner, 19 Nov 2026): for heavy
+        // users that meant 150,000 one-point squares, grey mush on screen
+        // and in any recording. The flood holds a moment, then fades.
+        await sleep(4.5 + 1.0)
         withAnimation(.easeInOut(duration: 1.2)) { pileGone = true }
         await sleep(1.2)
         pileRemoved = true
@@ -356,63 +358,57 @@ struct SocialCutView: View {
 }
 
 /// The squares' story: hours at each beat (a week, a month, a year, a
-/// life), the beat being drawn, and the screen's pixel size.
+/// life) and the beat being drawn.
+///
+/// Every square and gap is a whole number of points (owner, 19 Nov 2026: on
+/// a friend's phone the grid looked blurry and uneven). Whole points are
+/// whole pixels on every iPhone, and a gap of at least 1 pt survives a
+/// screen recording being scaled down; the old 0.64 pt gaps turned to mush.
+/// The smallest square is 4 pt with a 1 pt gap, the same for everyone: a
+/// pile too big for the box at that size runs off its bottom and fades
+/// instead of shrinking to dust. One square is still one hour.
 struct Pile {
   let counts: [Int]
   let beat: Int
-  let pixel: Double
 
   /// The pile's box (set when drawn).
   var box: CGSize = .zero
 
+  /// The smallest step from one square to the next: a 4 pt square, 1 pt gap.
+  static let minStep: Double = 5
+
   private var last: Int { counts.count - 1 }
+  /// The life: it floods past the box.
+  var isFlood: Bool { beat == last }
   private var near: [Int] { counts.map { Int(Double($0).squareRoot().rounded(.up)) } }
 
-  /// Beat k's square size if its pile, a near-square, fits the box (at
-  /// least 6 squares across).
+  /// Beat k's step if its pile, a near-square, fits the box (at least 6
+  /// squares across).
   private func fit(_ k: Int) -> Double {
     let c = near[k], r = Int((Double(counts[k]) / Double(c)).rounded(.up))
     return min(box.width / Double(max(c, 6)), box.height / Double(max(r, 6)))
   }
 
-  private func snap(_ v: Double) -> Double { max((v / pixel).rounded() * pixel, 4) }
+  /// Whole points, never under the smallest step. Rounded down so a pile
+  /// that fits the box still fits.
+  private func snap(_ v: Double) -> Double { max(v.rounded(.down), Pile.minStep) }
 
-  /// The life keeps the year's square size (it stops zooming there) and its
-  /// rows span exactly the box's width, so the flood ends flush on both sides
-  /// (owner, 18 Nov 2026: a gap opened on the right as squares shrank).
-  private var maxCols: Int { box.width > 0 ? Int(box.width / snap(fit(last - 1))) : Int.max }
-  private var lifeSquare: Double { box.width / Double(maxCols) }
+  /// The year's step; the life floods on at the same size.
+  private var lastStep: Double { box.width > 0 ? snap(fit(last - 1)) : Pile.minStep }
 
-  /// The life's grid: its columns and its square once pulled back so the
-  /// whole life fits the box's width × 400 pt. The square is whole pixels,
-  /// as big as fits, never under 1 pt (2 px), so the squares stay squares.
-  /// No pulling back when the flood's square already fits. Same as zoomGrid
-  /// in screen-time-mirror.tsx.
-  private var zoomGrid: (cols: Int, square: Double) {
-    guard box.width > 0 else { return (maxCols, lifeSquare) }
-    let scale = 1 / pixel
-    let w = Int((box.width * scale).rounded())
-    let minP = max(2, Int(scale.rounded()))
-    let n = counts[last]
-    var best = minP
-    var p = minP
-    while Double(p) < lifeSquare * scale {
-      let c = w / p
-      if (n + c - 1) / c * p <= Int(400 * scale) { best = p }
-      p += 1
-    }
-    if Double(best) >= lifeSquare * scale { return (maxCols, lifeSquare) }
-    let cols = w / best
-    return (cols, box.width / Double(cols))
-  }
+  /// The widest rows: as many whole steps as fit the box.
+  private var maxCols: Int { box.width > 0 ? max(1, Int(box.width / lastStep)) : Int.max }
 
-  /// Each beat's pile is a near-square of this many columns, never wider
-  /// than the life's rows. The life is laid out on the grid it ends on,
-  /// pulled back; the flood shows its top-left corner, so pulling back
-  /// moves no square.
+  /// Each beat's pile is a near-square of this many columns; one too tall
+  /// for the box at its size widens first (up to the box's width) and only
+  /// then runs off the bottom. The life's rows are the full width.
   var cols: [Int] {
-    let life = zoomGrid.cols
-    return near.enumerated().map { k, c in k == last ? life : min(c, maxCols) }
+    near.enumerated().map { k, c in
+      if k == last || box.height <= 0 { return k == last ? maxCols : min(c, maxCols) }
+      let fitRows = max(1, Int(box.height / snap(fit(k))))
+      let need = Int((Double(counts[k]) / Double(fitRows)).rounded(.up))
+      return min(max(c, need), maxCols)
+    }
   }
 
   /// Hours drawn when the beat has grown by e (0 to 1): the first beat counts
@@ -425,27 +421,18 @@ struct Pile {
     return exp(a + (b - a) * e)
   }
 
-  /// Square size and the square drawn in it. The life's square shrinks
-  /// smoothly as the view pulls back (z); at the end the gap is whole pixels.
-  func cell(_ e: Double, z: Double) -> (square: Double, cell: Double) {
-    guard beat == last else {
-      let s = square(e)
-      return (s, s * (1 - 0.16))
-    }
-    // Not snapped while pulling back: snapped, the size only had a few steps
-    // to take and the zoom jumped (owner, 18 Nov 2026: "it needs to be
-    // smooth"). The gap widens from the flood's share to whole pixels at the
-    // end, so it lands sharp. Same as Pile in screen-time-mirror.tsx.
-    let end = zoomGrid.square
-    let s = z >= 1 ? end : exp(log(lifeSquare) + (log(end) - log(lifeSquare)) * z)
-    let endGap = max(1, (end / pixel * 0.16).rounded()) * pixel / end
-    return (s, s * (1 - (0.16 + (endGap - 0.16) * z)))
+  /// The step from one square to the next and the square drawn in it, both
+  /// whole points: the gap is about a sixth of the step, at least 1 pt.
+  func cell(_ e: Double) -> (square: Double, cell: Double) {
+    let s = square(e)
+    let gap = max(1, (s * 0.16).rounded())
+    return (s, s - gap)
   }
 
-  /// Square size: each beat's pile fits the box, snapped to pixels, zooming
+  /// The step: each beat's pile fits the box, in whole points, zooming
   /// between beats in log steps; the life at the year's size.
   func square(_ e: Double) -> Double {
-    if beat == last { return lifeSquare }
+    if beat == last { return lastStep }
     if beat == 0 { return snap(fit(0)) }
     return snap(exp(log(fit(beat - 1)) + (log(fit(beat)) - log(fit(beat - 1))) * e))
   }
@@ -479,20 +466,17 @@ struct Pile {
 
 /// The time, drawn (owner, 18 Nov 2026): one ivory square per hour. A beat's
 /// squares fill in around the last beat's while the view pulls back to fit
-/// them in the box; at 4 pt it stops and the life floods down past the box,
-/// fading out ("we feel, wow, that's a lot"), then pulls back until all of
-/// it shows. Each row is one dashed line, a dash per square, so the whole
-/// life (over 100,000 squares) draws cheaply. The box is the top 160 pt;
-/// the canvas runs on below it for the flood. Same drawing as Pile in
-/// screen-time-mirror.tsx.
+/// them in the box; at the smallest square it stops, and the life floods
+/// down past the box and fades ("we feel, wow, that's a lot"). Each row is
+/// one dashed line, a dash per square, so even a big life draws cheaply.
+/// The box is the top 160 pt; for the life the canvas runs on below it.
 struct PileCanvas: View, Animatable {
   let pile: Pile
   var e: Double
-  var z: Double
   let color: Color
-  var animatableData: AnimatablePair<Double, Double> {
-    get { AnimatablePair(e, z) }
-    set { e = newValue.first; z = newValue.second }
+  var animatableData: Double {
+    get { e }
+    set { e = newValue }
   }
 
   var body: some View {
@@ -500,18 +484,35 @@ struct PileCanvas: View, Animatable {
       var pile = self.pile
       pile.box = CGSize(width: size.width, height: 160)
       let n = Int(pile.hours(e).rounded(.down))
-      let (s, cell) = pile.cell(e, z: z)
+      let (s, cell) = pile.cell(e)
       guard s > 0 else { return }
-      let visibleCols = Int((size.width + 40) / s) + 1
-      var p = Path()
-      for (y, len) in pile.rows(n, maxRows: Int(size.height / s) + 1).enumerated() {
+      let visibleCols = Int(size.width / s) + 1
+      let rows = pile.rows(n, maxRows: Int(size.height / s) + 1)
+      let style = StrokeStyle(lineWidth: cell, dash: [cell, s - cell])
+      func row(_ y: Int, _ len: Int) -> Path {
+        var p = Path()
         let count = min(len, visibleCols)
-        guard count > 0 else { continue }
+        guard count > 0 else { return p }
         let mid = Double(y) * s + cell / 2
         p.move(to: CGPoint(x: 0, y: mid))
         p.addLine(to: CGPoint(x: Double(count) * s - (s - cell), y: mid))
+        return p
       }
-      ctx.stroke(p, with: .color(color), style: StrokeStyle(lineWidth: cell, dash: [cell, s - cell]))
+      // A week, month or year that overruns its box fades over its last
+      // 40 pt; the life's flood is faded by the view's mask.
+      let fade = 40.0
+      if !pile.isFlood && Double(rows.count) * s > size.height {
+        for (y, len) in rows.enumerated() {
+          let top = Double(y) * s
+          let alpha = min(1, max(0, (size.height - top) / fade))
+          guard alpha > 0 else { break }
+          ctx.stroke(row(y, len), with: .color(color.opacity(alpha)), style: style)
+        }
+      } else {
+        var p = Path()
+        for (y, len) in rows.enumerated() { p.addPath(row(y, len)) }
+        ctx.stroke(p, with: .color(color), style: style)
+      }
     }
   }
 }

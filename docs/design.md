@@ -244,11 +244,19 @@ a font; that is Apple's).
   placed (a beat's squares fill in around the last beat's block, row by
   row). The week's 26 come one by one, linear, 1.6 s, after the screen has
   settled; month and year grow in log steps (ease in-out cubic, 1.7 s) while
-  the view pulls back, square sizes snapped to pixels; the life keeps the
-  year's size, rows exactly the content's width, and floods down over the
+  the view pulls back. Since 19 Nov 2026 (owner: on a friend's phone the
+  grid looked blurry and uneven, "no one's going to count the dots") every
+  square and gap is whole points: the gap about 16 % of the step, at least
+  1 pt; the smallest square 4 pt with a 1 pt gap, the same for everyone. A
+  pile too tall for the box at that size widens to the box's width, then
+  runs off the bottom, fading over its last 40 pt (from about 6 h a day). The
+  life keeps the year's size, full-width rows, and floods down over the
   words' place for 4.5 s (ease in), masked to fade from 55 % to 95 % of the
-  story's height; after 0.9 s it fades out over 1.2 s and the last words
-  move up into its place. The growth and the drawing run on the UI thread
+  story's height; it holds 1 s, fades out over 1.2 s and the last words move
+  up into its place. No pull back to show every hour of the life any more
+  (150,000 1 pt squares were grey mush, worst in screen recordings). Done in
+  SocialCut.swift; the app's AverageStory in screen-time-mirror.tsx still
+  has the old sizes and pull back. The growth and the drawing run on the UI thread
   (Reanimated animated props on an SVG path, the count in a read-only
   TextInput): driven from JS they reached the screen in bursts. Reduce
   Motion shows the last words only. `AverageStory`, `Reveal`, `Pile` and
