@@ -6,7 +6,7 @@ store build differs from the dev build.
 
 ## Current status (18 November 2026)
 
-**Build 35 (1.1.0) is being built for TestFlight** (18 November 2026). On
+**Build 35 (1.1.0) is being built for TestFlight** (18 November 2026, EAS build 0d859dd8, submission 9e0cf632; confirm once TestFlight shows it processed). On
 top of build 34, the rest of the app joins onboarding's brand: one ground
 everywhere (the empty Home's) with its low sun drifting behind the content;
 pledges as glass bubbles saying one quiet sentence ("**35 min** left
