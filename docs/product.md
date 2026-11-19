@@ -177,6 +177,11 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 
 ## Decisions taken (don't reopen)
 
+- Paid breaks stay on Stripe, not In-App Purchase (owner, 19 Nov 2026),
+  knowing App Review may call paying for app time a digital purchase.
+  Label "5 minutes for $1", never "donate". In the terms (section 4) and
+  argued in `docs/app-review-notes.md`. If Apple rejects over it, ask the
+  owner before switching to IAP.
 - Opener film is the owner's own montage (`assets/video/montage.mp4`),
   stitched into a seamless loop. Not the earlier generated clip, not stock.
 - No sign-in on the first screen, no welcome and no deal before the first
@@ -200,14 +205,6 @@ Legal pages are served by the backend at `/terms` and `/privacy`
 
 ## Open decisions (ask the owner, don't guess)
 
-- Paid breaks (30 Oct 2026): the owner chose Stripe and the wording
-  "Donate $1 for 5 minutes", then changed the label to "5 minutes for $1"
-  (31 Oct 2026), after being told the risks: App Review may see
-  paying for more app time as a digital purchase that needs In-App Purchase,
-  calling it a donation would contradict `docs/app-review-notes.md`, and
-  Apple only lets nonprofits take donations outside IAP (the label no
-  longer says "donate"). Not yet in the
-  terms (`backend/src/legal.ts`) or the rules step. Revisit before App Review.
 - Shield look: an animation is impossible; options offered were solid ink
   with a cream "p" icon, ember accent, or a still from the montage. No pick.
 - Coach: removed for now (owner, 16 Nov 2026), not in the App Store

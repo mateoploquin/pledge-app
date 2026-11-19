@@ -212,9 +212,8 @@ and that the built app has `Extensions/ReportExtension.appex`.
       the terms say "US dollars". Needs a backend deploy and a new build.
 - [x] Charity removed everywhere (19 Nov 2026): no charity line in the
       terms or the app. Needs a backend deploy.
-- [ ] Paid breaks: decide IAP vs Stripe for "5 minutes for $1" (see
-      `docs/product.md`, open decisions), add breaks to the terms and the
-      rules step, and update `docs/app-review-notes.md`.
+- [x] Paid breaks stay on Stripe (19 Nov 2026); in the terms and the App
+      Review notes. Needs a backend deploy.
 - [ ] App Privacy questionnaire in App Store Connect. Include the purpose
       text (user content, linked to the user, not used for tracking).
 - [ ] Screenshots from a real device.

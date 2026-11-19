@@ -55,6 +55,7 @@ export const termsHtml = page(
   <li>Your pledge is charged <strong>only if you surrender</strong>, meaning you choose to unlock your blocked apps before the pledge period is over. Surrendering ends the pledge.</li>
   <li>If you complete the pledge period without surrendering, nothing is charged.</li>
   <li>Charges are in US dollars for the pledge amount you chose and are <strong>non-refundable</strong>, since the charge is the agreed consequence of ending the pledge early.</li>
+  <li><strong>Breaks:</strong> while your apps are blocked you can take a 5-minute break for US$1, up to three a day per pledge. The break is charged to your saved card when you take it, is non-refundable, and the apps unlock for 5 minutes on the clock whether you use them or not. Your pledge keeps running and nothing else changes.</li>
   <li>If a charge fails, your apps remain blocked until the payment goes through or the pledge ends.</li>
 </ul>
 

@@ -27,19 +27,23 @@ Why the app uses Family Controls / Screen Time:
 
 Payments: the saved card is handled by Stripe. The charge is a penalty the
 user agreed to when starting the pledge, not a purchase of digital content
-or a donation, so it is processed outside In-App Purchase.
+or a donation, so it is processed outside In-App Purchase. The same holds
+for breaks: while their own chosen apps are blocked, the user can pay $1 to
+break their word for 5 minutes (up to 3 a day). It is a smaller penalty on
+the same commitment, not a purchase: it unlocks no content or feature in
+Pledge, only lifts the block the user put on other apps, and it is in the
+terms.
 
-Sign in: Sign in with Apple or Google (email was dropped on 8 Nov 2026).
+Sign in: Sign in with Apple only (email dropped 8 Nov, Google dropped 9 Nov 2026).
 The reviewer can use their own Apple ID; check whether a demo account is still
 needed.
 
 Demo account:
 - Email: [create a test account and put it here]
 - Password: [here]
-- Test card in the sandbox build: 4242 4242 4242 4242, any future expiry,
-  any CVC. (Production builds use live Stripe keys; reviewers can still
-  complete the flow with a real card because nothing is charged unless they
-  unlock.)
+- Card: production uses live Stripe keys, so test cards are declined. The
+  reviewer can add a real card: nothing is charged unless they unlock or
+  take a break.
 
 How to test in under two minutes:
 1. Sign in, allow Screen Time access, see the 7-day summary, Continue.
