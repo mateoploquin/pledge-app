@@ -1,5 +1,5 @@
 import React from "react";
-import { StatusBar, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
+import { LayoutChangeEvent, StatusBar, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PressableScale from "../buttons/pressable-scale";
@@ -26,6 +26,13 @@ interface InkScreenProps {
   backdropStyle?: any;
   /** Drawn over everything, full screen (Home's entrance after the seal). */
   overlay?: React.ReactNode;
+  /**
+   * The footer floats over the content instead of sitting under it, so a
+   * list can run on behind the button and fade there (Home). The content
+   * must leave room for it at its end: `onFooterHeight` reports how much.
+   */
+  floatingFooter?: boolean;
+  onFooterHeight?: (height: number) => void;
 }
 
 /** The dark ground every screen stands on: espresso, a soft light, grain. */
@@ -41,6 +48,8 @@ const InkScreen: React.FC<InkScreenProps> = ({
   footerBottom = 32,
   backdropStyle,
   overlay,
+  floatingFooter = false,
+  onFooterHeight,
 }) => {
   const insets = useSafeAreaInsets();
   return (
@@ -83,7 +92,18 @@ const InkScreen: React.FC<InkScreenProps> = ({
         {children}
       </View>
       {footer ? (
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom - 34, 0) + footerBottom }]}>{footer}</View>
+        <View
+          style={[
+            styles.footer,
+            floatingFooter && styles.footerFloating,
+            { paddingBottom: Math.max(insets.bottom - 34, 0) + footerBottom },
+          ]}
+          // Floating, the space around the button lets touches through to the list.
+          pointerEvents={floatingFooter ? "box-none" : "auto"}
+          onLayout={onFooterHeight ? (e: LayoutChangeEvent) => onFooterHeight(e.nativeEvent.layout.height) : undefined}
+        >
+          {footer}
+        </View>
       ) : (
         <View style={{ height: insets.bottom }} />
       )}
@@ -119,6 +139,7 @@ const styles = StyleSheet.create({
     gap: 4,
     alignItems: "center",
   },
+  footerFloating: { position: "absolute", left: 0, right: 0, bottom: 0 },
 });
 
 export default InkScreen;

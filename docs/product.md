@@ -70,7 +70,10 @@ midnight.", "**Blocked** all day.", and an ivory bar while minutes are being
 counted. Days left and the small print are on the pledge's page. Empty state shows the 7-day
 mirror under "YOUR LAST 7 DAYS" with a low sun. When Screen Time access is
 off while pledges run: "Your apps aren't being limited.", a warning, and
-"Open Settings". A glass "New pledge" starts another pledge. Heartbeat to the backend on every
+"Open Settings". A glass "New pledge" starts another pledge. The button
+floats over the list: cards run on behind it and dissolve there instead of
+being cut off above it (owner, 20 Nov 2026, TOM-5; see "Motion" in
+`docs/design.md`). Heartbeat to the backend on every
 foreground; forfeited pledges reported back are removed.
 
 **Time back** (under the cards, `TimeRecovered` → `targets/ReportExtension/Recovered.swift`).

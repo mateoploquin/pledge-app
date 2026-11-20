@@ -1,6 +1,6 @@
-import { FC } from "react";
+import { FC, useRef, useState } from "react";
 import { AuthorizationStatus, getAuthorizationStatus } from "react-native-device-activity";
-import { View, Text, ScrollView, StyleSheet, Linking } from "react-native";
+import { View, Text, StyleSheet, Linking, LayoutChangeEvent } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import InkScreen from "../../components/ink/ink-screen";
 import PillButton from "../../components/ink/pill-button";
@@ -17,7 +17,8 @@ import { useHome } from "./use-home";
 import { CURRENCY_SYMBOL } from "../../config";
 import { ScreenTimeOverview, TimeRecovered, isActivityReportAvailable } from "../../../modules/pledge-activity-report";
 import { color, fonts, spacing } from "../../theme/tokens";
-import Animated from "react-native-reanimated";
+import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
+import { FADE_LEAD, FootFade, FootFadeProvider, useFootFadeFrame } from "./foot-fade";
 import {
   Enter,
   EntranceBlur,
@@ -29,6 +30,8 @@ import {
 } from "./sealed-entrance";
 
 const NO_USAGE: DailyUsage = { usedMinutes: 0, remainingMinutes: 0, limitReached: false };
+/** The floating footer's height until it has been measured (54 button + 8 + 40). */
+const FOOTER_GUESS = 102;
 
 /** The one line at the top of Home, from the state of the pledges. */
 const headline = (pledges: Pledge[], usage: Record<string, DailyUsage>) => {
@@ -54,6 +57,27 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation, route }) => {
   const clock = useEntranceClock(sealed, pledges !== null);
   const groundStyle = useGroundStyle(clock);
   const logoStyle = useHomeLogoStyle(clock);
+
+  // The list runs on behind the floating button and fades there (foot-fade.tsx).
+  const fade = useFootFadeFrame();
+  const [footerHeight, setFooterHeight] = useState(0);
+  const sizes = useRef({ list: 0, footer: 0 });
+  const placeLine = () => {
+    const { list, footer } = sizes.current;
+    fade.line.value = list > 0 && footer > 0 ? list - footer - FADE_LEAD : 0;
+  };
+  const onListLayout = (e: LayoutChangeEvent) => {
+    sizes.current.list = e.nativeEvent.layout.height;
+    placeLine();
+  };
+  const onFooterHeight = (h: number) => {
+    sizes.current.footer = h;
+    setFooterHeight(h);
+    placeLine();
+  };
+  const onScroll = useAnimatedScrollHandler((e) => {
+    fade.scrollY.value = e.contentOffset.y;
+  });
 
   // Loading (a frame or two). Straight from the seal, this must look exactly
   // like the seal's last frame (dark ground, grain, the logo in its corner),
@@ -87,6 +111,8 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation, route }) => {
       // One ground everywhere, its low sun drifting behind the glass (owner, 18 Nov 2026).
       variant="empty"
       footerBottom={40}
+      floatingFooter
+      onFooterHeight={onFooterHeight}
       backdropStyle={sealed ? groundStyle : undefined}
       overlay={
         sealed ? (
@@ -124,7 +150,19 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation, route }) => {
         </Enter>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.scroll, roomy && styles.scrollRoomy]} showsVerticalScrollIndicator={false}>
+      <FootFadeProvider value={fade}>
+      <Animated.ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          roomy && styles.scrollRoomy,
+          // Room to scroll the last card up clear of the floating button.
+          { paddingBottom: (footerHeight || FOOTER_GUESS) + spacing.lg },
+        ]}
+        showsVerticalScrollIndicator={false}
+        onLayout={onListLayout}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
         <Enter order={1}>
         <Dissolve id={accessOff ? "access-off" : headline(pledges, usage)} style={[styles.head, roomy && styles.headRoomy]}>
           {accessOff ? (
@@ -144,6 +182,7 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation, route }) => {
         </Dissolve>
         </Enter>
 
+        <View onLayout={(e) => (fade.offset.value = e.nativeEvent.layout.y)}>
         <Enter order={2}>
         {accessOff ? (
           <Callout
@@ -171,16 +210,19 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation, route }) => {
         ) : (
           <View>
             {pledges.map((p, i) => (
-              <Enter key={p.id} order={2 + i}>
+              <FootFade key={p.id}>
+              <Enter order={2 + i}>
                 <PledgeCard
                   pledge={p}
                   usage={usage[p.id] ?? NO_USAGE}
                   onPress={() => navigation.navigate("PledgeDetail", { id: p.id })}
                 />
               </Enter>
+              </FootFade>
             ))}
             {/* Before vs since, drawn by the system; the one report on this screen. */}
             {showReport && selections.length > 0 && (
+              <FootFade>
               <Enter order={reportOrder}>
               <TimeRecovered
                 startedAt={startedAt}
@@ -191,11 +233,14 @@ const HomeScreen: FC<Interfaces.HomeScreenProps> = ({ navigation, route }) => {
                 style={styles.recovered}
               />
               </Enter>
+              </FootFade>
             )}
           </View>
         )}
         </Enter>
-      </ScrollView>
+        </View>
+      </Animated.ScrollView>
+      </FootFadeProvider>
     </InkScreen>
     </EntranceProvider>
   );
@@ -205,7 +250,7 @@ const styles = StyleSheet.create({
   footerEnter: { alignSelf: "stretch", alignItems: "center" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 4 },
   account: { width: 44, height: 44, alignItems: "flex-end", justifyContent: "center" },
-  scroll: { paddingTop: 36, paddingBottom: spacing.lg },
+  scroll: { paddingTop: 36 },
   // Paper C3/C4: the head starts 44 below the header and the card 36 below it.
   scrollRoomy: { paddingTop: 44 },
   head: { marginBottom: 28 },
