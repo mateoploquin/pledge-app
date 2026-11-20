@@ -227,6 +227,15 @@ a font; that is Apple's).
 
 ## Motion
 
+- Home's list never ends at a hard edge (owner, 20 Nov 2026: "right now we
+  just cut, and the button appears"). The New pledge button floats
+  (`InkScreen` `floatingFooter`) and the cards run on behind it to the
+  screen's bottom. Each card (and the Time back report) fades as a whole by
+  where it is (`screens/home/foot-fade.tsx`): whole while its bottom is above
+  a line 16 pt over the button, then fading out and shrinking up to 4 % as
+  its bottom goes past, gone once 90 % of its height is past the line, so
+  the next card only peeks out faintly. No gradient mask (no masked-view
+  package; a scrim would dim the low sun behind the button).
 - Screen to screen: `forSoftFade` in `src/navigation/index.tsx`, a 420 ms
   ease-out crossfade with a 12 pt lift; the screen underneath dims to 60 %.
   Modals (app picker, share sheet) use the native iOS sheet. The give-up
